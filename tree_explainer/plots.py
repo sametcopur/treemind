@@ -2,11 +2,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb_to_hsv
 import seaborn as sns
-import pandas as pd
 
 sns.set_theme()
 
-def plot_bar(values, raw_score):
+
+def plot_bar(values: np.ndarray, raw_score: float):
     # Sıfır olmayan sütunları bul ve ayıkla
     used_cols = np.where(np.logical_not(values == 0))[0]
     values = values[used_cols]
@@ -15,9 +15,6 @@ def plot_bar(values, raw_score):
     sorted_indices = np.argsort(np.abs(values))
     adjusted_values = values[sorted_indices]
     used_cols = used_cols[sorted_indices]
-
-    # Negatif değer olup olmadığını kontrol et
-    has_negative = np.any(adjusted_values < 0)
 
     # Renk ayarları
     colors = ["green" if val > 0 else "red" for val in adjusted_values]
@@ -62,13 +59,13 @@ def plot_bar(values, raw_score):
     plt.show()
 
 
-def plot_values_points(values, raw_score, points):
+def plot_values_points(values, raw_score, points, scale = 1):
 
     used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
     values = values[used_cols, :]
     points = [x for i, x in enumerate(points) if i in used_cols]
 
-    fig, ax = plt.subplots(figsize=(len(values[0]) * 2, len(values)))
+    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(values)* scale))
 
     # Pozitif ve negatif değerler için renk haritaları
     cmap_pos = sns.color_palette("Greens", as_cmap=True)
@@ -167,8 +164,7 @@ def create_intervals(point_row):
     return intervals
 
 
-def plot_points(values, points):
-
+def plot_points(values, points, scale = 1):
     used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
     values = values[used_cols, :]
     points = [x for i, x in enumerate(points) if i in used_cols]
@@ -176,7 +172,7 @@ def plot_points(values, points):
     # Verilen points listesini aralıklara çeviriyoruz
     points = [create_intervals(row) for row in points]
 
-    fig, ax = plt.subplots(figsize=(len(values[0]) * 2, len(points)))
+    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(points)* scale))
 
     # Pozitif ve negatif değerler için renk haritaları
     cmap_pos = sns.color_palette("Greens", as_cmap=True)
@@ -193,7 +189,6 @@ def plot_points(values, points):
 
     # Her satır ve sütun için verileri göster
     for i, row_points in enumerate(points):
-        n_cols = len(row_points)  # Sütun sayısı her satırda değişebilir
 
         for j, point in enumerate(row_points):
             # Renk paletinden uygun rengi al (önceki grafikteki değerlerle aynı renkleri tutuyoruz)
@@ -250,91 +245,72 @@ def plot_points(values, points):
     plt.show()
 
 
-def plot_dependecy(df):
-    plt.figure(figsize=(10, 8))
+def plot_dependecy(df, figsize = (10, 8)):
+    sub_column_name = df.columns[0]
+    main_columns_name = df.columns[1]
 
-    # Renkleri values ile orantılı olarak dinamik ayarlamak
+    plt.figure(figsize=figsize)
     scatter = plt.scatter(
-        x=df['main_point'], 
-        y=df['sub_point'], 
-        c=df['values'],  # Renkler values sütununa göre
-        cmap='RdYlGn',   # Eski renk paleti
-        s=(df['values'] - df['values'].min()) * 30 + 100,  # Nokta boyutunu değerlerle dinamik olarak ayarlama
-        edgecolor='black',  # Noktaların kenar rengi
-        vmin=df['values'].min(),  # Renk geçişinin başlangıcı
-        vmax=df['values'].max()   # Renk geçişinin bitişi
+        x=df[main_columns_name],
+        y=df[sub_column_name],
+        c=df["values"],  # Renkler values sütununa göre
+        cmap="RdYlGn",  # Eski renk paleti
+        s=(df["values"] - df["values"].min()) * 30
+        + 100,  # Nokta boyutunu değerlerle dinamik olarak ayarlama
+        edgecolor="black",  # Noktaların kenar rengi
+        vmin=df["values"].min(),  # Renk geçişinin başlangıcı
+        vmax=df["values"].max(),  # Renk geçişinin bitişi
     )
 
     # Colorbar ekleme
-    cbar = plt.colorbar(scatter, label='Values')
+    cbar = plt.colorbar(scatter, label="Values")
     cbar.ax.tick_params(labelsize=12)  # Colorbar yazı boyutunu ayarlama
 
     # Eksen etiketleri ve başlık
-    plt.xlabel('Main Column', fontsize=14)
-    plt.ylabel('Dependency Column', fontsize=14)
-    plt.title('Enhanced 2D Scatter Plot with Color Transition Based on Values', fontsize=16)
+    plt.xlabel(main_columns_name, fontsize=14)
+    plt.ylabel(sub_column_name, fontsize=14)
+    plt.title("Dependency Plot", fontsize=16)
 
-    # Grid ekleme
-    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.grid(True, linestyle="--", alpha=0.7)
 
-    # Eksen sınırlarını ayarlama
-    plt.xlim(df['main_point'].min() - 1, df['main_point'].max() + 1)
-    plt.ylim(df['sub_point'].min() - 1, df['sub_point'].max() + 1)
+    plt.xlim(df[main_columns_name].min() - 1, df[main_columns_name].max() + 1)
+    plt.ylim(df[sub_column_name].min() - 1, df[sub_column_name].max() + 1)
 
     plt.tight_layout()  # Grafik alanını optimize etme
     plt.show()
 
-# def plot_dependecy(df):
-#     # Main point için aralıkları oluştur
-#     unique_main_points = sorted(df["main_point"].unique())
-#     main_point_intervals = create_intervals(unique_main_points)
 
-#     # Sub point için aralıkları oluştur
-#     unique_sub_points = sorted(df["sub_point"].unique())
-#     sub_point_intervals = create_intervals(unique_sub_points)
+def plot_feature(df, figsize = (10, 6)):
+    column_name = df.columns[0]
 
-#     # Main point'i kategorilere ayır
-#     df["main_point_cat"] = pd.cut(
-#         df["main_point"],
-#         bins=[-np.inf] + list(unique_main_points) + [np.inf],
-#         labels=False,
-#     )
+    plt.figure(figsize=figsize)
 
-#     # Sub point'i kategorilere ayır
-#     df["sub_point_cat"] = pd.cut(
-#         df["sub_point"],
-#         bins=[-np.inf] + list(unique_sub_points) + [np.inf],
-#         labels=False,
-#     )
+    sns.scatterplot(
+        data=df,
+        x=column_name,
+        y="mean",
+        color="blue",
+        s=100,
+        edgecolor="w",
+        linewidth=0.5,
+    )
 
-#     # Her bir sub_point aralığı için ayrı box plot oluştur
-#     for i, sub_interval in enumerate(sub_point_intervals):
-#         plt.figure(figsize=(12, 6))
+    plt.errorbar(
+        df[column_name],
+        df["mean"],
+        yerr=[df["mean"] - df["min"], df["max"] - df["mean"]],
+        fmt="o",
+        ecolor="gray",
+        capsize=5,
+        elinewidth=1,
+        capthick=1,
+    )
 
-#         subset = df[df["sub_point_cat"] == i]
+    plt.title(f"Contribution of {column_name}", fontsize=16, fontweight="bold")
+    plt.xlabel(column_name, fontsize=14)
+    plt.ylabel("Values", fontsize=14)
+    plt.axhline(0, color="black", linestyle="--", linewidth=0.7)
+    plt.axvline(0, color="black", linestyle="--", linewidth=0.7)
+    plt.grid(True)
 
-#         sns.boxplot(
-#             data=subset,
-#             x="main_point_cat",
-#             y="values",
-#         )
-
-#         plt.title(f"Sub Column Interval: {sub_interval}", fontsize=16)
-#         plt.xlabel("Main Column Intervals", fontsize=12)
-#         plt.ylabel("Values", fontsize=12)
-#         # Y ekseninin aralığını ayarla
-#         plt.ylim(
-#             df["values"].min() - np.abs(df["values"].std()),
-#             df["values"].max() + np.abs(df["values"].std()),
-#         )
-
-#         # X eksenini özelleştir
-#         plt.xticks(
-#             ticks=range(len(main_point_intervals)),
-#             labels=main_point_intervals,
-#             rotation=45,
-#             ha="right",
-#         )
-
-#         plt.tight_layout()
-#         plt.show()
+    plt.show()

@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
-from explainer import Tree
-from plots import plot_bar, plot_values_points, plot_dependecy, plot_points
+from tree_explainer.explainer import Tree
+from tree_explainer.plots import plot_bar, plot_values_points, plot_dependecy, plot_points
 
 def generate_synthetic_data(n_samples=1000):
     np.random.seed(42)
