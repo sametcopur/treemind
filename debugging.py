@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
-from tree_explainer.explainer import Tree
+from tree_explainer import Explainer
 from tree_explainer.plots import plot_bar, plot_values_points, plot_dependecy, plot_points
 
 def generate_synthetic_data(n_samples=1000):
@@ -67,8 +67,12 @@ params = {
 num_round = 100
 model = lgb.train(params, train_data, num_round, valid_sets=[test_data])
 
-tree = Tree(model, X_train)
-tree.analyze_tree()
+tree = Explainer()
+tree(model)
+i = 7
+
+values, raw_score = tree.analyze_row(X_train[[i], :], detailed=False)
+plot_bar(values, raw_score)
 
 df = tree.analyze_feature_v2(2)
 

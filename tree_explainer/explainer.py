@@ -358,7 +358,7 @@ class Explainer:
         """
 
         leafs = self.model.predict(x, pred_leaf=True)
-        raw_score = self.model.predict(x, raw_score=True)[0]
+        raw_score = np.mean(self.model.predict(x, raw_score=True))
 
         if detailed:
             split_points_list = [
@@ -369,24 +369,27 @@ class Explainer:
         else:
             values = np.full((self.len_col,), fill_value=0.0, dtype=np.float64)
 
-        for tree, leaf in zip(self.trees, leafs[0]):
-            rule = tree[leaf]
-            for col in range(self.len_col):
-                ub, lb = rule.ubs[col], rule.lbs[col]
+        for row in range(leafs.shape[0]):
+            for tree, leaf in zip(self.trees, leafs[row, :]):
+                rule = tree[leaf]
+                for col in range(self.len_col):
+                    ub, lb = rule.ubs[col], rule.lbs[col]
 
-                if np.isinf(ub) and np.isinf(lb):
-                    continue
+                    if np.isinf(ub) and np.isinf(lb):
+                        continue
 
-                if detailed:
-                    loc_split_points = split_points_list[col]
+                    if detailed:
+                        loc_split_points = split_points_list[col]
 
-                    values[col, : len(loc_split_points)] += np.where(
-                        (lb < loc_split_points) & (loc_split_points <= ub),
-                        rule.value,
-                        0,
-                    )
-                else:
-                    values[col] += rule.value
+                        values[col, : len(loc_split_points)] += np.where(
+                            (lb < loc_split_points) & (loc_split_points <= ub),
+                            rule.value,
+                            0,
+                        )
+                    else:
+                        values[col] += rule.value
+
+        np.divide(values, leafs.shape[0], out=values)
 
         return (
             (values, split_points_list, raw_score) if detailed else (values, raw_score)
@@ -438,7 +441,9 @@ class Explainer:
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
 
-        df = pd.DataFrame(results, columns=[sub_column_name, main_column_name, "values"])
+        df = pd.DataFrame(
+            results, columns=[sub_column_name, main_column_name, "values"]
+        )
         df = df.explode(["values"]).reset_index(drop=True)
 
         df = _replace_inf(df, main_column_name)

@@ -2,38 +2,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb_to_hsv
 import seaborn as sns
+import pandas as pd
 
 sns.set_theme()
 
 
 def plot_bar(values: np.ndarray, raw_score: float):
-    # Sıfır olmayan sütunları bul ve ayıkla
     used_cols = np.where(np.logical_not(values == 0))[0]
     values = values[used_cols]
 
-    # Verileri mutlak değerlerine göre büyükten küçüğe sırala
     sorted_indices = np.argsort(np.abs(values))
     adjusted_values = values[sorted_indices]
     used_cols = used_cols[sorted_indices]
 
-    # Renk ayarları
     colors = ["green" if val > 0 else "red" for val in adjusted_values]
 
-    # Barları çiz
     fig, ax = plt.subplots()
     bars = ax.barh(np.arange(len(used_cols)), adjusted_values, color=colors)
 
-    # Orta nokta (sıfır) çizgisi
     ax.axvline(0, color="black", linewidth=0.8)
 
-    # Y eksenini numaralandır
     ax.set_yticks(np.arange(len(used_cols)))
     ax.set_yticklabels([f"Column {i}" for i in used_cols])
 
-    # X eksenine başlık ekle
     ax.set_xlabel("Contribution")
 
-    # Barların ortasına beyaz renkte etiket ekle
     for index, bar in enumerate(bars):
         ax.text(
             bar.get_width() / 2,
@@ -44,7 +37,6 @@ def plot_bar(values: np.ndarray, raw_score: float):
             color="white",
         )
 
-    # Sağ alt köşeye raw_score ekle
     plt.text(
         1,
         -0.1,
@@ -59,13 +51,13 @@ def plot_bar(values: np.ndarray, raw_score: float):
     plt.show()
 
 
-def plot_values_points(values, raw_score, points, scale = 1):
+def plot_values_points(values, raw_score, points, scale=1):
 
     used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
     values = values[used_cols, :]
     points = [x for i, x in enumerate(points) if i in used_cols]
 
-    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(values)* scale))
+    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(values) * scale))
 
     # Pozitif ve negatif değerler için renk haritaları
     cmap_pos = sns.color_palette("Greens", as_cmap=True)
@@ -164,7 +156,7 @@ def create_intervals(point_row):
     return intervals
 
 
-def plot_points(values, points, scale = 1):
+def plot_points(values, points, scale=1):
     used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
     values = values[used_cols, :]
     points = [x for i, x in enumerate(points) if i in used_cols]
@@ -172,7 +164,7 @@ def plot_points(values, points, scale = 1):
     # Verilen points listesini aralıklara çeviriyoruz
     points = [create_intervals(row) for row in points]
 
-    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(points)* scale))
+    fig, ax = plt.subplots(figsize=(len(values[0]) * 2 * scale, len(points) * scale))
 
     # Pozitif ve negatif değerler için renk haritaları
     cmap_pos = sns.color_palette("Greens", as_cmap=True)
@@ -245,7 +237,7 @@ def plot_points(values, points, scale = 1):
     plt.show()
 
 
-def plot_dependecy(df, figsize = (10, 8)):
+def plot_dependecy(df, figsize=(10, 8)):
     sub_column_name = df.columns[0]
     main_columns_name = df.columns[1]
 
@@ -280,37 +272,86 @@ def plot_dependecy(df, figsize = (10, 8)):
     plt.show()
 
 
-def plot_feature(df, figsize = (10, 6)):
+def plot_feature(df:pd.DataFrame, figsize=(10, 6)):
     column_name = df.columns[0]
+
+    max_steps = 2000
+
+    min_diff = np.diff(df[column_name]).min()
+    extend_ratio = 0.05 * (df[column_name].max() - df[column_name].min())
+
+    column_min = df[column_name].min() - extend_ratio
+    column_max = df[column_name].max() + extend_ratio
+
+    total_steps = (column_max - column_min) / min_diff
+    if total_steps > max_steps:
+        min_diff = (column_max - column_min) / max_steps
+
+    new_values = pd.DataFrame(
+        {column_name: np.arange(column_min - min_diff, column_max + min_diff, min_diff)}
+    )
+
+    df = df.merge(new_values, on=column_name, how="outer").bfill().ffill()
 
     plt.figure(figsize=figsize)
 
-    sns.scatterplot(
-        data=df,
-        x=column_name,
-        y="mean",
-        color="blue",
-        s=100,
-        edgecolor="w",
-        linewidth=0.5,
-    )
+    sns.lineplot(data=df, x=column_name, y="mean", color="blue", linewidth=2)
 
-    plt.errorbar(
+    plt.fill_between(
         df[column_name],
-        df["mean"],
-        yerr=[df["mean"] - df["min"], df["max"] - df["mean"]],
-        fmt="o",
-        ecolor="gray",
-        capsize=5,
-        elinewidth=1,
-        capthick=1,
+        df["min"],
+        df["max"],
+        color="gray",
+        alpha=0.3,
+        label="Min-Max Range",
     )
 
     plt.title(f"Contribution of {column_name}", fontsize=16, fontweight="bold")
+
+    plt.gca().set_facecolor("whitesmoke")
+
+    x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=10)
+    plt.xticks(x_ticks, [f"{tick:.2f}" for tick in x_ticks], fontsize=10)
+
     plt.xlabel(column_name, fontsize=14)
     plt.ylabel("Values", fontsize=14)
+
     plt.axhline(0, color="black", linestyle="--", linewidth=0.7)
     plt.axvline(0, color="black", linestyle="--", linewidth=0.7)
-    plt.grid(True)
 
+    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    plt.legend()
+    plt.show()
+
+
+def plot_hexbin(df, figsize=(10, 8), gridsize=20):
+    sub_column_name = df.columns[0]
+    main_columns_name = df.columns[1]
+
+    plt.figure(figsize=figsize)
+
+    x = df[main_columns_name]
+    y = df[sub_column_name]
+    values = df['values']
+
+    # Hexbin plot oluştur
+    hb = plt.hexbin(x, y, C=values, gridsize=gridsize, 
+                    cmap='RdYlGn', edgecolors='face',
+                    vmin=values.min(), vmax=values.max())
+
+    # Colorbar ekleme
+    cbar = plt.colorbar(hb, label="Values")
+    cbar.ax.tick_params(labelsize=12)
+
+    # Eksen etiketleri ve başlık
+    plt.xlabel(main_columns_name, fontsize=14)
+    plt.ylabel(sub_column_name, fontsize=14)
+    plt.title("Hexbin Plot", fontsize=16)
+
+    plt.grid(True, linestyle='--', alpha=0.7)
+
+    plt.xlim(x.min() - 1, x.max() + 1)
+    plt.ylim(y.min() - 1, y.max() + 1)
+
+    plt.tight_layout()
     plt.show()
