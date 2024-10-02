@@ -4,6 +4,10 @@ from matplotlib.colors import rgb_to_hsv
 import seaborn as sns
 import pandas as pd
 
+
+from scipy.interpolate import griddata
+from scipy.ndimage import gaussian_filter
+
 sns.set_theme()
 
 
@@ -246,7 +250,7 @@ def plot_dependecy(df, figsize=(10, 8)):
         x=df[main_columns_name],
         y=df[sub_column_name],
         c=df["values"],  # Renkler values sütununa göre
-        cmap="RdYlGn",  # Eski renk paleti
+        cmap="coolwarm",  # Eski renk paleti
         s=(df["values"] - df["values"].min()) * 30
         + 100,  # Nokta boyutunu değerlerle dinamik olarak ayarlama
         edgecolor="black",  # Noktaların kenar rengi
@@ -272,30 +276,29 @@ def plot_dependecy(df, figsize=(10, 8)):
     plt.show()
 
 
-def plot_feature(df:pd.DataFrame, figsize=(10, 6)):
+def plot_feature(df: pd.DataFrame, figsize=(10, 6)):
     column_name = df.columns[0]
 
-    max_steps = 2000
-
-    min_diff = np.diff(df[column_name]).min()
     extend_ratio = 0.05 * (df[column_name].max() - df[column_name].min())
 
-    column_min = df[column_name].min() - extend_ratio
-    column_max = df[column_name].max() + extend_ratio
+    min_row = df.iloc[df[column_name].argmin()].copy()
+    min_row[column_name] -= extend_ratio
 
-    total_steps = (column_max - column_min) / min_diff
-    if total_steps > max_steps:
-        min_diff = (column_max - column_min) / max_steps
+    max_row = df.iloc[df[column_name].argmax()].copy()
+    max_row[column_name] += extend_ratio
 
-    new_values = pd.DataFrame(
-        {column_name: np.arange(column_min - min_diff, column_max + min_diff, min_diff)}
-    )
-
-    df = df.merge(new_values, on=column_name, how="outer").bfill().ffill()
+    df = pd.concat([min_row.to_frame().T, df, max_row.to_frame().T], ignore_index=True)
 
     plt.figure(figsize=figsize)
 
-    sns.lineplot(data=df, x=column_name, y="mean", color="blue", linewidth=2)
+    sns.lineplot(
+        data=df,
+        x=column_name,
+        y="mean",
+        color="blue",
+        linewidth=2,
+        drawstyle="steps-post",
+    )
 
     plt.fill_between(
         df[column_name],
@@ -304,6 +307,7 @@ def plot_feature(df:pd.DataFrame, figsize=(10, 6)):
         color="gray",
         alpha=0.3,
         label="Min-Max Range",
+        step="post",
     )
 
     plt.title(f"Contribution of {column_name}", fontsize=16, fontweight="bold")
@@ -332,12 +336,19 @@ def plot_hexbin(df, figsize=(10, 8), gridsize=20):
 
     x = df[main_columns_name]
     y = df[sub_column_name]
-    values = df['values']
+    values = df["values"]
 
     # Hexbin plot oluştur
-    hb = plt.hexbin(x, y, C=values, gridsize=gridsize, 
-                    cmap='RdYlGn', edgecolors='face',
-                    vmin=values.min(), vmax=values.max())
+    hb = plt.hexbin(
+        x,
+        y,
+        C=values,
+        gridsize=gridsize,
+        cmap="RdYlGn",
+        edgecolors="face",
+        vmin=values.min(),
+        vmax=values.max(),
+    )
 
     # Colorbar ekleme
     cbar = plt.colorbar(hb, label="Values")
@@ -348,10 +359,64 @@ def plot_hexbin(df, figsize=(10, 8), gridsize=20):
     plt.ylabel(sub_column_name, fontsize=14)
     plt.title("Hexbin Plot", fontsize=16)
 
-    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.grid(True, linestyle="--", alpha=0.7)
 
     plt.xlim(x.min() - 1, x.max() + 1)
     plt.ylim(y.min() - 1, y.max() + 1)
 
     plt.tight_layout()
+    plt.show()
+
+
+def plot_interaction(df, figsize=(8, 6), sigma=3):
+    column1 = df.columns[0]
+    column2 = df.columns[1]
+    
+    xi = np.linspace(df[column1].min(), df[column1].max(), 100)
+    yi = np.linspace(df[column2 ].min(), df[column2 ].max(), 100)
+    xi, yi = np.meshgrid(xi, yi)
+
+    zi = griddata((df[column1], df[column2 ]), df['values'], (xi, yi), method='nearest')
+
+    zi_smooth = gaussian_filter(zi, sigma=sigma)
+    
+    plt.figure(figsize=figsize)
+    plt.contourf(xi, yi, zi_smooth, levels=50, cmap='coolwarm')
+
+    cb = plt.colorbar()
+    cb.set_label('Interpolated Values')
+    plt.title('Smooth Filled Hexbin Plot with Gaussian Filter')
+    plt.xlabel(column1)
+    plt.ylabel(column2 )
+
+    plt.show()
+    
+    
+
+def plot_dependecy_new(df):
+    figsize = (8,6)
+    column1 = df.columns[0]
+    column2 = df.columns[1]
+
+    xi = np.linspace(df[column1].min(), df[column1].max(), 200)
+    yi = np.linspace(df[column2 ].min(), df[column2 ].max(), 200)
+    xi, yi = np.meshgrid(xi, yi)
+
+    zi = np.empty_like(xi)
+
+    for index, row in df.sort_values(by = [column1, column2], ascending=[False, False]).iterrows():
+        zi[(xi <= row.values[0] ) & (yi <= row.values[1])] = row.values[2]
+        
+        
+    zi_smooth = gaussian_filter(zi, sigma=0)
+        
+    plt.figure(figsize=figsize)
+    plt.contourf(xi, yi, zi_smooth, levels=50, cmap='coolwarm')
+
+    cb = plt.colorbar()
+    cb.set_label('Interpolated Values')
+    plt.title('Smooth Filled Hexbin Plot with Gaussian Filter')
+    plt.xlabel(column1)
+    plt.ylabel(column2 )
+
     plt.show()
