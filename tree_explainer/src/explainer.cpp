@@ -1281,6 +1281,19 @@ static CYTHON_INLINE float __PYX_NAN() {
 #include "stdexcept"
 #include "typeinfo"
 #include <vector>
+#include <utility>
+
+    #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1600)
+    // move should be defined for these versions of MSVC, but __cplusplus isn't set usefully
+    #include <type_traits>
+
+    namespace cython_std {
+    template <typename T> typename std::remove_reference<T>::type&& move(T& t) noexcept { return std::move(t); }
+    template <typename T> typename std::remove_reference<T>::type&& move(T&& t) noexcept { return std::move(t); }
+    }
+
+    #endif
+    
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -1950,6 +1963,15 @@ struct __pyx_ctuple_double__and_double {
   double f0;
   double f1;
 };
+
+/* "lgb.pxd":6
+ * from libcpp.pair cimport pair as cpp_pair
+ * 
+ * ctypedef cpp_pair[double, double] RangePair             # <<<<<<<<<<<<<<
+ * 
+ * cdef void traverse_lightgbm(dict node_dict, str node_index, vector[RangePair]& feature_ranges, vector[Rule]& rules, int tree_index)
+ */
+typedef std::pair<double,double>  __pyx_t_14tree_explainer_3src_3lgb_RangePair;
 
 /* "../../../../../../../../Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/numpy/__init__.cython-30.pxd":1096
  * 
@@ -3381,6 +3403,10 @@ static PyObject *(*__pyx_f_14tree_explainer_3src_5utils_replace_inf)(PyObject *,
 static double (*__pyx_f_14tree_explainer_3src_5utils_find_mean)(std::vector<std::vector<double> > ); /*proto*/
 static __pyx_ctuple_double__and_double (*__pyx_f_14tree_explainer_3src_5utils_find_min_max)(std::vector<std::vector<double> > ); /*proto*/
 
+/* Module declarations from "libcpp.utility" */
+
+/* Module declarations from "libcpp.pair" */
+
 /* Module declarations from "tree_explainer.src.lgb" */
 static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> >  (*__pyx_f_14tree_explainer_3src_3lgb_analyze_lightgbm)(PyObject *, int); /*proto*/
 
@@ -3738,6 +3764,10 @@ typedef struct {
   #endif
   #ifdef __Pyx_Coroutine_USED
   PyTypeObject *__pyx_CoroutineType;
+  #endif
+  #if CYTHON_USE_MODULE_STATE
+  #endif
+  #if CYTHON_USE_MODULE_STATE
   #endif
   #if CYTHON_USE_MODULE_STATE
   #endif
@@ -4620,6 +4650,10 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #endif
 #ifdef __Pyx_Coroutine_USED
 #define __pyx_CoroutineType __pyx_mstate_global->__pyx_CoroutineType
+#endif
+#if CYTHON_USE_MODULE_STATE
+#endif
+#if CYTHON_USE_MODULE_STATE
 #endif
 #if CYTHON_USE_MODULE_STATE
 #endif
@@ -22168,9 +22202,9 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_2__call__(
   return __pyx_r;
 }
 
-/* "tree_explainer/src/explainer.pyx":36
- *     @boundscheck(False)
- *     @wraparound(False)
+/* "tree_explainer/src/explainer.pyx":40
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_dependency(self, int main_col, int sub_col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes the dependency between two features by calculating values based on the split points
@@ -22258,13 +22292,13 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_dependency); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_dependency); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!__Pyx_IsSameCFunction(__pyx_t_1, (void*) __pyx_pw_14tree_explainer_3src_9explainer_9Explainer_5analyze_dependency)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_main_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_main_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 40, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sub_col); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 36, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sub_col); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 40, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_5 = __pyx_t_1; __pyx_t_6 = NULL;
@@ -22287,7 +22321,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
           __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 40, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         }
@@ -22309,7 +22343,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
     #endif
   }
 
-  /* "tree_explainer/src/explainer.pyx":53
+  /* "tree_explainer/src/explainer.pyx":57
  *             A DataFrame with sub feature split points, main feature split points, and the corresponding values.
  *         """
  *         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, main_col, sub_col)             # <<<<<<<<<<<<<<
@@ -22318,30 +22352,30 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
   __pyx_t_9.__pyx_n = 1;
   __pyx_t_9.sub_col = __pyx_v_sub_col;
-  __pyx_t_8 = __pyx_f_14tree_explainer_3src_4rule_filter_trees(__pyx_v_self->trees, __pyx_v_main_col, &__pyx_t_9); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L1_error)
+  __pyx_t_8 = __pyx_f_14tree_explainer_3src_4rule_filter_trees(__pyx_v_self->trees, __pyx_v_main_col, &__pyx_t_9); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 57, __pyx_L1_error)
   __pyx_v_filtered_trees = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_8);
 
-  /* "tree_explainer/src/explainer.pyx":54
+  /* "tree_explainer/src/explainer.pyx":58
  *         """
  *         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, main_col, sub_col)
  *         cdef vector[double] main_split_points = get_split_point(filtered_trees, main_col)             # <<<<<<<<<<<<<<
  *         cdef vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
  * 
  */
-  __pyx_t_10 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_main_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L1_error)
+  __pyx_t_10 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_main_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 58, __pyx_L1_error)
   __pyx_v_main_split_points = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_10);
 
-  /* "tree_explainer/src/explainer.pyx":55
+  /* "tree_explainer/src/explainer.pyx":59
  *         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, main_col, sub_col)
  *         cdef vector[double] main_split_points = get_split_point(filtered_trees, main_col)
  *         cdef vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)             # <<<<<<<<<<<<<<
  * 
  *         cdef vector[vector[double]] all_values
  */
-  __pyx_t_10 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_sub_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_10 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_sub_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 59, __pyx_L1_error)
   __pyx_v_sub_split_points = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_10);
 
-  /* "tree_explainer/src/explainer.pyx":71
+  /* "tree_explainer/src/explainer.pyx":75
  *         cdef object df
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -22357,7 +22391,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
       #endif
       /*try:*/ {
 
-        /* "tree_explainer/src/explainer.pyx":72
+        /* "tree_explainer/src/explainer.pyx":76
  * 
  *         with nogil:
  *             for sub_point in sub_split_points:             # <<<<<<<<<<<<<<
@@ -22371,7 +22405,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
           ++__pyx_t_11;
           __pyx_v_sub_point = __pyx_t_12;
 
-          /* "tree_explainer/src/explainer.pyx":73
+          /* "tree_explainer/src/explainer.pyx":77
  *         with nogil:
  *             for sub_point in sub_split_points:
  *                 for main_point in main_split_points:             # <<<<<<<<<<<<<<
@@ -22385,7 +22419,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
             ++__pyx_t_13;
             __pyx_v_main_point = __pyx_t_12;
 
-            /* "tree_explainer/src/explainer.pyx":74
+            /* "tree_explainer/src/explainer.pyx":78
  *             for sub_point in sub_split_points:
  *                 for main_point in main_split_points:
  *                     all_values.clear()             # <<<<<<<<<<<<<<
@@ -22394,7 +22428,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
             __pyx_v_all_values.clear();
 
-            /* "tree_explainer/src/explainer.pyx":76
+            /* "tree_explainer/src/explainer.pyx":80
  *                     all_values.clear()
  * 
  *                     for tree in filtered_trees:             # <<<<<<<<<<<<<<
@@ -22408,7 +22442,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
               ++__pyx_t_14;
               __pyx_v_tree = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_15);
 
-              /* "tree_explainer/src/explainer.pyx":77
+              /* "tree_explainer/src/explainer.pyx":81
  * 
  *                     for tree in filtered_trees:
  *                         tree_values.clear()             # <<<<<<<<<<<<<<
@@ -22417,7 +22451,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
               __pyx_v_tree_values.clear();
 
-              /* "tree_explainer/src/explainer.pyx":79
+              /* "tree_explainer/src/explainer.pyx":83
  *                         tree_values.clear()
  * 
  *                         for rule in tree:             # <<<<<<<<<<<<<<
@@ -22431,7 +22465,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
                 ++__pyx_t_16;
                 __pyx_v_rule = __pyx_t_17;
 
-                /* "tree_explainer/src/explainer.pyx":80
+                /* "tree_explainer/src/explainer.pyx":84
  * 
  *                         for rule in tree:
  *                             result_main = check_value(&rule, main_col, main_point)             # <<<<<<<<<<<<<<
@@ -22440,7 +22474,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
                 __pyx_v_result_main = __pyx_f_14tree_explainer_3src_4rule_check_value((&__pyx_v_rule), __pyx_v_main_col, __pyx_v_main_point);
 
-                /* "tree_explainer/src/explainer.pyx":81
+                /* "tree_explainer/src/explainer.pyx":85
  *                         for rule in tree:
  *                             result_main = check_value(&rule, main_col, main_point)
  *                             result_sub = check_value(&rule, sub_col, sub_point)             # <<<<<<<<<<<<<<
@@ -22449,7 +22483,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
                 __pyx_v_result_sub = __pyx_f_14tree_explainer_3src_4rule_check_value((&__pyx_v_rule), __pyx_v_sub_col, __pyx_v_sub_point);
 
-                /* "tree_explainer/src/explainer.pyx":83
+                /* "tree_explainer/src/explainer.pyx":87
  *                             result_sub = check_value(&rule, sub_col, sub_point)
  * 
  *                             if result_main & result_sub:             # <<<<<<<<<<<<<<
@@ -22459,7 +22493,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
                 __pyx_t_18 = (__pyx_v_result_main & __pyx_v_result_sub);
                 if (__pyx_t_18) {
 
-                  /* "tree_explainer/src/explainer.pyx":84
+                  /* "tree_explainer/src/explainer.pyx":88
  * 
  *                             if result_main & result_sub:
  *                                 tree_values.push_back(rule.value)             # <<<<<<<<<<<<<<
@@ -22476,10 +22510,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
                     #ifdef WITH_THREAD
                     __Pyx_PyGILState_Release(__pyx_gilstate_save);
                     #endif
-                    __PYX_ERR(0, 84, __pyx_L4_error)
+                    __PYX_ERR(0, 88, __pyx_L4_error)
                   }
 
-                  /* "tree_explainer/src/explainer.pyx":83
+                  /* "tree_explainer/src/explainer.pyx":87
  *                             result_sub = check_value(&rule, sub_col, sub_point)
  * 
  *                             if result_main & result_sub:             # <<<<<<<<<<<<<<
@@ -22488,7 +22522,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
                 }
 
-                /* "tree_explainer/src/explainer.pyx":79
+                /* "tree_explainer/src/explainer.pyx":83
  *                         tree_values.clear()
  * 
  *                         for rule in tree:             # <<<<<<<<<<<<<<
@@ -22497,7 +22531,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
               }
 
-              /* "tree_explainer/src/explainer.pyx":86
+              /* "tree_explainer/src/explainer.pyx":90
  *                                 tree_values.push_back(rule.value)
  * 
  *                         if tree_values.size() > 0:             # <<<<<<<<<<<<<<
@@ -22507,7 +22541,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
               __pyx_t_18 = (__pyx_v_tree_values.size() > 0);
               if (__pyx_t_18) {
 
-                /* "tree_explainer/src/explainer.pyx":87
+                /* "tree_explainer/src/explainer.pyx":91
  * 
  *                         if tree_values.size() > 0:
  *                             all_values.push_back(tree_values)             # <<<<<<<<<<<<<<
@@ -22524,10 +22558,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
                   #ifdef WITH_THREAD
                   __Pyx_PyGILState_Release(__pyx_gilstate_save);
                   #endif
-                  __PYX_ERR(0, 87, __pyx_L4_error)
+                  __PYX_ERR(0, 91, __pyx_L4_error)
                 }
 
-                /* "tree_explainer/src/explainer.pyx":86
+                /* "tree_explainer/src/explainer.pyx":90
  *                                 tree_values.push_back(rule.value)
  * 
  *                         if tree_values.size() > 0:             # <<<<<<<<<<<<<<
@@ -22536,7 +22570,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
               }
 
-              /* "tree_explainer/src/explainer.pyx":76
+              /* "tree_explainer/src/explainer.pyx":80
  *                     all_values.clear()
  * 
  *                     for tree in filtered_trees:             # <<<<<<<<<<<<<<
@@ -22545,7 +22579,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
             }
 
-            /* "tree_explainer/src/explainer.pyx":89
+            /* "tree_explainer/src/explainer.pyx":93
  *                             all_values.push_back(tree_values)
  * 
  *                     if all_values.size() == 0:             # <<<<<<<<<<<<<<
@@ -22555,7 +22589,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
             __pyx_t_18 = (__pyx_v_all_values.size() == 0);
             if (__pyx_t_18) {
 
-              /* "tree_explainer/src/explainer.pyx":90
+              /* "tree_explainer/src/explainer.pyx":94
  * 
  *                     if all_values.size() == 0:
  *                         continue             # <<<<<<<<<<<<<<
@@ -22564,7 +22598,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
               goto __pyx_L8_continue;
 
-              /* "tree_explainer/src/explainer.pyx":89
+              /* "tree_explainer/src/explainer.pyx":93
  *                             all_values.push_back(tree_values)
  * 
  *                     if all_values.size() == 0:             # <<<<<<<<<<<<<<
@@ -22573,7 +22607,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
             }
 
-            /* "tree_explainer/src/explainer.pyx":92
+            /* "tree_explainer/src/explainer.pyx":96
  *                         continue
  * 
  *                     mean_values.push_back(find_mean(all_values))             # <<<<<<<<<<<<<<
@@ -22590,10 +22624,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
               #ifdef WITH_THREAD
               __Pyx_PyGILState_Release(__pyx_gilstate_save);
               #endif
-              __PYX_ERR(0, 92, __pyx_L4_error)
+              __PYX_ERR(0, 96, __pyx_L4_error)
             }
 
-            /* "tree_explainer/src/explainer.pyx":93
+            /* "tree_explainer/src/explainer.pyx":97
  * 
  *                     mean_values.push_back(find_mean(all_values))
  *                     sub_points.push_back(sub_point)             # <<<<<<<<<<<<<<
@@ -22610,10 +22644,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
               #ifdef WITH_THREAD
               __Pyx_PyGILState_Release(__pyx_gilstate_save);
               #endif
-              __PYX_ERR(0, 93, __pyx_L4_error)
+              __PYX_ERR(0, 97, __pyx_L4_error)
             }
 
-            /* "tree_explainer/src/explainer.pyx":94
+            /* "tree_explainer/src/explainer.pyx":98
  *                     mean_values.push_back(find_mean(all_values))
  *                     sub_points.push_back(sub_point)
  *                     main_points.push_back(main_point)             # <<<<<<<<<<<<<<
@@ -22630,10 +22664,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
               #ifdef WITH_THREAD
               __Pyx_PyGILState_Release(__pyx_gilstate_save);
               #endif
-              __PYX_ERR(0, 94, __pyx_L4_error)
+              __PYX_ERR(0, 98, __pyx_L4_error)
             }
 
-            /* "tree_explainer/src/explainer.pyx":73
+            /* "tree_explainer/src/explainer.pyx":77
  *         with nogil:
  *             for sub_point in sub_split_points:
  *                 for main_point in main_split_points:             # <<<<<<<<<<<<<<
@@ -22643,7 +22677,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
             __pyx_L8_continue:;
           }
 
-          /* "tree_explainer/src/explainer.pyx":72
+          /* "tree_explainer/src/explainer.pyx":76
  * 
  *         with nogil:
  *             for sub_point in sub_split_points:             # <<<<<<<<<<<<<<
@@ -22653,7 +22687,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
         }
       }
 
-      /* "tree_explainer/src/explainer.pyx":71
+      /* "tree_explainer/src/explainer.pyx":75
  *         cdef object df
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -22679,46 +22713,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
       }
   }
 
-  /* "tree_explainer/src/explainer.pyx":97
+  /* "tree_explainer/src/explainer.pyx":101
  * 
  * 
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)             # <<<<<<<<<<<<<<
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] sub_points_arr = np.asarray(sub_points, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] main_points_arr = np.asarray(main_points, dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __pyx_convert_vector_to_py_double(__pyx_v_mean_values); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_vector_to_py_double(__pyx_v_mean_values); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 101, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 101, __pyx_L1_error)
   __pyx_t_19 = ((PyArrayObject *)__pyx_t_3);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_19, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_mean_values_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 97, __pyx_L1_error)
+      __PYX_ERR(0, 101, __pyx_L1_error)
     } else {__pyx_pybuffernd_mean_values_arr.diminfo[0].strides = __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_mean_values_arr.diminfo[0].shape = __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -22726,46 +22760,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
   __pyx_v_mean_values_arr = ((PyArrayObject *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":98
+  /* "tree_explainer/src/explainer.pyx":102
  * 
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] sub_points_arr = np.asarray(sub_points, dtype=np.float64)             # <<<<<<<<<<<<<<
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] main_points_arr = np.asarray(main_points, dtype=np.float64)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_v_sub_points); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_v_sub_points); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 98, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_4) < 0) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 98, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 98, __pyx_L1_error)
+  if (!(likely(((__pyx_t_4) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_4, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 102, __pyx_L1_error)
   __pyx_t_20 = ((PyArrayObject *)__pyx_t_4);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_sub_points_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_20, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_sub_points_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_sub_points_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 98, __pyx_L1_error)
+      __PYX_ERR(0, 102, __pyx_L1_error)
     } else {__pyx_pybuffernd_sub_points_arr.diminfo[0].strides = __pyx_pybuffernd_sub_points_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_sub_points_arr.diminfo[0].shape = __pyx_pybuffernd_sub_points_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -22773,46 +22807,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
   __pyx_v_sub_points_arr = ((PyArrayObject *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":99
+  /* "tree_explainer/src/explainer.pyx":103
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] sub_points_arr = np.asarray(sub_points, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] main_points_arr = np.asarray(main_points, dtype=np.float64)             # <<<<<<<<<<<<<<
  * 
  *         main_column_name = self.columns[main_col]
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_asarray); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_asarray); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __pyx_convert_vector_to_py_double(__pyx_v_main_points); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_4 = __pyx_convert_vector_to_py_double(__pyx_v_main_points); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_4);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 99, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 99, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 103, __pyx_L1_error)
   __pyx_t_21 = ((PyArrayObject *)__pyx_t_2);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_main_points_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_21, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_main_points_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_main_points_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 99, __pyx_L1_error)
+      __PYX_ERR(0, 103, __pyx_L1_error)
     } else {__pyx_pybuffernd_main_points_arr.diminfo[0].strides = __pyx_pybuffernd_main_points_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_main_points_arr.diminfo[0].shape = __pyx_pybuffernd_main_points_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -22820,7 +22854,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
   __pyx_v_main_points_arr = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":101
+  /* "tree_explainer/src/explainer.pyx":105
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] main_points_arr = np.asarray(main_points, dtype=np.float64)
  * 
  *         main_column_name = self.columns[main_col]             # <<<<<<<<<<<<<<
@@ -22829,15 +22863,15 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
   if (unlikely(__pyx_v_self->columns == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 101, __pyx_L1_error)
+    __PYX_ERR(0, 105, __pyx_L1_error)
   }
-  if (!(likely(PyUnicode_CheckExact(PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)))||((PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)))) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)))||((PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col)))) __PYX_ERR(0, 105, __pyx_L1_error)
   __pyx_t_2 = PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_main_col);
   __Pyx_INCREF(__pyx_t_2);
   __pyx_v_main_column_name = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":102
+  /* "tree_explainer/src/explainer.pyx":106
  * 
  *         main_column_name = self.columns[main_col]
  *         sub_column_name = self.columns[sub_col]             # <<<<<<<<<<<<<<
@@ -22846,55 +22880,55 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
  */
   if (unlikely(__pyx_v_self->columns == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 102, __pyx_L1_error)
+    __PYX_ERR(0, 106, __pyx_L1_error)
   }
-  if (!(likely(PyUnicode_CheckExact(PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)))||((PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)))) __PYX_ERR(0, 102, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)))||((PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col)))) __PYX_ERR(0, 106, __pyx_L1_error)
   __pyx_t_2 = PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_sub_col);
   __Pyx_INCREF(__pyx_t_2);
   __pyx_v_sub_column_name = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":104
+  /* "tree_explainer/src/explainer.pyx":108
  *         sub_column_name = self.columns[sub_col]
  * 
  *         df = pd.DataFrame({             # <<<<<<<<<<<<<<
  *             sub_column_name: sub_points_arr,
  *             main_column_name: main_points_arr,
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_pd); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_pd); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 108, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":105
+  /* "tree_explainer/src/explainer.pyx":109
  * 
  *         df = pd.DataFrame({
  *             sub_column_name: sub_points_arr,             # <<<<<<<<<<<<<<
  *             main_column_name: main_points_arr,
  *             'values': mean_values_arr,
  */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_v_sub_column_name, ((PyObject *)__pyx_v_sub_points_arr)) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_v_sub_column_name, ((PyObject *)__pyx_v_sub_points_arr)) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":106
+  /* "tree_explainer/src/explainer.pyx":110
  *         df = pd.DataFrame({
  *             sub_column_name: sub_points_arr,
  *             main_column_name: main_points_arr,             # <<<<<<<<<<<<<<
  *             'values': mean_values_arr,
  *         })
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_v_main_column_name, ((PyObject *)__pyx_v_main_points_arr)) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_v_main_column_name, ((PyObject *)__pyx_v_main_points_arr)) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":107
+  /* "tree_explainer/src/explainer.pyx":111
  *             sub_column_name: sub_points_arr,
  *             main_column_name: main_points_arr,
  *             'values': mean_values_arr,             # <<<<<<<<<<<<<<
  *         })
  * 
  */
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_u_values, ((PyObject *)__pyx_v_mean_values_arr)) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_u_values, ((PyObject *)__pyx_v_mean_values_arr)) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
   __pyx_t_3 = NULL;
   __pyx_t_7 = 0;
   #if CYTHON_UNPACK_METHODS
@@ -22914,27 +22948,27 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
     __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_7, 1+__pyx_t_7);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __pyx_v_df = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":110
+  /* "tree_explainer/src/explainer.pyx":114
  *         })
  * 
  *         df = df.explode(["values"]).reset_index(drop=True)             # <<<<<<<<<<<<<<
  * 
  *         df = replace_inf(df, main_column_name)
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_df, __pyx_n_s_explode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_df, __pyx_n_s_explode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_n_u_values);
   __Pyx_GIVEREF(__pyx_n_u_values);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_n_u_values)) __PYX_ERR(0, 110, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_n_u_values)) __PYX_ERR(0, 114, __pyx_L1_error);
   __pyx_t_3 = NULL;
   __pyx_t_7 = 0;
   #if CYTHON_UNPACK_METHODS
@@ -22954,48 +22988,48 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
     __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_7, 1+__pyx_t_7);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_reset_index); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_reset_index); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drop, Py_True) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drop, Py_True) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF_SET(__pyx_v_df, __pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":112
+  /* "tree_explainer/src/explainer.pyx":116
  *         df = df.explode(["values"]).reset_index(drop=True)
  * 
  *         df = replace_inf(df, main_column_name)             # <<<<<<<<<<<<<<
  *         df = replace_inf(df, sub_column_name)
  * 
  */
-  __pyx_t_4 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_main_column_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_4 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_main_column_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF_SET(__pyx_v_df, __pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":113
+  /* "tree_explainer/src/explainer.pyx":117
  * 
  *         df = replace_inf(df, main_column_name)
  *         df = replace_inf(df, sub_column_name)             # <<<<<<<<<<<<<<
  * 
  *         return df
  */
-  __pyx_t_4 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_sub_column_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __pyx_t_4 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_sub_column_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF_SET(__pyx_v_df, __pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":115
+  /* "tree_explainer/src/explainer.pyx":119
  *         df = replace_inf(df, sub_column_name)
  * 
  *         return df             # <<<<<<<<<<<<<<
@@ -23007,9 +23041,9 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dep
   __pyx_r = __pyx_v_df;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/explainer.pyx":36
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":40
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_dependency(self, int main_col, int sub_col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes the dependency between two features by calculating values based on the split points
@@ -23107,7 +23141,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
@@ -23115,14 +23149,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[1]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("analyze_dependency", 1, 2, 2, 1); __PYX_ERR(0, 36, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("analyze_dependency", 1, 2, 2, 1); __PYX_ERR(0, 40, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_dependency") < 0)) __PYX_ERR(0, 36, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_dependency") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -23130,12 +23164,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_main_col = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_main_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
-    __pyx_v_sub_col = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sub_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
+    __pyx_v_main_col = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_main_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_sub_col = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sub_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("analyze_dependency", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 36, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("analyze_dependency", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 40, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -23171,7 +23205,7 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_4analyze_d
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("analyze_dependency", 1);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dependency(__pyx_v_self, __pyx_v_main_col, __pyx_v_sub_col, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_dependency(__pyx_v_self, __pyx_v_main_col, __pyx_v_sub_col, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -23188,9 +23222,9 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_4analyze_d
   return __pyx_r;
 }
 
-/* "tree_explainer/src/explainer.pyx":119
- *     @boundscheck(False)
- *     @wraparound(False)
+/* "tree_explainer/src/explainer.pyx":127
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef tuple analyze_row(self, object x, bint detailed = True):             # <<<<<<<<<<<<<<
  *         """
  *         Optimized version of analyze_row function using C++ vectors of doubles.
@@ -23294,11 +23328,11 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_row); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_row); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!__Pyx_IsSameCFunction(__pyx_t_1, (void*) __pyx_pw_14tree_explainer_3src_9explainer_9Explainer_7analyze_row)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_detailed); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_v_detailed); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 127, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -23320,11 +23354,11 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
-        if (!(likely(PyTuple_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("tuple", __pyx_t_2))) __PYX_ERR(0, 119, __pyx_L1_error)
+        if (!(likely(PyTuple_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("tuple", __pyx_t_2))) __PYX_ERR(0, 127, __pyx_L1_error)
         __pyx_r = ((PyObject*)__pyx_t_2);
         __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -23343,57 +23377,57 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
     #endif
   }
 
-  /* "tree_explainer/src/explainer.pyx":125
+  /* "tree_explainer/src/explainer.pyx":133
  *         Parameters and return values remain the same as the original function.
  *         """
  *         cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True)             # <<<<<<<<<<<<<<
  *         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->model, __pyx_n_s_predict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->model, __pyx_n_s_predict); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_v_x);
   __Pyx_GIVEREF(__pyx_v_x);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_x)) __PYX_ERR(0, 125, __pyx_L1_error);
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 125, __pyx_L1_error)
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_v_x)) __PYX_ERR(0, 133, __pyx_L1_error);
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_pred_leaf, Py_True) < 0) __PYX_ERR(0, 125, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 125, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_pred_leaf, Py_True) < 0) __PYX_ERR(0, 133, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(__pyx_t_3, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_to_MemoryviewSlice_d_dc_int(__pyx_t_3, PyBUF_WRITABLE); if (unlikely(!__pyx_t_7.memview)) __PYX_ERR(0, 133, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_leafs = __pyx_t_7;
   __pyx_t_7.memview = NULL;
   __pyx_t_7.data = NULL;
 
-  /* "tree_explainer/src/explainer.pyx":126
+  /* "tree_explainer/src/explainer.pyx":134
  *         """
  *         cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True)
  *         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))             # <<<<<<<<<<<<<<
  * 
  *         cdef int row, col, size, i, j, max_len = 0
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_mean); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_mean); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->model, __pyx_n_s_predict); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->model, __pyx_n_s_predict); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_x);
   __Pyx_GIVEREF(__pyx_v_x);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_x)) __PYX_ERR(0, 126, __pyx_L1_error);
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_x)) __PYX_ERR(0, 134, __pyx_L1_error);
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_raw_score, Py_True) < 0) __PYX_ERR(0, 126, __pyx_L1_error)
-  __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 126, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_raw_score, Py_True) < 0) __PYX_ERR(0, 134, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -23417,15 +23451,15 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 126, __pyx_L1_error)
+  __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 134, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_raw_score = __pyx_t_9;
 
-  /* "tree_explainer/src/explainer.pyx":128
+  /* "tree_explainer/src/explainer.pyx":136
  *         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))
  * 
  *         cdef int row, col, size, i, j, max_len = 0             # <<<<<<<<<<<<<<
@@ -23434,7 +23468,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
   __pyx_v_max_len = 0;
 
-  /* "tree_explainer/src/explainer.pyx":137
+  /* "tree_explainer/src/explainer.pyx":145
  *         cdef Rule rule
  * 
  *         if detailed:             # <<<<<<<<<<<<<<
@@ -23443,7 +23477,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
   if (__pyx_v_detailed) {
 
-    /* "tree_explainer/src/explainer.pyx":138
+    /* "tree_explainer/src/explainer.pyx":146
  * 
  *         if detailed:
  *             split_points.resize(self.len_col)             # <<<<<<<<<<<<<<
@@ -23454,10 +23488,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
       __pyx_v_split_points.resize(__pyx_v_self->len_col);
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      __PYX_ERR(0, 138, __pyx_L1_error)
+      __PYX_ERR(0, 146, __pyx_L1_error)
     }
 
-    /* "tree_explainer/src/explainer.pyx":140
+    /* "tree_explainer/src/explainer.pyx":148
  *             split_points.resize(self.len_col)
  * 
  *             for col in range(self.len_col):             # <<<<<<<<<<<<<<
@@ -23469,7 +23503,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_col = __pyx_t_12;
 
-      /* "tree_explainer/src/explainer.pyx":141
+      /* "tree_explainer/src/explainer.pyx":149
  * 
  *             for col in range(self.len_col):
  *                 col_split_points.clear()  # Clear previous values             # <<<<<<<<<<<<<<
@@ -23478,36 +23512,36 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
       __pyx_v_col_split_points.clear();
 
-      /* "tree_explainer/src/explainer.pyx":142
+      /* "tree_explainer/src/explainer.pyx":150
  *             for col in range(self.len_col):
  *                 col_split_points.clear()  # Clear previous values
  *                 split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)             # <<<<<<<<<<<<<<
  * 
  *                 for j in range(split_point_array.shape[0]):
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_13 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_self->trees, __pyx_v_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L1_error)
-      __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_13 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_self->trees, __pyx_v_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_GIVEREF(__pyx_t_3);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 142, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -23515,44 +23549,44 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
       __Pyx_XDECREF_SET(__pyx_v_split_point_array, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "tree_explainer/src/explainer.pyx":144
+      /* "tree_explainer/src/explainer.pyx":152
  *                 split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)
  * 
  *                 for j in range(split_point_array.shape[0]):             # <<<<<<<<<<<<<<
  *                     col_split_points.push_back(split_point_array[j])
  * 
  */
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_split_point_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_split_point_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 152, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_14 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_14 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 144, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyInt_As_long(__pyx_t_3); if (unlikely((__pyx_t_14 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 152, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       __pyx_t_15 = __pyx_t_14;
       for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
         __pyx_v_j = __pyx_t_16;
 
-        /* "tree_explainer/src/explainer.pyx":145
+        /* "tree_explainer/src/explainer.pyx":153
  * 
  *                 for j in range(split_point_array.shape[0]):
  *                     col_split_points.push_back(split_point_array[j])             # <<<<<<<<<<<<<<
  * 
  *                 split_points[col] = col_split_points
  */
-        __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_split_point_array, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_GetItemInt(__pyx_v_split_point_array, __pyx_v_j, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 153, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 145, __pyx_L1_error)
+        __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         try {
           __pyx_v_col_split_points.push_back(__pyx_t_9);
         } catch(...) {
           __Pyx_CppExn2PyErr();
-          __PYX_ERR(0, 145, __pyx_L1_error)
+          __PYX_ERR(0, 153, __pyx_L1_error)
         }
       }
 
-      /* "tree_explainer/src/explainer.pyx":147
+      /* "tree_explainer/src/explainer.pyx":155
  *                     col_split_points.push_back(split_point_array[j])
  * 
  *                 split_points[col] = col_split_points             # <<<<<<<<<<<<<<
@@ -23561,7 +23595,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
       (__pyx_v_split_points[__pyx_v_col]) = __pyx_v_col_split_points;
 
-      /* "tree_explainer/src/explainer.pyx":148
+      /* "tree_explainer/src/explainer.pyx":156
  * 
  *                 split_points[col] = col_split_points
  *                 if col_split_points.size() > max_len:             # <<<<<<<<<<<<<<
@@ -23571,7 +23605,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
       __pyx_t_17 = (__pyx_v_col_split_points.size() > __pyx_v_max_len);
       if (__pyx_t_17) {
 
-        /* "tree_explainer/src/explainer.pyx":149
+        /* "tree_explainer/src/explainer.pyx":157
  *                 split_points[col] = col_split_points
  *                 if col_split_points.size() > max_len:
  *                     max_len = col_split_points.size()             # <<<<<<<<<<<<<<
@@ -23580,7 +23614,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
         __pyx_v_max_len = __pyx_v_col_split_points.size();
 
-        /* "tree_explainer/src/explainer.pyx":148
+        /* "tree_explainer/src/explainer.pyx":156
  * 
  *                 split_points[col] = col_split_points
  *                 if col_split_points.size() > max_len:             # <<<<<<<<<<<<<<
@@ -23590,50 +23624,50 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
       }
     }
 
-    /* "tree_explainer/src/explainer.pyx":151
+    /* "tree_explainer/src/explainer.pyx":159
  *                     max_len = col_split_points.size()
  * 
  *             values_2d = np.zeros((self.len_col, max_len), dtype=np.float64)             # <<<<<<<<<<<<<<
  *         else:
  *             values_1d = np.zeros(self.len_col, dtype=np.float64)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->len_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->len_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_max_len); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_max_len); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GIVEREF(__pyx_t_3);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error);
     __Pyx_GIVEREF(__pyx_t_8);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_8)) __PYX_ERR(0, 151, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_t_8)) __PYX_ERR(0, 159, __pyx_L1_error);
     __pyx_t_3 = 0;
     __pyx_t_8 = 0;
-    __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_GIVEREF(__pyx_t_2);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error);
     __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 151, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_8, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_8, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 151, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 159, __pyx_L1_error)
     __pyx_t_18 = ((PyArrayObject *)__pyx_t_5);
     {
       __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -23650,13 +23684,13 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
         __pyx_t_19 = __pyx_t_20 = __pyx_t_21 = 0;
       }
       __pyx_pybuffernd_values_2d.diminfo[0].strides = __pyx_pybuffernd_values_2d.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_values_2d.diminfo[0].shape = __pyx_pybuffernd_values_2d.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_values_2d.diminfo[1].strides = __pyx_pybuffernd_values_2d.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_values_2d.diminfo[1].shape = __pyx_pybuffernd_values_2d.rcbuffer->pybuffer.shape[1];
-      if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 151, __pyx_L1_error)
+      if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 159, __pyx_L1_error)
     }
     __pyx_t_18 = 0;
     __pyx_v_values_2d = ((PyArrayObject *)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "tree_explainer/src/explainer.pyx":137
+    /* "tree_explainer/src/explainer.pyx":145
  *         cdef Rule rule
  * 
  *         if detailed:             # <<<<<<<<<<<<<<
@@ -23666,7 +23700,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
     goto __pyx_L3;
   }
 
-  /* "tree_explainer/src/explainer.pyx":153
+  /* "tree_explainer/src/explainer.pyx":161
  *             values_2d = np.zeros((self.len_col, max_len), dtype=np.float64)
  *         else:
  *             values_1d = np.zeros(self.len_col, dtype=np.float64)             # <<<<<<<<<<<<<<
@@ -23674,33 +23708,33 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  *         cdef int num_rows = leafs.shape[0]
  */
   /*else*/ {
-    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->len_col); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->len_col); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_GIVEREF(__pyx_t_5);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error);
     __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 153, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 153, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_8, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 153, __pyx_L1_error)
+    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 161, __pyx_L1_error)
     __pyx_t_22 = ((PyArrayObject *)__pyx_t_3);
     {
       __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -23717,7 +23751,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
         __pyx_t_21 = __pyx_t_20 = __pyx_t_19 = 0;
       }
       __pyx_pybuffernd_values_1d.diminfo[0].strides = __pyx_pybuffernd_values_1d.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_values_1d.diminfo[0].shape = __pyx_pybuffernd_values_1d.rcbuffer->pybuffer.shape[0];
-      if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 153, __pyx_L1_error)
+      if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 161, __pyx_L1_error)
     }
     __pyx_t_22 = 0;
     __pyx_v_values_1d = ((PyArrayObject *)__pyx_t_3);
@@ -23725,7 +23759,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
   }
   __pyx_L3:;
 
-  /* "tree_explainer/src/explainer.pyx":155
+  /* "tree_explainer/src/explainer.pyx":163
  *             values_1d = np.zeros(self.len_col, dtype=np.float64)
  * 
  *         cdef int num_rows = leafs.shape[0]             # <<<<<<<<<<<<<<
@@ -23734,7 +23768,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
   __pyx_v_num_rows = (__pyx_v_leafs.shape[0]);
 
-  /* "tree_explainer/src/explainer.pyx":156
+  /* "tree_explainer/src/explainer.pyx":164
  * 
  *         cdef int num_rows = leafs.shape[0]
  *         cdef int num_leafs = leafs.shape[1]             # <<<<<<<<<<<<<<
@@ -23743,7 +23777,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
  */
   __pyx_v_num_leafs = (__pyx_v_leafs.shape[1]);
 
-  /* "tree_explainer/src/explainer.pyx":159
+  /* "tree_explainer/src/explainer.pyx":167
  *         cdef double split_value
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -23759,7 +23793,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
       #endif
       /*try:*/ {
 
-        /* "tree_explainer/src/explainer.pyx":160
+        /* "tree_explainer/src/explainer.pyx":168
  * 
  *         with nogil:
  *             for row in range(num_rows):             # <<<<<<<<<<<<<<
@@ -23771,7 +23805,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_row
         for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
           __pyx_v_row = __pyx_t_12;
 
-          /* "tree_explainer/src/explainer.pyx":161
+          /* "tree_explainer/src/explainer.pyx":169
  *         with nogil:
  *             for row in range(num_rows):
  *                 leaf_loc = leafs[row, :]             # <<<<<<<<<<<<<<
@@ -23796,7 +23830,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
           __pyx_t_23.memview = NULL;
           __pyx_t_23.data = NULL;
 
-          /* "tree_explainer/src/explainer.pyx":163
+          /* "tree_explainer/src/explainer.pyx":171
  *                 leaf_loc = leafs[row, :]
  * 
  *                 for i in range(num_leafs):             # <<<<<<<<<<<<<<
@@ -23808,7 +23842,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
           for (__pyx_t_25 = 0; __pyx_t_25 < __pyx_t_24; __pyx_t_25+=1) {
             __pyx_v_i = __pyx_t_25;
 
-            /* "tree_explainer/src/explainer.pyx":164
+            /* "tree_explainer/src/explainer.pyx":172
  * 
  *                 for i in range(num_leafs):
  *                     rule = self.trees[i][leaf_loc[i]]             # <<<<<<<<<<<<<<
@@ -23818,7 +23852,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
             __pyx_t_26 = __pyx_v_i;
             __pyx_v_rule = ((__pyx_v_self->trees[__pyx_v_i])[(*((int *) ( /* dim=0 */ (__pyx_v_leaf_loc.data + __pyx_t_26 * __pyx_v_leaf_loc.strides[0]) )))]);
 
-            /* "tree_explainer/src/explainer.pyx":166
+            /* "tree_explainer/src/explainer.pyx":174
  *                     rule = self.trees[i][leaf_loc[i]]
  * 
  *                     for col in range(self.len_col):             # <<<<<<<<<<<<<<
@@ -23830,7 +23864,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
             for (__pyx_t_29 = 0; __pyx_t_29 < __pyx_t_28; __pyx_t_29+=1) {
               __pyx_v_col = __pyx_t_29;
 
-              /* "tree_explainer/src/explainer.pyx":167
+              /* "tree_explainer/src/explainer.pyx":175
  * 
  *                     for col in range(self.len_col):
  *                         ub, lb = rule.ubs[col], rule.lbs[col]             # <<<<<<<<<<<<<<
@@ -23842,7 +23876,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
               __pyx_v_ub = __pyx_t_9;
               __pyx_v_lb = __pyx_t_30;
 
-              /* "tree_explainer/src/explainer.pyx":169
+              /* "tree_explainer/src/explainer.pyx":177
  *                         ub, lb = rule.ubs[col], rule.lbs[col]
  * 
  *                         if (ub == INFINITY) and (lb == -INFINITY):             # <<<<<<<<<<<<<<
@@ -23860,7 +23894,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
               __pyx_L19_bool_binop_done:;
               if (__pyx_t_17) {
 
-                /* "tree_explainer/src/explainer.pyx":170
+                /* "tree_explainer/src/explainer.pyx":178
  * 
  *                         if (ub == INFINITY) and (lb == -INFINITY):
  *                             continue             # <<<<<<<<<<<<<<
@@ -23869,7 +23903,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
                 goto __pyx_L16_continue;
 
-                /* "tree_explainer/src/explainer.pyx":169
+                /* "tree_explainer/src/explainer.pyx":177
  *                         ub, lb = rule.ubs[col], rule.lbs[col]
  * 
  *                         if (ub == INFINITY) and (lb == -INFINITY):             # <<<<<<<<<<<<<<
@@ -23878,7 +23912,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
               }
 
-              /* "tree_explainer/src/explainer.pyx":172
+              /* "tree_explainer/src/explainer.pyx":180
  *                             continue
  * 
  *                         if detailed:             # <<<<<<<<<<<<<<
@@ -23887,7 +23921,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
               if (__pyx_v_detailed) {
 
-                /* "tree_explainer/src/explainer.pyx":173
+                /* "tree_explainer/src/explainer.pyx":181
  * 
  *                         if detailed:
  *                             col_split_points = split_points[col]             # <<<<<<<<<<<<<<
@@ -23896,7 +23930,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
                 __pyx_v_col_split_points = (__pyx_v_split_points[__pyx_v_col]);
 
-                /* "tree_explainer/src/explainer.pyx":174
+                /* "tree_explainer/src/explainer.pyx":182
  *                         if detailed:
  *                             col_split_points = split_points[col]
  *                             for j in range(col_split_points.size()):             # <<<<<<<<<<<<<<
@@ -23908,7 +23942,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
                 for (__pyx_t_34 = 0; __pyx_t_34 < __pyx_t_33; __pyx_t_34+=1) {
                   __pyx_v_j = __pyx_t_34;
 
-                  /* "tree_explainer/src/explainer.pyx":175
+                  /* "tree_explainer/src/explainer.pyx":183
  *                             col_split_points = split_points[col]
  *                             for j in range(col_split_points.size()):
  *                                 split_value = col_split_points[j]             # <<<<<<<<<<<<<<
@@ -23917,7 +23951,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
                   __pyx_v_split_value = (__pyx_v_col_split_points[__pyx_v_j]);
 
-                  /* "tree_explainer/src/explainer.pyx":176
+                  /* "tree_explainer/src/explainer.pyx":184
  *                             for j in range(col_split_points.size()):
  *                                 split_value = col_split_points[j]
  *                                 if lb < split_value <= ub:             # <<<<<<<<<<<<<<
@@ -23930,7 +23964,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
                   }
                   if (__pyx_t_17) {
 
-                    /* "tree_explainer/src/explainer.pyx":177
+                    /* "tree_explainer/src/explainer.pyx":185
  *                                 split_value = col_split_points[j]
  *                                 if lb < split_value <= ub:
  *                                     values_2d[col, j] += rule.value             # <<<<<<<<<<<<<<
@@ -23941,7 +23975,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
                     __pyx_t_35 = __pyx_v_j;
                     *__Pyx_BufPtrCContig2d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_values_2d.rcbuffer->pybuffer.buf, __pyx_t_26, __pyx_pybuffernd_values_2d.diminfo[0].strides, __pyx_t_35, __pyx_pybuffernd_values_2d.diminfo[1].strides) += __pyx_v_rule.value;
 
-                    /* "tree_explainer/src/explainer.pyx":176
+                    /* "tree_explainer/src/explainer.pyx":184
  *                             for j in range(col_split_points.size()):
  *                                 split_value = col_split_points[j]
  *                                 if lb < split_value <= ub:             # <<<<<<<<<<<<<<
@@ -23951,7 +23985,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
                   }
                 }
 
-                /* "tree_explainer/src/explainer.pyx":172
+                /* "tree_explainer/src/explainer.pyx":180
  *                             continue
  * 
  *                         if detailed:             # <<<<<<<<<<<<<<
@@ -23961,7 +23995,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
                 goto __pyx_L21;
               }
 
-              /* "tree_explainer/src/explainer.pyx":179
+              /* "tree_explainer/src/explainer.pyx":187
  *                                     values_2d[col, j] += rule.value
  *                         else:
  *                             values_1d[col] += rule.value             # <<<<<<<<<<<<<<
@@ -23979,7 +24013,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
         }
       }
 
-      /* "tree_explainer/src/explainer.pyx":159
+      /* "tree_explainer/src/explainer.pyx":167
  *         cdef double split_value
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -23998,7 +24032,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       }
   }
 
-  /* "tree_explainer/src/explainer.pyx":181
+  /* "tree_explainer/src/explainer.pyx":189
  *                             values_1d[col] += rule.value
  * 
  *         if detailed:             # <<<<<<<<<<<<<<
@@ -24007,7 +24041,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
   if (__pyx_v_detailed) {
 
-    /* "tree_explainer/src/explainer.pyx":182
+    /* "tree_explainer/src/explainer.pyx":190
  * 
  *         if detailed:
  *             for col in range(self.len_col):             # <<<<<<<<<<<<<<
@@ -24019,7 +24053,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_col = __pyx_t_12;
 
-      /* "tree_explainer/src/explainer.pyx":183
+      /* "tree_explainer/src/explainer.pyx":191
  *         if detailed:
  *             for col in range(self.len_col):
  *                 for j in range(max_len):             # <<<<<<<<<<<<<<
@@ -24031,7 +24065,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       for (__pyx_t_25 = 0; __pyx_t_25 < __pyx_t_24; __pyx_t_25+=1) {
         __pyx_v_j = __pyx_t_25;
 
-        /* "tree_explainer/src/explainer.pyx":184
+        /* "tree_explainer/src/explainer.pyx":192
  *             for col in range(self.len_col):
  *                 for j in range(max_len):
  *                     values_2d[col, j] /= num_rows             # <<<<<<<<<<<<<<
@@ -24044,19 +24078,19 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       }
     }
 
-    /* "tree_explainer/src/explainer.pyx":186
+    /* "tree_explainer/src/explainer.pyx":194
  *                     values_2d[col, j] /= num_rows
  * 
  *             split_points_list = []             # <<<<<<<<<<<<<<
  *             for col in range(self.len_col):
  *                 col_split_points = split_points[col]
  */
-    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_v_split_points_list = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "tree_explainer/src/explainer.pyx":187
+    /* "tree_explainer/src/explainer.pyx":195
  * 
  *             split_points_list = []
  *             for col in range(self.len_col):             # <<<<<<<<<<<<<<
@@ -24068,7 +24102,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_col = __pyx_t_12;
 
-      /* "tree_explainer/src/explainer.pyx":188
+      /* "tree_explainer/src/explainer.pyx":196
  *             split_points_list = []
  *             for col in range(self.len_col):
  *                 col_split_points = split_points[col]             # <<<<<<<<<<<<<<
@@ -24077,35 +24111,35 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
       __pyx_v_col_split_points = (__pyx_v_split_points[__pyx_v_col]);
 
-      /* "tree_explainer/src/explainer.pyx":189
+      /* "tree_explainer/src/explainer.pyx":197
  *             for col in range(self.len_col):
  *                 col_split_points = split_points[col]
  *                 np_array = np.zeros(col_split_points.size(), dtype=np.float64)             # <<<<<<<<<<<<<<
  *                 for j in range(col_split_points.size()):
  *                     np_array[j] = col_split_points[j]
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_zeros); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyInt_FromSize_t(__pyx_v_col_split_points.size()); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_FromSize_t(__pyx_v_col_split_points.size()); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_8 = PyTuple_New(1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_GIVEREF(__pyx_t_3);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
+      if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
@@ -24113,7 +24147,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       __Pyx_XDECREF_SET(__pyx_v_np_array, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "tree_explainer/src/explainer.pyx":190
+      /* "tree_explainer/src/explainer.pyx":198
  *                 col_split_points = split_points[col]
  *                 np_array = np.zeros(col_split_points.size(), dtype=np.float64)
  *                 for j in range(col_split_points.size()):             # <<<<<<<<<<<<<<
@@ -24125,30 +24159,30 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_33; __pyx_t_16+=1) {
         __pyx_v_j = __pyx_t_16;
 
-        /* "tree_explainer/src/explainer.pyx":191
+        /* "tree_explainer/src/explainer.pyx":199
  *                 np_array = np.zeros(col_split_points.size(), dtype=np.float64)
  *                 for j in range(col_split_points.size()):
  *                     np_array[j] = col_split_points[j]             # <<<<<<<<<<<<<<
  *                 split_points_list.append(np_array)
  * 
  */
-        __pyx_t_1 = PyFloat_FromDouble((__pyx_v_col_split_points[__pyx_v_j])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 191, __pyx_L1_error)
+        __pyx_t_1 = PyFloat_FromDouble((__pyx_v_col_split_points[__pyx_v_j])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
-        if (unlikely((__Pyx_SetItemInt(__pyx_v_np_array, __pyx_v_j, __pyx_t_1, int, 1, __Pyx_PyInt_From_int, 0, 0, 0) < 0))) __PYX_ERR(0, 191, __pyx_L1_error)
+        if (unlikely((__Pyx_SetItemInt(__pyx_v_np_array, __pyx_v_j, __pyx_t_1, int, 1, __Pyx_PyInt_From_int, 0, 0, 0) < 0))) __PYX_ERR(0, 199, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       }
 
-      /* "tree_explainer/src/explainer.pyx":192
+      /* "tree_explainer/src/explainer.pyx":200
  *                 for j in range(col_split_points.size()):
  *                     np_array[j] = col_split_points[j]
  *                 split_points_list.append(np_array)             # <<<<<<<<<<<<<<
  * 
  *             return values_2d, split_points_list, raw_score
  */
-      __pyx_t_36 = __Pyx_PyList_Append(__pyx_v_split_points_list, __pyx_v_np_array); if (unlikely(__pyx_t_36 == ((int)-1))) __PYX_ERR(0, 192, __pyx_L1_error)
+      __pyx_t_36 = __Pyx_PyList_Append(__pyx_v_split_points_list, __pyx_v_np_array); if (unlikely(__pyx_t_36 == ((int)-1))) __PYX_ERR(0, 200, __pyx_L1_error)
     }
 
-    /* "tree_explainer/src/explainer.pyx":194
+    /* "tree_explainer/src/explainer.pyx":202
  *                 split_points_list.append(np_array)
  * 
  *             return values_2d, split_points_list, raw_score             # <<<<<<<<<<<<<<
@@ -24156,24 +24190,24 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  *             for col in range(self.len_col):
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_raw_score); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_raw_score); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 194, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF((PyObject *)__pyx_v_values_2d);
     __Pyx_GIVEREF((PyObject *)__pyx_v_values_2d);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_values_2d))) __PYX_ERR(0, 194, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 0, ((PyObject *)__pyx_v_values_2d))) __PYX_ERR(0, 202, __pyx_L1_error);
     __Pyx_INCREF(__pyx_v_split_points_list);
     __Pyx_GIVEREF(__pyx_v_split_points_list);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_split_points_list)) __PYX_ERR(0, 194, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_v_split_points_list)) __PYX_ERR(0, 202, __pyx_L1_error);
     __Pyx_GIVEREF(__pyx_t_1);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_t_1)) __PYX_ERR(0, 194, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error);
     __pyx_t_1 = 0;
     __pyx_r = ((PyObject*)__pyx_t_3);
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "tree_explainer/src/explainer.pyx":181
+    /* "tree_explainer/src/explainer.pyx":189
  *                             values_1d[col] += rule.value
  * 
  *         if detailed:             # <<<<<<<<<<<<<<
@@ -24182,7 +24216,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  */
   }
 
-  /* "tree_explainer/src/explainer.pyx":196
+  /* "tree_explainer/src/explainer.pyx":204
  *             return values_2d, split_points_list, raw_score
  *         else:
  *             for col in range(self.len_col):             # <<<<<<<<<<<<<<
@@ -24195,7 +24229,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
     for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
       __pyx_v_col = __pyx_t_12;
 
-      /* "tree_explainer/src/explainer.pyx":197
+      /* "tree_explainer/src/explainer.pyx":205
  *         else:
  *             for col in range(self.len_col):
  *                 values_1d[col] /= num_rows             # <<<<<<<<<<<<<<
@@ -24206,7 +24240,7 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
       *__Pyx_BufPtrCContig1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_values_1d.rcbuffer->pybuffer.buf, __pyx_t_26, __pyx_pybuffernd_values_1d.diminfo[0].strides) /= __pyx_v_num_rows;
     }
 
-    /* "tree_explainer/src/explainer.pyx":198
+    /* "tree_explainer/src/explainer.pyx":206
  *             for col in range(self.len_col):
  *                 values_1d[col] /= num_rows
  *             return values_1d, raw_score             # <<<<<<<<<<<<<<
@@ -24214,24 +24248,24 @@ __PYX_XCLEAR_MEMVIEW(&__pyx_v_leaf_loc, 0);
  * 
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_raw_score); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_raw_score); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 206, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_INCREF((PyObject *)__pyx_v_values_1d);
     __Pyx_GIVEREF((PyObject *)__pyx_v_values_1d);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_values_1d))) __PYX_ERR(0, 198, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_values_1d))) __PYX_ERR(0, 206, __pyx_L1_error);
     __Pyx_GIVEREF(__pyx_t_3);
-    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error);
+    if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_3)) __PYX_ERR(0, 206, __pyx_L1_error);
     __pyx_t_3 = 0;
     __pyx_r = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
     goto __pyx_L0;
   }
 
-  /* "tree_explainer/src/explainer.pyx":119
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":127
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef tuple analyze_row(self, object x, bint detailed = True):             # <<<<<<<<<<<<<<
  *         """
  *         Optimized version of analyze_row function using C++ vectors of doubles.
@@ -24330,19 +24364,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 119, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (kw_args > 0) {
           PyObject* value = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_detailed);
           if (value) { values[1] = __Pyx_Arg_NewRef_FASTCALL(value); kw_args--; }
-          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 119, __pyx_L3_error)
+          else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_row") < 0)) __PYX_ERR(0, 119, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_row") < 0)) __PYX_ERR(0, 127, __pyx_L3_error)
       }
     } else {
       switch (__pyx_nargs) {
@@ -24355,14 +24389,14 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
     }
     __pyx_v_x = values[0];
     if (values[1]) {
-      __pyx_v_detailed = __Pyx_PyObject_IsTrue(values[1]); if (unlikely((__pyx_v_detailed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 119, __pyx_L3_error)
+      __pyx_v_detailed = __Pyx_PyObject_IsTrue(values[1]); if (unlikely((__pyx_v_detailed == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
     } else {
       __pyx_v_detailed = ((int)1);
     }
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("analyze_row", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 119, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("analyze_row", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 127, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -24401,7 +24435,7 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_6analyze_r
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_2.__pyx_n = 1;
   __pyx_t_2.detailed = __pyx_v_detailed;
-  __pyx_t_1 = __pyx_vtabptr_14tree_explainer_3src_9explainer_Explainer->analyze_row(__pyx_v_self, __pyx_v_x, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_1 = __pyx_vtabptr_14tree_explainer_3src_9explainer_Explainer->analyze_row(__pyx_v_self, __pyx_v_x, 1, &__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -24418,9 +24452,9 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_6analyze_r
   return __pyx_r;
 }
 
-/* "tree_explainer/src/explainer.pyx":201
- * 
- * 
+/* "tree_explainer/src/explainer.pyx":215
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_feature(self, int col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes a specific feature by calculating the mean, min, and max values
@@ -24513,11 +24547,11 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_feature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_analyze_feature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       if (!__Pyx_IsSameCFunction(__pyx_t_1, (void*) __pyx_pw_14tree_explainer_3src_9explainer_9Explainer_9analyze_feature)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 201, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_col); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 215, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -24539,7 +24573,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 215, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -24561,27 +24595,27 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
     #endif
   }
 
-  /* "tree_explainer/src/explainer.pyx":217
+  /* "tree_explainer/src/explainer.pyx":231
  *             for the specified feature.
  *         """
  *         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, col)             # <<<<<<<<<<<<<<
  *         cdef vector[double] split_points = get_split_point(filtered_trees, col)
  *         cdef double point
  */
-  __pyx_t_7 = __pyx_f_14tree_explainer_3src_4rule_filter_trees(__pyx_v_self->trees, __pyx_v_col, NULL); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_7 = __pyx_f_14tree_explainer_3src_4rule_filter_trees(__pyx_v_self->trees, __pyx_v_col, NULL); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 231, __pyx_L1_error)
   __pyx_v_filtered_trees = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_7);
 
-  /* "tree_explainer/src/explainer.pyx":218
+  /* "tree_explainer/src/explainer.pyx":232
  *         """
  *         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, col)
  *         cdef vector[double] split_points = get_split_point(filtered_trees, col)             # <<<<<<<<<<<<<<
  *         cdef double point
  *         cdef vector[vector[double]] all_values
  */
-  __pyx_t_8 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 218, __pyx_L1_error)
+  __pyx_t_8 = __pyx_f_14tree_explainer_3src_4rule_get_split_point(__pyx_v_filtered_trees, __pyx_v_col); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 232, __pyx_L1_error)
   __pyx_v_split_points = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_8);
 
-  /* "tree_explainer/src/explainer.pyx":226
+  /* "tree_explainer/src/explainer.pyx":240
  *         cdef Rule rule
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -24597,7 +24631,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
       #endif
       /*try:*/ {
 
-        /* "tree_explainer/src/explainer.pyx":227
+        /* "tree_explainer/src/explainer.pyx":241
  * 
  *         with nogil:
  *             for point in split_points:             # <<<<<<<<<<<<<<
@@ -24611,7 +24645,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
           ++__pyx_t_9;
           __pyx_v_point = __pyx_t_10;
 
-          /* "tree_explainer/src/explainer.pyx":228
+          /* "tree_explainer/src/explainer.pyx":242
  *         with nogil:
  *             for point in split_points:
  *                 all_values.clear()             # <<<<<<<<<<<<<<
@@ -24620,7 +24654,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
           __pyx_v_all_values.clear();
 
-          /* "tree_explainer/src/explainer.pyx":230
+          /* "tree_explainer/src/explainer.pyx":244
  *                 all_values.clear()
  * 
  *                 for tree in filtered_trees:             # <<<<<<<<<<<<<<
@@ -24634,7 +24668,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             ++__pyx_t_11;
             __pyx_v_tree = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_12);
 
-            /* "tree_explainer/src/explainer.pyx":231
+            /* "tree_explainer/src/explainer.pyx":245
  * 
  *                 for tree in filtered_trees:
  *                     tree_values.clear()             # <<<<<<<<<<<<<<
@@ -24643,7 +24677,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
             __pyx_v_tree_values.clear();
 
-            /* "tree_explainer/src/explainer.pyx":233
+            /* "tree_explainer/src/explainer.pyx":247
  *                     tree_values.clear()
  * 
  *                     for rule in tree:             # <<<<<<<<<<<<<<
@@ -24657,7 +24691,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
               ++__pyx_t_13;
               __pyx_v_rule = __pyx_t_14;
 
-              /* "tree_explainer/src/explainer.pyx":234
+              /* "tree_explainer/src/explainer.pyx":248
  * 
  *                     for rule in tree:
  *                         if check_value(&rule, col, point):             # <<<<<<<<<<<<<<
@@ -24667,7 +24701,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
               __pyx_t_15 = __pyx_f_14tree_explainer_3src_4rule_check_value((&__pyx_v_rule), __pyx_v_col, __pyx_v_point);
               if (__pyx_t_15) {
 
-                /* "tree_explainer/src/explainer.pyx":235
+                /* "tree_explainer/src/explainer.pyx":249
  *                     for rule in tree:
  *                         if check_value(&rule, col, point):
  *                             tree_values.push_back(rule.value)             # <<<<<<<<<<<<<<
@@ -24684,10 +24718,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
                   #ifdef WITH_THREAD
                   __Pyx_PyGILState_Release(__pyx_gilstate_save);
                   #endif
-                  __PYX_ERR(0, 235, __pyx_L4_error)
+                  __PYX_ERR(0, 249, __pyx_L4_error)
                 }
 
-                /* "tree_explainer/src/explainer.pyx":234
+                /* "tree_explainer/src/explainer.pyx":248
  * 
  *                     for rule in tree:
  *                         if check_value(&rule, col, point):             # <<<<<<<<<<<<<<
@@ -24696,7 +24730,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
               }
 
-              /* "tree_explainer/src/explainer.pyx":233
+              /* "tree_explainer/src/explainer.pyx":247
  *                     tree_values.clear()
  * 
  *                     for rule in tree:             # <<<<<<<<<<<<<<
@@ -24705,7 +24739,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
             }
 
-            /* "tree_explainer/src/explainer.pyx":237
+            /* "tree_explainer/src/explainer.pyx":251
  *                             tree_values.push_back(rule.value)
  * 
  *                     if tree_values.size() > 0:             # <<<<<<<<<<<<<<
@@ -24715,7 +24749,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             __pyx_t_15 = (__pyx_v_tree_values.size() > 0);
             if (__pyx_t_15) {
 
-              /* "tree_explainer/src/explainer.pyx":238
+              /* "tree_explainer/src/explainer.pyx":252
  * 
  *                     if tree_values.size() > 0:
  *                         all_values.push_back(tree_values)             # <<<<<<<<<<<<<<
@@ -24732,10 +24766,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
                 #ifdef WITH_THREAD
                 __Pyx_PyGILState_Release(__pyx_gilstate_save);
                 #endif
-                __PYX_ERR(0, 238, __pyx_L4_error)
+                __PYX_ERR(0, 252, __pyx_L4_error)
               }
 
-              /* "tree_explainer/src/explainer.pyx":237
+              /* "tree_explainer/src/explainer.pyx":251
  *                             tree_values.push_back(rule.value)
  * 
  *                     if tree_values.size() > 0:             # <<<<<<<<<<<<<<
@@ -24744,7 +24778,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
             }
 
-            /* "tree_explainer/src/explainer.pyx":230
+            /* "tree_explainer/src/explainer.pyx":244
  *                 all_values.clear()
  * 
  *                 for tree in filtered_trees:             # <<<<<<<<<<<<<<
@@ -24753,7 +24787,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
           }
 
-          /* "tree_explainer/src/explainer.pyx":240
+          /* "tree_explainer/src/explainer.pyx":254
  *                         all_values.push_back(tree_values)
  * 
  *                 if all_values.size() == 0:             # <<<<<<<<<<<<<<
@@ -24763,7 +24797,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
           __pyx_t_15 = (__pyx_v_all_values.size() == 0);
           if (__pyx_t_15) {
 
-            /* "tree_explainer/src/explainer.pyx":241
+            /* "tree_explainer/src/explainer.pyx":255
  * 
  *                 if all_values.size() == 0:
  *                     continue             # <<<<<<<<<<<<<<
@@ -24772,7 +24806,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
             goto __pyx_L6_continue;
 
-            /* "tree_explainer/src/explainer.pyx":240
+            /* "tree_explainer/src/explainer.pyx":254
  *                         all_values.push_back(tree_values)
  * 
  *                 if all_values.size() == 0:             # <<<<<<<<<<<<<<
@@ -24781,7 +24815,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
           }
 
-          /* "tree_explainer/src/explainer.pyx":243
+          /* "tree_explainer/src/explainer.pyx":257
  *                     continue
  * 
  *                 min_val, max_val = find_min_max(all_values)             # <<<<<<<<<<<<<<
@@ -24794,7 +24828,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
           __pyx_v_min_val = __pyx_t_10;
           __pyx_v_max_val = __pyx_t_17;
 
-          /* "tree_explainer/src/explainer.pyx":244
+          /* "tree_explainer/src/explainer.pyx":258
  * 
  *                 min_val, max_val = find_min_max(all_values)
  *                 mean_values.push_back(find_mean(all_values))             # <<<<<<<<<<<<<<
@@ -24811,10 +24845,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             #ifdef WITH_THREAD
             __Pyx_PyGILState_Release(__pyx_gilstate_save);
             #endif
-            __PYX_ERR(0, 244, __pyx_L4_error)
+            __PYX_ERR(0, 258, __pyx_L4_error)
           }
 
-          /* "tree_explainer/src/explainer.pyx":245
+          /* "tree_explainer/src/explainer.pyx":259
  *                 min_val, max_val = find_min_max(all_values)
  *                 mean_values.push_back(find_mean(all_values))
  *                 min_vals.push_back(min_val)             # <<<<<<<<<<<<<<
@@ -24831,10 +24865,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             #ifdef WITH_THREAD
             __Pyx_PyGILState_Release(__pyx_gilstate_save);
             #endif
-            __PYX_ERR(0, 245, __pyx_L4_error)
+            __PYX_ERR(0, 259, __pyx_L4_error)
           }
 
-          /* "tree_explainer/src/explainer.pyx":246
+          /* "tree_explainer/src/explainer.pyx":260
  *                 mean_values.push_back(find_mean(all_values))
  *                 min_vals.push_back(min_val)
  *                 max_vals.push_back(max_val)             # <<<<<<<<<<<<<<
@@ -24851,10 +24885,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             #ifdef WITH_THREAD
             __Pyx_PyGILState_Release(__pyx_gilstate_save);
             #endif
-            __PYX_ERR(0, 246, __pyx_L4_error)
+            __PYX_ERR(0, 260, __pyx_L4_error)
           }
 
-          /* "tree_explainer/src/explainer.pyx":247
+          /* "tree_explainer/src/explainer.pyx":261
  *                 min_vals.push_back(min_val)
  *                 max_vals.push_back(max_val)
  *                 points.push_back(point)             # <<<<<<<<<<<<<<
@@ -24871,10 +24905,10 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
             #ifdef WITH_THREAD
             __Pyx_PyGILState_Release(__pyx_gilstate_save);
             #endif
-            __PYX_ERR(0, 247, __pyx_L4_error)
+            __PYX_ERR(0, 261, __pyx_L4_error)
           }
 
-          /* "tree_explainer/src/explainer.pyx":227
+          /* "tree_explainer/src/explainer.pyx":241
  * 
  *         with nogil:
  *             for point in split_points:             # <<<<<<<<<<<<<<
@@ -24885,7 +24919,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
         }
       }
 
-      /* "tree_explainer/src/explainer.pyx":226
+      /* "tree_explainer/src/explainer.pyx":240
  *         cdef Rule rule
  * 
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -24911,7 +24945,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
       }
   }
 
-  /* "tree_explainer/src/explainer.pyx":249
+  /* "tree_explainer/src/explainer.pyx":263
  *                 points.push_back(point)
  * 
  *         column_name = self.columns[col]             # <<<<<<<<<<<<<<
@@ -24920,54 +24954,54 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
  */
   if (unlikely(__pyx_v_self->columns == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 249, __pyx_L1_error)
+    __PYX_ERR(0, 263, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_self->columns, __pyx_v_col, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", __pyx_t_1))) __PYX_ERR(0, 249, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_col)))||((PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_col)) == Py_None) || __Pyx_RaiseUnexpectedTypeError("unicode", PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_col)))) __PYX_ERR(0, 263, __pyx_L1_error)
+  __pyx_t_1 = PyList_GET_ITEM(__pyx_v_self->columns, __pyx_v_col);
+  __Pyx_INCREF(__pyx_t_1);
   __pyx_v_column_name = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":252
+  /* "tree_explainer/src/explainer.pyx":266
  * 
  * 
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)             # <<<<<<<<<<<<<<
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] max_arr = np.asarray(max_vals, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] min_arr = np.asarray(min_vals, dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __pyx_convert_vector_to_py_double(__pyx_v_mean_values); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_1 = __pyx_convert_vector_to_py_double(__pyx_v_mean_values); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 266, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 266, __pyx_L1_error)
   __pyx_t_18 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_18, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_mean_values_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 252, __pyx_L1_error)
+      __PYX_ERR(0, 266, __pyx_L1_error)
     } else {__pyx_pybuffernd_mean_values_arr.diminfo[0].strides = __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_mean_values_arr.diminfo[0].shape = __pyx_pybuffernd_mean_values_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -24975,46 +25009,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
   __pyx_v_mean_values_arr = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":253
+  /* "tree_explainer/src/explainer.pyx":267
  * 
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] max_arr = np.asarray(max_vals, dtype=np.float64)             # <<<<<<<<<<<<<<
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] min_arr = np.asarray(min_vals, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] point_arr = np.asarray(points, dtype=np.float64)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_asarray); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_asarray); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __pyx_convert_vector_to_py_double(__pyx_v_max_vals); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_5 = __pyx_convert_vector_to_py_double(__pyx_v_max_vals); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_5);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5)) __PYX_ERR(0, 267, __pyx_L1_error);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float64); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 253, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_t_3) < 0) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 253, __pyx_L1_error)
+  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 267, __pyx_L1_error)
   __pyx_t_19 = ((PyArrayObject *)__pyx_t_3);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_max_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_19, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_max_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_max_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 253, __pyx_L1_error)
+      __PYX_ERR(0, 267, __pyx_L1_error)
     } else {__pyx_pybuffernd_max_arr.diminfo[0].strides = __pyx_pybuffernd_max_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_max_arr.diminfo[0].shape = __pyx_pybuffernd_max_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -25022,46 +25056,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
   __pyx_v_max_arr = ((PyArrayObject *)__pyx_t_3);
   __pyx_t_3 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":254
+  /* "tree_explainer/src/explainer.pyx":268
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] max_arr = np.asarray(max_vals, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] min_arr = np.asarray(min_vals, dtype=np.float64)             # <<<<<<<<<<<<<<
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] point_arr = np.asarray(points, dtype=np.float64)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_asarray); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_v_min_vals); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_3 = __pyx_convert_vector_to_py_double(__pyx_v_min_vals); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_3);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float64); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 254, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 268, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 254, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 268, __pyx_L1_error)
   __pyx_t_20 = ((PyArrayObject *)__pyx_t_2);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_min_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_20, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_min_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_min_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 254, __pyx_L1_error)
+      __PYX_ERR(0, 268, __pyx_L1_error)
     } else {__pyx_pybuffernd_min_arr.diminfo[0].strides = __pyx_pybuffernd_min_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_min_arr.diminfo[0].shape = __pyx_pybuffernd_min_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -25069,46 +25103,46 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
   __pyx_v_min_arr = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":255
+  /* "tree_explainer/src/explainer.pyx":269
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] max_arr = np.asarray(max_vals, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] min_arr = np.asarray(min_vals, dtype=np.float64)
  *         cdef cnp.ndarray[cnp.float64_t, ndim=1] point_arr = np.asarray(points, dtype=np.float64)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_asarray); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_asarray); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __pyx_convert_vector_to_py_double(__pyx_v_points); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_vector_to_py_double(__pyx_v_points); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_2);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float64); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_4, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 269, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 255, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 269, __pyx_L1_error)
   __pyx_t_21 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_point_arr.rcbuffer->pybuffer, (PyObject*)__pyx_t_21, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_point_arr = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_point_arr.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 255, __pyx_L1_error)
+      __PYX_ERR(0, 269, __pyx_L1_error)
     } else {__pyx_pybuffernd_point_arr.diminfo[0].strides = __pyx_pybuffernd_point_arr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_point_arr.diminfo[0].shape = __pyx_pybuffernd_point_arr.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -25116,56 +25150,56 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
   __pyx_v_point_arr = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":258
+  /* "tree_explainer/src/explainer.pyx":272
  * 
  * 
  *         df = pd.DataFrame({             # <<<<<<<<<<<<<<
  *             column_name: point_arr,
  *             'mean': mean_values_arr,
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pd); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_pd); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_DataFrame); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":259
+  /* "tree_explainer/src/explainer.pyx":273
  * 
  *         df = pd.DataFrame({
  *             column_name: point_arr,             # <<<<<<<<<<<<<<
  *             'mean': mean_values_arr,
  *             'min': min_arr,
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_v_column_name, ((PyObject *)__pyx_v_point_arr)) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_v_column_name, ((PyObject *)__pyx_v_point_arr)) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":260
+  /* "tree_explainer/src/explainer.pyx":274
  *         df = pd.DataFrame({
  *             column_name: point_arr,
  *             'mean': mean_values_arr,             # <<<<<<<<<<<<<<
  *             'min': min_arr,
  *             'max': max_arr,
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_mean, ((PyObject *)__pyx_v_mean_values_arr)) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_mean, ((PyObject *)__pyx_v_mean_values_arr)) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":261
+  /* "tree_explainer/src/explainer.pyx":275
  *             column_name: point_arr,
  *             'mean': mean_values_arr,
  *             'min': min_arr,             # <<<<<<<<<<<<<<
  *             'max': max_arr,
  *         })
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_min, ((PyObject *)__pyx_v_min_arr)) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_min, ((PyObject *)__pyx_v_min_arr)) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":262
+  /* "tree_explainer/src/explainer.pyx":276
  *             'mean': mean_values_arr,
  *             'min': min_arr,
  *             'max': max_arr,             # <<<<<<<<<<<<<<
  *         })
  * 
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_max, ((PyObject *)__pyx_v_max_arr)) < 0) __PYX_ERR(0, 259, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_max, ((PyObject *)__pyx_v_max_arr)) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
   #if CYTHON_UNPACK_METHODS
@@ -25185,26 +25219,26 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 272, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
   __pyx_v_df = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":265
+  /* "tree_explainer/src/explainer.pyx":279
  *         })
  * 
  *         df = replace_inf(df, column_name)             # <<<<<<<<<<<<<<
  * 
  *         return df
  */
-  __pyx_t_1 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_column_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_14tree_explainer_3src_5utils_replace_inf(__pyx_v_df, __pyx_v_column_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF_SET(__pyx_v_df, __pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":267
+  /* "tree_explainer/src/explainer.pyx":281
  *         df = replace_inf(df, column_name)
  * 
  *         return df             # <<<<<<<<<<<<<<
@@ -25214,9 +25248,9 @@ static PyObject *__pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_fea
   __pyx_r = __pyx_v_df;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/explainer.pyx":201
- * 
- * 
+  /* "tree_explainer/src/explainer.pyx":215
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_feature(self, int col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes a specific feature by calculating the mean, min, and max values
@@ -25312,23 +25346,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
           (void)__Pyx_Arg_NewRef_FASTCALL(values[0]);
           kw_args--;
         }
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 201, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 215, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_feature") < 0)) __PYX_ERR(0, 201, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "analyze_feature") < 0)) __PYX_ERR(0, 215, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_col = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 201, __pyx_L3_error)
+    __pyx_v_col = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_col == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 215, __pyx_L3_error)
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("analyze_feature", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 201, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("analyze_feature", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 215, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -25364,7 +25398,7 @@ static PyObject *__pyx_pf_14tree_explainer_3src_9explainer_9Explainer_8analyze_f
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("analyze_feature", 1);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_feature(__pyx_v_self, __pyx_v_col, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_14tree_explainer_3src_9explainer_9Explainer_analyze_feature(__pyx_v_self, __pyx_v_col, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -27624,7 +27658,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 32, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 148, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 68, __pyx_L1_error)
   __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(1, 19, __pyx_L1_error)
   __pyx_builtin___import__ = __Pyx_GetBuiltinName(__pyx_n_s_import); if (!__pyx_builtin___import__) __PYX_ERR(1, 100, __pyx_L1_error)
@@ -27892,44 +27926,44 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__28);
   __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Enum, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(1, 1, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":36
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":40
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_dependency(self, int main_col, int sub_col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes the dependency between two features by calculating values based on the split points
  */
-  __pyx_tuple__30 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_main_col, __pyx_n_s_sub_col); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_main_col, __pyx_n_s_sub_col); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__30);
   __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_dependency, 36, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_dependency, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 40, __pyx_L1_error)
 
-  /* "tree_explainer/src/explainer.pyx":119
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":127
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef tuple analyze_row(self, object x, bint detailed = True):             # <<<<<<<<<<<<<<
  *         """
  *         Optimized version of analyze_row function using C++ vectors of doubles.
  */
-  __pyx_tuple__32 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_detailed); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_x, __pyx_n_s_detailed); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__32);
   __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_row, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 119, __pyx_L1_error)
-  __pyx_tuple__34 = PyTuple_Pack(1, Py_True); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_row, 127, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_tuple__34 = PyTuple_Pack(1, Py_True); if (unlikely(!__pyx_tuple__34)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__34);
   __Pyx_GIVEREF(__pyx_tuple__34);
 
-  /* "tree_explainer/src/explainer.pyx":201
- * 
- * 
+  /* "tree_explainer/src/explainer.pyx":215
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_feature(self, int col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes a specific feature by calculating the mean, min, and max values
  */
-  __pyx_tuple__35 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_col); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_tuple__35 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_col); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__35);
   __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_feature, 201, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tree_explainer_src_explainer_pyx, __pyx_n_s_analyze_feature, 215, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 215, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -29147,43 +29181,43 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_pd, __pyx_t_7) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "tree_explainer/src/explainer.pyx":36
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":40
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_dependency(self, int main_col, int sub_col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes the dependency between two features by calculating values based on the split points
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_5analyze_dependency, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_dependency, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_5analyze_dependency, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_dependency, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_dependency, __pyx_t_7) < 0) __PYX_ERR(0, 36, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_dependency, __pyx_t_7) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   PyType_Modified(__pyx_ptype_14tree_explainer_3src_9explainer_Explainer);
 
-  /* "tree_explainer/src/explainer.pyx":119
- *     @boundscheck(False)
- *     @wraparound(False)
+  /* "tree_explainer/src/explainer.pyx":127
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef tuple analyze_row(self, object x, bint detailed = True):             # <<<<<<<<<<<<<<
  *         """
  *         Optimized version of analyze_row function using C++ vectors of doubles.
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_7analyze_row, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_row, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_7analyze_row, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_row, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_7, __pyx_tuple__34);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_row, __pyx_t_7) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_row, __pyx_t_7) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   PyType_Modified(__pyx_ptype_14tree_explainer_3src_9explainer_Explainer);
 
-  /* "tree_explainer/src/explainer.pyx":201
- * 
- * 
+  /* "tree_explainer/src/explainer.pyx":215
+ *     @overflowcheck(False)
+ *     @cdivision(True)
  *     cpdef object analyze_feature(self, int col):             # <<<<<<<<<<<<<<
  *         """
  *         Analyzes a specific feature by calculating the mean, min, and max values
  */
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_9analyze_feature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_feature, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_14tree_explainer_3src_9explainer_9Explainer_9analyze_feature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Explainer_analyze_feature, NULL, __pyx_n_s_tree_explainer_src_explainer, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_feature, __pyx_t_7) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (__Pyx_SetItemOnTypeDict((PyObject *)__pyx_ptype_14tree_explainer_3src_9explainer_Explainer, __pyx_n_s_analyze_feature, __pyx_t_7) < 0) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   PyType_Modified(__pyx_ptype_14tree_explainer_3src_9explainer_Explainer);
 
@@ -29223,7 +29257,7 @@ if (!__Pyx_RefNanny) {
   /* "tree_explainer/src/explainer.pyx":1
  * from libcpp.vector cimport vector             # <<<<<<<<<<<<<<
  * 
- * from cython cimport boundscheck, wraparound
+ * from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck
  */
   __pyx_t_7 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);

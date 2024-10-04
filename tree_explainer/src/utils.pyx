@@ -1,19 +1,29 @@
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport max_element, min_element
 
-from cython cimport boundscheck, wraparound
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 import numpy as np
 cimport numpy as cnp
 
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef inline double max(double a, double b):
     return a if a > b else b
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef inline double min(double a, double b):
     return a if a < b else b
 
@@ -28,7 +38,12 @@ cdef object replace_inf(object data, str column_name):
     return data
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
     """
     Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
@@ -63,7 +78,12 @@ cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
     return sums
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noexcept nogil:
     """
     Finds the minimum and maximum possible values from tree combinations using C++ vectors.

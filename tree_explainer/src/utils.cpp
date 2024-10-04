@@ -4646,9 +4646,9 @@ static CYTHON_INLINE NPY_DATETIMEUNIT __pyx_f_5numpy_get_datetime64_unit(PyObjec
   return __pyx_r;
 }
 
-/* "tree_explainer/src/utils.pyx":12
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/utils.pyx":17
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline double max(double a, double b):             # <<<<<<<<<<<<<<
  *     return a if a > b else b
  * 
@@ -4659,8 +4659,8 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_max(double __py
   double __pyx_t_1;
   int __pyx_t_2;
 
-  /* "tree_explainer/src/utils.pyx":13
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":18
+ * @infer_types(False)
  * cdef inline double max(double a, double b):
  *     return a if a > b else b             # <<<<<<<<<<<<<<
  * 
@@ -4675,9 +4675,9 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_max(double __py
   __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/utils.pyx":12
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":17
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline double max(double a, double b):             # <<<<<<<<<<<<<<
  *     return a if a > b else b
  * 
@@ -4688,9 +4688,9 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_max(double __py
   return __pyx_r;
 }
 
-/* "tree_explainer/src/utils.pyx":17
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/utils.pyx":27
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline double min(double a, double b):             # <<<<<<<<<<<<<<
  *     return a if a < b else b
  * 
@@ -4701,8 +4701,8 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_min(double __py
   double __pyx_t_1;
   int __pyx_t_2;
 
-  /* "tree_explainer/src/utils.pyx":18
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":28
+ * @infer_types(False)
  * cdef inline double min(double a, double b):
  *     return a if a < b else b             # <<<<<<<<<<<<<<
  * 
@@ -4717,9 +4717,9 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_min(double __py
   __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/utils.pyx":17
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":27
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline double min(double a, double b):             # <<<<<<<<<<<<<<
  *     return a if a < b else b
  * 
@@ -4730,7 +4730,7 @@ static CYTHON_INLINE double __pyx_f_14tree_explainer_3src_5utils_min(double __py
   return __pyx_r;
 }
 
-/* "tree_explainer/src/utils.pyx":20
+/* "tree_explainer/src/utils.pyx":30
  *     return a if a < b else b
  * 
  * cdef object replace_inf(object data, str column_name):             # <<<<<<<<<<<<<<
@@ -4777,21 +4777,21 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   __pyx_pybuffernd_unique_points.data = NULL;
   __pyx_pybuffernd_unique_points.rcbuffer = &__pyx_pybuffer_unique_points;
 
-  /* "tree_explainer/src/utils.pyx":21
+  /* "tree_explainer/src/utils.pyx":31
  * 
  * cdef object replace_inf(object data, str column_name):
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)             # <<<<<<<<<<<<<<
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
  *     cdef double max_main = unique_points.max()
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_asarray); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_data, __pyx_v_column_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_data, __pyx_v_column_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_unique); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_unique); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -4812,36 +4812,36 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_float64); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_6) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 21, __pyx_L1_error)
+  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 31, __pyx_L1_error)
   __pyx_t_7 = ((PyArrayObject *)__pyx_t_6);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_unique_points_.rcbuffer->pybuffer, (PyObject*)__pyx_t_7, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_unique_points_ = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_unique_points_.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 21, __pyx_L1_error)
+      __PYX_ERR(0, 31, __pyx_L1_error)
     } else {__pyx_pybuffernd_unique_points_.diminfo[0].strides = __pyx_pybuffernd_unique_points_.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_unique_points_.diminfo[0].shape = __pyx_pybuffernd_unique_points_.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -4849,26 +4849,26 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   __pyx_v_unique_points_ = ((PyArrayObject *)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "tree_explainer/src/utils.pyx":22
+  /* "tree_explainer/src/utils.pyx":32
  * cdef object replace_inf(object data, str column_name):
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])             # <<<<<<<<<<<<<<
  *     cdef double max_main = unique_points.max()
  *     cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_sort); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_sort); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_logical_not); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_logical_not); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_np); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_n_s_np); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
-  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_isinf); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_isinf); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __pyx_t_8 = NULL;
@@ -4889,7 +4889,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     PyObject *__pyx_callargs[2] = {__pyx_t_8, ((PyObject *)__pyx_v_unique_points_)};
     __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_9, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   }
@@ -4912,11 +4912,11 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_unique_points_), __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetItem(((PyObject *)__pyx_v_unique_points_), __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -4938,17 +4938,17 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 22, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
-  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (!(likely(((__pyx_t_6) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_6, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 32, __pyx_L1_error)
   __pyx_t_10 = ((PyArrayObject *)__pyx_t_6);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_unique_points.rcbuffer->pybuffer, (PyObject*)__pyx_t_10, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_unique_points = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_unique_points.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 22, __pyx_L1_error)
+      __PYX_ERR(0, 32, __pyx_L1_error)
     } else {__pyx_pybuffernd_unique_points.diminfo[0].strides = __pyx_pybuffernd_unique_points.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_unique_points.diminfo[0].shape = __pyx_pybuffernd_unique_points.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -4956,14 +4956,14 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   __pyx_v_unique_points = ((PyArrayObject *)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "tree_explainer/src/utils.pyx":23
+  /* "tree_explainer/src/utils.pyx":33
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
  *     cdef double max_main = unique_points.max()             # <<<<<<<<<<<<<<
  *     cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main)
  * 
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_unique_points), __pyx_n_s_max); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_unique_points), __pyx_n_s_max); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_5 = 0;
@@ -4983,15 +4983,15 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 23, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
-  __pyx_t_11 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 23, __pyx_L1_error)
+  __pyx_t_11 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_v_max_main = __pyx_t_11;
 
-  /* "tree_explainer/src/utils.pyx":24
+  /* "tree_explainer/src/utils.pyx":34
  *     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
  *     cdef double max_main = unique_points.max()
  *     cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main)             # <<<<<<<<<<<<<<
@@ -5008,7 +5008,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     } else if (unlikely(__pyx_t_14 >= __pyx_pybuffernd_unique_points.diminfo[0].shape)) __pyx_t_15 = 0;
     if (unlikely(__pyx_t_15 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_15);
-      __PYX_ERR(0, 24, __pyx_L1_error)
+      __PYX_ERR(0, 34, __pyx_L1_error)
     }
     __pyx_t_12 = (*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_unique_points.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_unique_points.diminfo[0].strides));
   } else {
@@ -5016,23 +5016,23 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   }
   __pyx_v_difference_main = (__pyx_v_max_main - __pyx_t_12);
 
-  /* "tree_explainer/src/utils.pyx":26
+  /* "tree_explainer/src/utils.pyx":36
  *     cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main)
  * 
  *     data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main             # <<<<<<<<<<<<<<
  * 
  *     return data
  */
-  __pyx_t_6 = PyFloat_FromDouble((__pyx_v_max_main + __pyx_v_difference_main)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_6 = PyFloat_FromDouble((__pyx_v_max_main + __pyx_v_difference_main)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_data, __pyx_n_s_loc); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_data, __pyx_n_s_loc); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_isinf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_isinf); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_data, __pyx_v_column_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Dict_GetItem(__pyx_v_data, __pyx_v_column_name); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_9 = NULL;
   __pyx_t_5 = 0;
@@ -5053,24 +5053,24 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_3);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3)) __PYX_ERR(0, 26, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_3)) __PYX_ERR(0, 36, __pyx_L1_error);
   __Pyx_INCREF(__pyx_v_column_name);
   __Pyx_GIVEREF(__pyx_v_column_name);
-  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_column_name)) __PYX_ERR(0, 26, __pyx_L1_error);
+  if (__Pyx_PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_column_name)) __PYX_ERR(0, 36, __pyx_L1_error);
   __pyx_t_3 = 0;
-  if (unlikely((PyObject_SetItem(__pyx_t_4, __pyx_t_2, __pyx_t_6) < 0))) __PYX_ERR(0, 26, __pyx_L1_error)
+  if (unlikely((PyObject_SetItem(__pyx_t_4, __pyx_t_2, __pyx_t_6) < 0))) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "tree_explainer/src/utils.pyx":28
+  /* "tree_explainer/src/utils.pyx":38
  *     data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main
  * 
  *     return data             # <<<<<<<<<<<<<<
@@ -5082,7 +5082,7 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   __pyx_r = __pyx_v_data;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/utils.pyx":20
+  /* "tree_explainer/src/utils.pyx":30
  *     return a if a < b else b
  * 
  * cdef object replace_inf(object data, str column_name):             # <<<<<<<<<<<<<<
@@ -5120,9 +5120,9 @@ static PyObject *__pyx_f_14tree_explainer_3src_5utils_replace_inf(PyObject *__py
   return __pyx_r;
 }
 
-/* "tree_explainer/src/utils.pyx":32
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/utils.pyx":47
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
@@ -5140,14 +5140,8 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
   int __pyx_t_3;
   int __pyx_t_4;
   int __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
-  #ifdef WITH_THREAD
-  PyGILState_STATE __pyx_gilstate_save;
-  #endif
 
-  /* "tree_explainer/src/utils.pyx":48
+  /* "tree_explainer/src/utils.pyx":63
  *         The average of the sums of all possible combinations of one element from each sublist.
  *     """
  *     cdef double sums = 0.0             # <<<<<<<<<<<<<<
@@ -5156,7 +5150,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
  */
   __pyx_v_sums = 0.0;
 
-  /* "tree_explainer/src/utils.pyx":55
+  /* "tree_explainer/src/utils.pyx":70
  *     cdef int sublist_size
  * 
  *     for sublist in tree_results:             # <<<<<<<<<<<<<<
@@ -5170,7 +5164,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
     ++__pyx_t_1;
     __pyx_v_sublist = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
 
-    /* "tree_explainer/src/utils.pyx":56
+    /* "tree_explainer/src/utils.pyx":71
  * 
  *     for sublist in tree_results:
  *         sublist_size = sublist.size()             # <<<<<<<<<<<<<<
@@ -5179,7 +5173,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
  */
     __pyx_v_sublist_size = __pyx_v_sublist.size();
 
-    /* "tree_explainer/src/utils.pyx":57
+    /* "tree_explainer/src/utils.pyx":72
  *     for sublist in tree_results:
  *         sublist_size = sublist.size()
  *         total = 0.0             # <<<<<<<<<<<<<<
@@ -5188,7 +5182,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
  */
     __pyx_v_total = 0.0;
 
-    /* "tree_explainer/src/utils.pyx":58
+    /* "tree_explainer/src/utils.pyx":73
  *         sublist_size = sublist.size()
  *         total = 0.0
  *         for i in range(sublist_size):             # <<<<<<<<<<<<<<
@@ -5200,7 +5194,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
     for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
       __pyx_v_i = __pyx_t_5;
 
-      /* "tree_explainer/src/utils.pyx":59
+      /* "tree_explainer/src/utils.pyx":74
  *         total = 0.0
  *         for i in range(sublist_size):
  *             total += sublist[i]             # <<<<<<<<<<<<<<
@@ -5210,26 +5204,16 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
       __pyx_v_total = (__pyx_v_total + (__pyx_v_sublist[__pyx_v_i]));
     }
 
-    /* "tree_explainer/src/utils.pyx":61
+    /* "tree_explainer/src/utils.pyx":76
  *             total += sublist[i]
  * 
  *         sums += total / sublist_size             # <<<<<<<<<<<<<<
  * 
  *     return sums
  */
-    if (unlikely(__pyx_v_sublist_size == 0)) {
-      #ifdef WITH_THREAD
-      PyGILState_STATE __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-      #endif
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      #ifdef WITH_THREAD
-      __Pyx_PyGILState_Release(__pyx_gilstate_save);
-      #endif
-      __PYX_ERR(0, 61, __pyx_L1_error)
-    }
     __pyx_v_sums = (__pyx_v_sums + (__pyx_v_total / ((double)__pyx_v_sublist_size)));
 
-    /* "tree_explainer/src/utils.pyx":55
+    /* "tree_explainer/src/utils.pyx":70
  *     cdef int sublist_size
  * 
  *     for sublist in tree_results:             # <<<<<<<<<<<<<<
@@ -5238,7 +5222,7 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
  */
   }
 
-  /* "tree_explainer/src/utils.pyx":63
+  /* "tree_explainer/src/utils.pyx":78
  *         sums += total / sublist_size
  * 
  *     return sums             # <<<<<<<<<<<<<<
@@ -5248,31 +5232,22 @@ static double __pyx_f_14tree_explainer_3src_5utils_find_mean(std::vector<std::ve
   __pyx_r = __pyx_v_sums;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/utils.pyx":32
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":47
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
  */
 
   /* function exit code */
-  __pyx_L1_error:;
-  #ifdef WITH_THREAD
-  __pyx_gilstate_save = __Pyx_PyGILState_Ensure();
-  #endif
-  __Pyx_WriteUnraisable("tree_explainer.src.utils.find_mean", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
-  __pyx_r = 0;
-  #ifdef WITH_THREAD
-  __Pyx_PyGILState_Release(__pyx_gilstate_save);
-  #endif
   __pyx_L0:;
   return __pyx_r;
 }
 
-/* "tree_explainer/src/utils.pyx":67
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/utils.pyx":87
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Finds the minimum and maximum possible values from tree combinations using C++ vectors.
@@ -5297,7 +5272,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
   PyGILState_STATE __pyx_gilstate_save;
   #endif
 
-  /* "tree_explainer/src/utils.pyx":85
+  /* "tree_explainer/src/utils.pyx":105
  *         The maximum possible value obtained by summing the maximum value from each vector.
  *     """
  *     cdef double min_value = 0.0             # <<<<<<<<<<<<<<
@@ -5306,7 +5281,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
  */
   __pyx_v_min_value = 0.0;
 
-  /* "tree_explainer/src/utils.pyx":86
+  /* "tree_explainer/src/utils.pyx":106
  *     """
  *     cdef double min_value = 0.0
  *     cdef double max_value = 0.0             # <<<<<<<<<<<<<<
@@ -5315,7 +5290,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
  */
   __pyx_v_max_value = 0.0;
 
-  /* "tree_explainer/src/utils.pyx":90
+  /* "tree_explainer/src/utils.pyx":110
  *     cdef vector[double] vector_i
  * 
  *     for i in range(tree_results.size()):             # <<<<<<<<<<<<<<
@@ -5327,7 +5302,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i = __pyx_t_3;
 
-    /* "tree_explainer/src/utils.pyx":91
+    /* "tree_explainer/src/utils.pyx":111
  * 
  *     for i in range(tree_results.size()):
  *         vector_i = tree_results[i]             # <<<<<<<<<<<<<<
@@ -5336,7 +5311,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
  */
     __pyx_v_vector_i = (__pyx_v_tree_results[__pyx_v_i]);
 
-    /* "tree_explainer/src/utils.pyx":93
+    /* "tree_explainer/src/utils.pyx":113
  *         vector_i = tree_results[i]
  * 
  *         if vector_i.size() > 1:             # <<<<<<<<<<<<<<
@@ -5346,7 +5321,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
     __pyx_t_4 = (__pyx_v_vector_i.size() > 1);
     if (__pyx_t_4) {
 
-      /* "tree_explainer/src/utils.pyx":94
+      /* "tree_explainer/src/utils.pyx":114
  * 
  *         if vector_i.size() > 1:
  *             min_value += <double>min_element(vector_i.begin(), vector_i.end())[0]             # <<<<<<<<<<<<<<
@@ -5363,11 +5338,11 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
         #ifdef WITH_THREAD
         __Pyx_PyGILState_Release(__pyx_gilstate_save);
         #endif
-        __PYX_ERR(0, 94, __pyx_L1_error)
+        __PYX_ERR(0, 114, __pyx_L1_error)
       }
       __pyx_v_min_value = (__pyx_v_min_value + ((double)(__pyx_t_5[0])));
 
-      /* "tree_explainer/src/utils.pyx":95
+      /* "tree_explainer/src/utils.pyx":115
  *         if vector_i.size() > 1:
  *             min_value += <double>min_element(vector_i.begin(), vector_i.end())[0]
  *             max_value += <double>max_element(vector_i.begin(), vector_i.end())[0]             # <<<<<<<<<<<<<<
@@ -5384,11 +5359,11 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
         #ifdef WITH_THREAD
         __Pyx_PyGILState_Release(__pyx_gilstate_save);
         #endif
-        __PYX_ERR(0, 95, __pyx_L1_error)
+        __PYX_ERR(0, 115, __pyx_L1_error)
       }
       __pyx_v_max_value = (__pyx_v_max_value + ((double)(__pyx_t_5[0])));
 
-      /* "tree_explainer/src/utils.pyx":93
+      /* "tree_explainer/src/utils.pyx":113
  *         vector_i = tree_results[i]
  * 
  *         if vector_i.size() > 1:             # <<<<<<<<<<<<<<
@@ -5398,7 +5373,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
       goto __pyx_L5;
     }
 
-    /* "tree_explainer/src/utils.pyx":97
+    /* "tree_explainer/src/utils.pyx":117
  *             max_value += <double>max_element(vector_i.begin(), vector_i.end())[0]
  *         else:
  *             min_value += vector_i[0]             # <<<<<<<<<<<<<<
@@ -5408,7 +5383,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
     /*else*/ {
       __pyx_v_min_value = (__pyx_v_min_value + (__pyx_v_vector_i[0]));
 
-      /* "tree_explainer/src/utils.pyx":98
+      /* "tree_explainer/src/utils.pyx":118
  *         else:
  *             min_value += vector_i[0]
  *             max_value += vector_i[0]             # <<<<<<<<<<<<<<
@@ -5420,7 +5395,7 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
     __pyx_L5:;
   }
 
-  /* "tree_explainer/src/utils.pyx":100
+  /* "tree_explainer/src/utils.pyx":120
  *             max_value += vector_i[0]
  * 
  *     return min_value, max_value             # <<<<<<<<<<<<<<
@@ -5430,9 +5405,9 @@ static __pyx_ctuple_double__and_double __pyx_f_14tree_explainer_3src_5utils_find
   __pyx_r = __pyx_t_6;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/utils.pyx":67
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/utils.pyx":87
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Finds the minimum and maximum possible values from tree combinations using C++ vectors.
@@ -5499,7 +5474,7 @@ static int __Pyx_CreateStringTabAndInitStrings(void) {
 }
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 73, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 1026, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -5966,7 +5941,7 @@ if (!__Pyx_RefNanny) {
   #endif
 
   /* "tree_explainer/src/utils.pyx":6
- * from cython cimport boundscheck, wraparound
+ * from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
  * cimport numpy as cnp

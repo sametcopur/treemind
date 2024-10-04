@@ -2306,9 +2306,9 @@ static PyObject *__pyx_convert_vector_to_py_double(std::vector<double>  const &_
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":12
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":16
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef Rule create_rule(int len_col, int tree_index, int leaf_index):             # <<<<<<<<<<<<<<
  *     """
  *     Initializes a new Rule struct with the given parameters.
@@ -2327,7 +2327,7 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("create_rule", 1);
 
-  /* "tree_explainer/src/rule.pyx":31
+  /* "tree_explainer/src/rule.pyx":35
  *     """
  *     cdef Rule rule
  *     rule.len_col = len_col             # <<<<<<<<<<<<<<
@@ -2336,7 +2336,7 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
  */
   __pyx_v_rule.len_col = __pyx_v_len_col;
 
-  /* "tree_explainer/src/rule.pyx":32
+  /* "tree_explainer/src/rule.pyx":36
  *     cdef Rule rule
  *     rule.len_col = len_col
  *     rule.tree_index = tree_index             # <<<<<<<<<<<<<<
@@ -2345,7 +2345,7 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
  */
   __pyx_v_rule.tree_index = __pyx_v_tree_index;
 
-  /* "tree_explainer/src/rule.pyx":33
+  /* "tree_explainer/src/rule.pyx":37
  *     rule.len_col = len_col
  *     rule.tree_index = tree_index
  *     rule.leaf_index = leaf_index             # <<<<<<<<<<<<<<
@@ -2354,7 +2354,7 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
  */
   __pyx_v_rule.leaf_index = __pyx_v_leaf_index;
 
-  /* "tree_explainer/src/rule.pyx":34
+  /* "tree_explainer/src/rule.pyx":38
  *     rule.tree_index = tree_index
  *     rule.leaf_index = leaf_index
  *     rule.lbs = vector[double](len_col, -INFINITY)             # <<<<<<<<<<<<<<
@@ -2365,11 +2365,11 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
     __pyx_t_1 = std::vector<double> (__pyx_v_len_col, (-INFINITY));
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 34, __pyx_L1_error)
+    __PYX_ERR(1, 38, __pyx_L1_error)
   }
   __pyx_v_rule.lbs = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "tree_explainer/src/rule.pyx":35
+  /* "tree_explainer/src/rule.pyx":39
  *     rule.leaf_index = leaf_index
  *     rule.lbs = vector[double](len_col, -INFINITY)
  *     rule.ubs = vector[double](len_col, INFINITY)             # <<<<<<<<<<<<<<
@@ -2380,27 +2380,27 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
     __pyx_t_1 = std::vector<double> (__pyx_v_len_col, INFINITY);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 35, __pyx_L1_error)
+    __PYX_ERR(1, 39, __pyx_L1_error)
   }
   __pyx_v_rule.ubs = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "tree_explainer/src/rule.pyx":36
+  /* "tree_explainer/src/rule.pyx":40
  *     rule.lbs = vector[double](len_col, -INFINITY)
  *     rule.ubs = vector[double](len_col, INFINITY)
  *     rule.value = np.nan             # <<<<<<<<<<<<<<
  *     return rule
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 36, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_nan); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 36, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_nan); if (unlikely(!__pyx_t_3)) __PYX_ERR(1, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(1, 36, __pyx_L1_error)
+  __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(1, 40, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_rule.value = __pyx_t_4;
 
-  /* "tree_explainer/src/rule.pyx":37
+  /* "tree_explainer/src/rule.pyx":41
  *     rule.ubs = vector[double](len_col, INFINITY)
  *     rule.value = np.nan
  *     return rule             # <<<<<<<<<<<<<<
@@ -2410,9 +2410,9 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
   __pyx_r = __pyx_v_rule;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":12
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":16
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef Rule create_rule(int len_col, int tree_index, int leaf_index):             # <<<<<<<<<<<<<<
  *     """
  *     Initializes a new Rule struct with the given parameters.
@@ -2429,9 +2429,9 @@ static struct __pyx_t_14tree_explainer_3src_4rule_Rule __pyx_f_14tree_explainer_
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":41
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":50
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef void update_rule(Rule* rule, int index, double lb, double ub):             # <<<<<<<<<<<<<<
  *     """
  *     Updates the lower and upper bounds for a feature at the specified index.
@@ -2443,7 +2443,7 @@ static void __pyx_f_14tree_explainer_3src_4rule_update_rule(struct __pyx_t_14tre
   double __pyx_t_3;
   int __pyx_t_4;
 
-  /* "tree_explainer/src/rule.pyx":56
+  /* "tree_explainer/src/rule.pyx":65
  *         The new lower bound for the feature.
  *     """
  *     rule.lbs[index] = max(rule.lbs[index], lb)             # <<<<<<<<<<<<<<
@@ -2460,7 +2460,7 @@ static void __pyx_f_14tree_explainer_3src_4rule_update_rule(struct __pyx_t_14tre
   }
   (__pyx_v_rule->lbs[__pyx_v_index]) = __pyx_t_3;
 
-  /* "tree_explainer/src/rule.pyx":57
+  /* "tree_explainer/src/rule.pyx":66
  *     """
  *     rule.lbs[index] = max(rule.lbs[index], lb)
  *     rule.ubs[index] = min(rule.ubs[index], ub)             # <<<<<<<<<<<<<<
@@ -2477,9 +2477,9 @@ static void __pyx_f_14tree_explainer_3src_4rule_update_rule(struct __pyx_t_14tre
   }
   (__pyx_v_rule->ubs[__pyx_v_index]) = __pyx_t_2;
 
-  /* "tree_explainer/src/rule.pyx":41
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":50
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef void update_rule(Rule* rule, int index, double lb, double ub):             # <<<<<<<<<<<<<<
  *     """
  *     Updates the lower and upper bounds for a feature at the specified index.
@@ -2488,9 +2488,9 @@ static void __pyx_f_14tree_explainer_3src_4rule_update_rule(struct __pyx_t_14tre
   /* function exit code */
 }
 
-/* "tree_explainer/src/rule.pyx":61
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":75
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :             # <<<<<<<<<<<<<<
  *     """
  *     Checks whether the rule has been fully defined for the given feature indices.
@@ -2504,7 +2504,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
   int __pyx_t_3;
   int __pyx_t_4;
 
-  /* "tree_explainer/src/rule.pyx":78
+  /* "tree_explainer/src/rule.pyx":92
  *     """
  *     cdef int idx
  *     for idx in feature_indices:             # <<<<<<<<<<<<<<
@@ -2518,7 +2518,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
     ++__pyx_t_1;
     __pyx_v_idx = __pyx_t_2;
 
-    /* "tree_explainer/src/rule.pyx":79
+    /* "tree_explainer/src/rule.pyx":93
  *     cdef int idx
  *     for idx in feature_indices:
  *         if (rule.lbs[idx] == -INFINITY) and (rule.ubs[idx] == INFINITY):             # <<<<<<<<<<<<<<
@@ -2536,7 +2536,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
     __pyx_L6_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "tree_explainer/src/rule.pyx":80
+      /* "tree_explainer/src/rule.pyx":94
  *     for idx in feature_indices:
  *         if (rule.lbs[idx] == -INFINITY) and (rule.ubs[idx] == INFINITY):
  *             return 0             # <<<<<<<<<<<<<<
@@ -2546,7 +2546,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "tree_explainer/src/rule.pyx":79
+      /* "tree_explainer/src/rule.pyx":93
  *     cdef int idx
  *     for idx in feature_indices:
  *         if (rule.lbs[idx] == -INFINITY) and (rule.ubs[idx] == INFINITY):             # <<<<<<<<<<<<<<
@@ -2555,7 +2555,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
  */
     }
 
-    /* "tree_explainer/src/rule.pyx":78
+    /* "tree_explainer/src/rule.pyx":92
  *     """
  *     cdef int idx
  *     for idx in feature_indices:             # <<<<<<<<<<<<<<
@@ -2564,7 +2564,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
  */
   }
 
-  /* "tree_explainer/src/rule.pyx":81
+  /* "tree_explainer/src/rule.pyx":95
  *         if (rule.lbs[idx] == -INFINITY) and (rule.ubs[idx] == INFINITY):
  *             return 0
  *     return 1             # <<<<<<<<<<<<<<
@@ -2574,9 +2574,9 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
   __pyx_r = 1;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":61
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":75
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :             # <<<<<<<<<<<<<<
  *     """
  *     Checks whether the rule has been fully defined for the given feature indices.
@@ -2587,9 +2587,9 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_rule(struct _
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":85
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":104
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Checks if the given value lies within the bounds for the specified feature index.
@@ -2599,7 +2599,7 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_value(struct 
   int __pyx_r;
   int __pyx_t_1;
 
-  /* "tree_explainer/src/rule.pyx":103
+  /* "tree_explainer/src/rule.pyx":122
  *         True if the value lies within the bounds, False otherwise.
  *     """
  *     return rule.lbs[i] < value <= rule.ubs[i]             # <<<<<<<<<<<<<<
@@ -2613,9 +2613,9 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_value(struct 
   __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":85
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":104
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:             # <<<<<<<<<<<<<<
  *     """
  *     Checks if the given value lies within the bounds for the specified feature index.
@@ -2626,9 +2626,9 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_value(struct 
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":108
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":132
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef int compare_rules(const Rule& a, const Rule& b):             # <<<<<<<<<<<<<<
  *     return a.leaf_index < b.leaf_index
  * 
@@ -2637,8 +2637,8 @@ static CYTHON_INLINE int __pyx_f_14tree_explainer_3src_4rule_check_value(struct 
 static int __pyx_f_14tree_explainer_3src_4rule_compare_rules(struct __pyx_t_14tree_explainer_3src_4rule_Rule const &__pyx_v_a, struct __pyx_t_14tree_explainer_3src_4rule_Rule const &__pyx_v_b) {
   int __pyx_r;
 
-  /* "tree_explainer/src/rule.pyx":109
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":133
+ * @infer_types(False)
  * cdef int compare_rules(const Rule& a, const Rule& b):
  *     return a.leaf_index < b.leaf_index             # <<<<<<<<<<<<<<
  * 
@@ -2647,9 +2647,9 @@ static int __pyx_f_14tree_explainer_3src_4rule_compare_rules(struct __pyx_t_14tr
   __pyx_r = (__pyx_v_a.leaf_index < __pyx_v_b.leaf_index);
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":108
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":132
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef int compare_rules(const Rule& a, const Rule& b):             # <<<<<<<<<<<<<<
  *     return a.leaf_index < b.leaf_index
  * 
@@ -2660,9 +2660,9 @@ static int __pyx_f_14tree_explainer_3src_4rule_compare_rules(struct __pyx_t_14tr
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":113
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":142
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col = -1):             # <<<<<<<<<<<<<<
  *     """
  *     Filters rules across all trees based on the specified main and optional sub-column.
@@ -2693,7 +2693,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     }
   }
 
-  /* "tree_explainer/src/rule.pyx":132
+  /* "tree_explainer/src/rule.pyx":161
  *     cdef Rule rule
  *     cdef vector[vector[Rule]] filtered_trees
  *     cdef vector[Rule] filtered_rules = vector[Rule]()             # <<<<<<<<<<<<<<
@@ -2704,11 +2704,11 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     __pyx_t_1 = std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> ();
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 132, __pyx_L1_error)
+    __PYX_ERR(1, 161, __pyx_L1_error)
   }
   __pyx_v_filtered_rules = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-  /* "tree_explainer/src/rule.pyx":134
+  /* "tree_explainer/src/rule.pyx":163
  *     cdef vector[Rule] filtered_rules = vector[Rule]()
  *     cdef vector[Rule] tree
  *     cdef vector[int] check_rules = vector[int]()             # <<<<<<<<<<<<<<
@@ -2719,11 +2719,11 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     __pyx_t_2 = std::vector<int> ();
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 134, __pyx_L1_error)
+    __PYX_ERR(1, 163, __pyx_L1_error)
   }
   __pyx_v_check_rules = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
 
-  /* "tree_explainer/src/rule.pyx":137
+  /* "tree_explainer/src/rule.pyx":166
  * 
  *     # Convert Python int to C++ int
  *     cdef int c_main_col = <int>main_col             # <<<<<<<<<<<<<<
@@ -2732,7 +2732,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
   __pyx_v_c_main_col = ((int)__pyx_v_main_col);
 
-  /* "tree_explainer/src/rule.pyx":138
+  /* "tree_explainer/src/rule.pyx":167
  *     # Convert Python int to C++ int
  *     cdef int c_main_col = <int>main_col
  *     cdef int c_sub_col = <int>sub_col             # <<<<<<<<<<<<<<
@@ -2741,7 +2741,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
   __pyx_v_c_sub_col = ((int)__pyx_v_sub_col);
 
-  /* "tree_explainer/src/rule.pyx":140
+  /* "tree_explainer/src/rule.pyx":169
  *     cdef int c_sub_col = <int>sub_col
  * 
  *     check_rules.push_back(c_main_col)             # <<<<<<<<<<<<<<
@@ -2752,10 +2752,10 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     __pyx_v_check_rules.push_back(__pyx_v_c_main_col);
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 140, __pyx_L1_error)
+    __PYX_ERR(1, 169, __pyx_L1_error)
   }
 
-  /* "tree_explainer/src/rule.pyx":142
+  /* "tree_explainer/src/rule.pyx":171
  *     check_rules.push_back(c_main_col)
  * 
  *     if c_sub_col != -1:             # <<<<<<<<<<<<<<
@@ -2765,7 +2765,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
   __pyx_t_3 = (__pyx_v_c_sub_col != -1L);
   if (__pyx_t_3) {
 
-    /* "tree_explainer/src/rule.pyx":143
+    /* "tree_explainer/src/rule.pyx":172
  * 
  *     if c_sub_col != -1:
  *         check_rules.push_back(c_sub_col)             # <<<<<<<<<<<<<<
@@ -2776,10 +2776,10 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
       __pyx_v_check_rules.push_back(__pyx_v_c_sub_col);
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      __PYX_ERR(1, 143, __pyx_L1_error)
+      __PYX_ERR(1, 172, __pyx_L1_error)
     }
 
-    /* "tree_explainer/src/rule.pyx":142
+    /* "tree_explainer/src/rule.pyx":171
  *     check_rules.push_back(c_main_col)
  * 
  *     if c_sub_col != -1:             # <<<<<<<<<<<<<<
@@ -2788,7 +2788,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
   }
 
-  /* "tree_explainer/src/rule.pyx":145
+  /* "tree_explainer/src/rule.pyx":174
  *         check_rules.push_back(c_sub_col)
  * 
  *     for tree in trees:             # <<<<<<<<<<<<<<
@@ -2802,7 +2802,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     ++__pyx_t_4;
     __pyx_v_tree = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_1);
 
-    /* "tree_explainer/src/rule.pyx":146
+    /* "tree_explainer/src/rule.pyx":175
  * 
  *     for tree in trees:
  *         filtered_rules.clear()             # <<<<<<<<<<<<<<
@@ -2811,7 +2811,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
     __pyx_v_filtered_rules.clear();
 
-    /* "tree_explainer/src/rule.pyx":147
+    /* "tree_explainer/src/rule.pyx":176
  *     for tree in trees:
  *         filtered_rules.clear()
  *         for rule in tree:             # <<<<<<<<<<<<<<
@@ -2825,17 +2825,17 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
       ++__pyx_t_5;
       __pyx_v_rule = __pyx_t_6;
 
-      /* "tree_explainer/src/rule.pyx":148
+      /* "tree_explainer/src/rule.pyx":177
  *         filtered_rules.clear()
  *         for rule in tree:
  *             if check_rule(&rule, check_rules):             # <<<<<<<<<<<<<<
  *                 filtered_rules.push_back(rule)
  * 
  */
-      __pyx_t_3 = __pyx_f_14tree_explainer_3src_4rule_check_rule((&__pyx_v_rule), __pyx_v_check_rules); if (unlikely(__pyx_t_3 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(1, 148, __pyx_L1_error)
+      __pyx_t_3 = __pyx_f_14tree_explainer_3src_4rule_check_rule((&__pyx_v_rule), __pyx_v_check_rules); if (unlikely(__pyx_t_3 == ((int)-1) && PyErr_Occurred())) __PYX_ERR(1, 177, __pyx_L1_error)
       if (__pyx_t_3) {
 
-        /* "tree_explainer/src/rule.pyx":149
+        /* "tree_explainer/src/rule.pyx":178
  *         for rule in tree:
  *             if check_rule(&rule, check_rules):
  *                 filtered_rules.push_back(rule)             # <<<<<<<<<<<<<<
@@ -2846,10 +2846,10 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
           __pyx_v_filtered_rules.push_back(__pyx_v_rule);
         } catch(...) {
           __Pyx_CppExn2PyErr();
-          __PYX_ERR(1, 149, __pyx_L1_error)
+          __PYX_ERR(1, 178, __pyx_L1_error)
         }
 
-        /* "tree_explainer/src/rule.pyx":148
+        /* "tree_explainer/src/rule.pyx":177
  *         filtered_rules.clear()
  *         for rule in tree:
  *             if check_rule(&rule, check_rules):             # <<<<<<<<<<<<<<
@@ -2858,7 +2858,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
       }
 
-      /* "tree_explainer/src/rule.pyx":147
+      /* "tree_explainer/src/rule.pyx":176
  *     for tree in trees:
  *         filtered_rules.clear()
  *         for rule in tree:             # <<<<<<<<<<<<<<
@@ -2867,7 +2867,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
     }
 
-    /* "tree_explainer/src/rule.pyx":151
+    /* "tree_explainer/src/rule.pyx":180
  *                 filtered_rules.push_back(rule)
  * 
  *         if filtered_rules.size() >= 1:             # <<<<<<<<<<<<<<
@@ -2877,7 +2877,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
     __pyx_t_3 = (__pyx_v_filtered_rules.size() >= 1);
     if (__pyx_t_3) {
 
-      /* "tree_explainer/src/rule.pyx":152
+      /* "tree_explainer/src/rule.pyx":181
  * 
  *         if filtered_rules.size() >= 1:
  *             filtered_trees.push_back(filtered_rules)             # <<<<<<<<<<<<<<
@@ -2888,10 +2888,10 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
         __pyx_v_filtered_trees.push_back(__pyx_v_filtered_rules);
       } catch(...) {
         __Pyx_CppExn2PyErr();
-        __PYX_ERR(1, 152, __pyx_L1_error)
+        __PYX_ERR(1, 181, __pyx_L1_error)
       }
 
-      /* "tree_explainer/src/rule.pyx":151
+      /* "tree_explainer/src/rule.pyx":180
  *                 filtered_rules.push_back(rule)
  * 
  *         if filtered_rules.size() >= 1:             # <<<<<<<<<<<<<<
@@ -2900,7 +2900,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
     }
 
-    /* "tree_explainer/src/rule.pyx":145
+    /* "tree_explainer/src/rule.pyx":174
  *         check_rules.push_back(c_sub_col)
  * 
  *     for tree in trees:             # <<<<<<<<<<<<<<
@@ -2909,7 +2909,7 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
  */
   }
 
-  /* "tree_explainer/src/rule.pyx":154
+  /* "tree_explainer/src/rule.pyx":183
  *             filtered_trees.push_back(filtered_rules)
  * 
  *     return filtered_trees             # <<<<<<<<<<<<<<
@@ -2919,9 +2919,9 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
   __pyx_r = __pyx_v_filtered_trees;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":113
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":142
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col = -1):             # <<<<<<<<<<<<<<
  *     """
  *     Filters rules across all trees based on the specified main and optional sub-column.
@@ -2935,9 +2935,9 @@ static std::vector<std::vector<struct __pyx_t_14tree_explainer_3src_4rule_Rule> 
   return __pyx_r;
 }
 
-/* "tree_explainer/src/rule.pyx":159
- * @boundscheck(False)
- * @wraparound(False)
+/* "tree_explainer/src/rule.pyx":192
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):             # <<<<<<<<<<<<<<
  *     """
  *     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
@@ -2963,7 +2963,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get_split_point", 1);
 
-  /* "tree_explainer/src/rule.pyx":182
+  /* "tree_explainer/src/rule.pyx":215
  *     cdef vector[double] result
  * 
  *     for tree in trees:             # <<<<<<<<<<<<<<
@@ -2977,7 +2977,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
     ++__pyx_t_1;
     __pyx_v_tree = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_2);
 
-    /* "tree_explainer/src/rule.pyx":183
+    /* "tree_explainer/src/rule.pyx":216
  * 
  *     for tree in trees:
  *         for rule in tree:             # <<<<<<<<<<<<<<
@@ -2991,7 +2991,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
       ++__pyx_t_3;
       __pyx_v_rule = __pyx_t_4;
 
-      /* "tree_explainer/src/rule.pyx":184
+      /* "tree_explainer/src/rule.pyx":217
  *     for tree in trees:
  *         for rule in tree:
  *             points.push_back(rule.ubs[col])             # <<<<<<<<<<<<<<
@@ -3002,10 +3002,10 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
         __pyx_v_points.push_back((__pyx_v_rule.ubs[__pyx_v_col]));
       } catch(...) {
         __Pyx_CppExn2PyErr();
-        __PYX_ERR(1, 184, __pyx_L1_error)
+        __PYX_ERR(1, 217, __pyx_L1_error)
       }
 
-      /* "tree_explainer/src/rule.pyx":185
+      /* "tree_explainer/src/rule.pyx":218
  *         for rule in tree:
  *             points.push_back(rule.ubs[col])
  *             points.push_back(rule.lbs[col])             # <<<<<<<<<<<<<<
@@ -3016,10 +3016,10 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
         __pyx_v_points.push_back((__pyx_v_rule.lbs[__pyx_v_col]));
       } catch(...) {
         __Pyx_CppExn2PyErr();
-        __PYX_ERR(1, 185, __pyx_L1_error)
+        __PYX_ERR(1, 218, __pyx_L1_error)
       }
 
-      /* "tree_explainer/src/rule.pyx":183
+      /* "tree_explainer/src/rule.pyx":216
  * 
  *     for tree in trees:
  *         for rule in tree:             # <<<<<<<<<<<<<<
@@ -3028,7 +3028,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
  */
     }
 
-    /* "tree_explainer/src/rule.pyx":182
+    /* "tree_explainer/src/rule.pyx":215
  *     cdef vector[double] result
  * 
  *     for tree in trees:             # <<<<<<<<<<<<<<
@@ -3037,7 +3037,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
  */
   }
 
-  /* "tree_explainer/src/rule.pyx":187
+  /* "tree_explainer/src/rule.pyx":220
  *             points.push_back(rule.lbs[col])
  * 
  *     sort(points.begin(), points.end())             # <<<<<<<<<<<<<<
@@ -3048,10 +3048,10 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
     std::sort<std::vector<double> ::iterator>(__pyx_v_points.begin(), __pyx_v_points.end());
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 187, __pyx_L1_error)
+    __PYX_ERR(1, 220, __pyx_L1_error)
   }
 
-  /* "tree_explainer/src/rule.pyx":188
+  /* "tree_explainer/src/rule.pyx":221
  * 
  *     sort(points.begin(), points.end())
  *     it = unique(points.begin(), points.end())             # <<<<<<<<<<<<<<
@@ -3062,11 +3062,11 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
     __pyx_t_5 = std::unique<std::vector<double> ::iterator>(__pyx_v_points.begin(), __pyx_v_points.end());
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 188, __pyx_L1_error)
+    __PYX_ERR(1, 221, __pyx_L1_error)
   }
   __pyx_v_it = __PYX_STD_MOVE_IF_SUPPORTED(__pyx_t_5);
 
-  /* "tree_explainer/src/rule.pyx":190
+  /* "tree_explainer/src/rule.pyx":223
  *     it = unique(points.begin(), points.end())
  * 
  *     points.resize(it - points.begin())             # <<<<<<<<<<<<<<
@@ -3077,24 +3077,24 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
     __pyx_v_points.resize((__pyx_v_it - __pyx_v_points.begin()));
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(1, 190, __pyx_L1_error)
+    __PYX_ERR(1, 223, __pyx_L1_error)
   }
 
-  /* "tree_explainer/src/rule.pyx":192
+  /* "tree_explainer/src/rule.pyx":225
  *     points.resize(it - points.begin())
  * 
  *     if len(points) > 1:             # <<<<<<<<<<<<<<
  *         points.erase(points.begin())
  * 
  */
-  __pyx_t_6 = __pyx_convert_vector_to_py_double(__pyx_v_points); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 192, __pyx_L1_error)
+  __pyx_t_6 = __pyx_convert_vector_to_py_double(__pyx_v_points); if (unlikely(!__pyx_t_6)) __PYX_ERR(1, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = PyObject_Length(__pyx_t_6); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(1, 192, __pyx_L1_error)
+  __pyx_t_7 = PyObject_Length(__pyx_t_6); if (unlikely(__pyx_t_7 == ((Py_ssize_t)-1))) __PYX_ERR(1, 225, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_8 = (__pyx_t_7 > 1);
   if (__pyx_t_8) {
 
-    /* "tree_explainer/src/rule.pyx":193
+    /* "tree_explainer/src/rule.pyx":226
  * 
  *     if len(points) > 1:
  *         points.erase(points.begin())             # <<<<<<<<<<<<<<
@@ -3103,7 +3103,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
  */
     (void)(__pyx_v_points.erase(__pyx_v_points.begin()));
 
-    /* "tree_explainer/src/rule.pyx":192
+    /* "tree_explainer/src/rule.pyx":225
  *     points.resize(it - points.begin())
  * 
  *     if len(points) > 1:             # <<<<<<<<<<<<<<
@@ -3112,7 +3112,7 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
  */
   }
 
-  /* "tree_explainer/src/rule.pyx":195
+  /* "tree_explainer/src/rule.pyx":228
  *         points.erase(points.begin())
  * 
  *     return points             # <<<<<<<<<<<<<<
@@ -3120,9 +3120,9 @@ static std::vector<double>  __pyx_f_14tree_explainer_3src_4rule_get_split_point(
   __pyx_r = __pyx_v_points;
   goto __pyx_L0;
 
-  /* "tree_explainer/src/rule.pyx":159
- * @boundscheck(False)
- * @wraparound(False)
+  /* "tree_explainer/src/rule.pyx":192
+ * @overflowcheck(False)
+ * @infer_types(False)
  * cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):             # <<<<<<<<<<<<<<
  *     """
  *     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
@@ -3558,16 +3558,16 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(1, 1, __pyx_L1_error)
   #endif
 
-  /* "tree_explainer/src/rule.pyx":8
+  /* "tree_explainer/src/rule.pyx":7
  * from .rule cimport Rule
  * 
  * import numpy as np             # <<<<<<<<<<<<<<
  * 
  * @boundscheck(False)
  */
-  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_numpy, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 8, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_ImportDottedModule(__pyx_n_s_numpy, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 7, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_2) < 0) __PYX_ERR(1, 8, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_2) < 0) __PYX_ERR(1, 7, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "tree_explainer/src/rule.pyx":1

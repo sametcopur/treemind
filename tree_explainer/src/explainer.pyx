@@ -1,6 +1,6 @@
 from libcpp.vector cimport vector
 
-from cython cimport boundscheck, wraparound
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck
 from .rule cimport filter_trees, get_split_point, check_value
 from .utils cimport find_mean, replace_inf, find_min_max
 from .lgb cimport analyze_lightgbm
@@ -32,7 +32,11 @@ cdef class Explainer:
             raise ValueError("MAAAL")
 
     @boundscheck(False)
+    @nonecheck(False)
     @wraparound(False)
+    @initializedcheck(False)
+    @overflowcheck(False)
+    @cdivision(True)
     cpdef object analyze_dependency(self, int main_col, int sub_col):
         """
         Analyzes the dependency between two features by calculating values based on the split points
@@ -115,7 +119,11 @@ cdef class Explainer:
         return df
 
     @boundscheck(False)
+    @initializedcheck(False)
+    @nonecheck(False)
     @wraparound(False)
+    @overflowcheck(False)
+    @cdivision(True)
     cpdef tuple analyze_row(self, object x, bint detailed = True):
         """
         Optimized version of analyze_row function using C++ vectors of doubles.
@@ -198,6 +206,12 @@ cdef class Explainer:
             return values_1d, raw_score
 
 
+    @boundscheck(False)
+    @nonecheck(False)
+    @wraparound(False)
+    @initializedcheck(False)
+    @overflowcheck(False)
+    @cdivision(True)
     cpdef object analyze_feature(self, int col):
         """
         Analyzes a specific feature by calculating the mean, min, and max values

@@ -1,8 +1,9 @@
 
 from libcpp.vector cimport vector
 from .rule cimport Rule
+from libcpp.pair cimport pair as cpp_pair
 
-cdef void traverse_lightgbm(object tree, str node_index, dict feature_ranges, vector[Rule]& rules, int tree_index, int len_col)
+ctypedef cpp_pair[double, double] RangePair
 
-cdef vector[vector[Rule]] analyze_lightgbm( object model, int len_col)
-  
+cdef void traverse_lightgbm(dict node_dict, str node_index, vector[RangePair]& feature_ranges, vector[Rule]& rules, int tree_index)
+cdef vector[vector[Rule]] analyze_lightgbm(object model, int len_col)

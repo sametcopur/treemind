@@ -1,14 +1,18 @@
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
-
-from cython cimport boundscheck, wraparound
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from .rule cimport Rule
 
 import numpy as np
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     """
     Initializes a new Rule struct with the given parameters.
@@ -37,7 +41,12 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     return rule
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef void update_rule(Rule* rule, int index, double lb, double ub):
     """
     Updates the lower and upper bounds for a feature at the specified index.
@@ -57,7 +66,12 @@ cdef void update_rule(Rule* rule, int index, double lb, double ub):
     rule.ubs[index] = min(rule.ubs[index], ub)
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :
     """
     Checks whether the rule has been fully defined for the given feature indices.
@@ -81,7 +95,12 @@ cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :
     return 1
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:
     """
     Checks if the given value lies within the bounds for the specified feature index.
@@ -104,12 +123,22 @@ cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:
 
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
 @boundscheck(False)
+@nonecheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col = -1):
     """
     Filters rules across all trees based on the specified main and optional sub-column.
@@ -156,6 +185,10 @@ cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col,
 
 @boundscheck(False)
 @wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(False)
 cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
