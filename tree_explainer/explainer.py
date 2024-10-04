@@ -3,7 +3,6 @@ import numpy as np
 from fractions import Fraction
 from typing import List, Tuple, Optional, Union
 
-
 def _find_mean(tree_results: List[List[float]]) -> float:
     """
     Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
@@ -20,18 +19,12 @@ def _find_mean(tree_results: List[List[float]]) -> float:
     average : float
         The average of the sums of all possible combinations of one element from each sublist.
     """
-    sums = [sum(sublist) for sublist in tree_results]
-    element_counts = [len(sublist) for sublist in tree_results]
-
-    combination_count = 1
-    for element_count in element_counts:
-        combination_count *= element_count
-
-    total_sum = Fraction(0)
-    for sum_value, element_count in zip(sums, element_counts):
-        total_sum += Fraction(sum_value) * (combination_count // element_count)
-
-    return float(total_sum / combination_count)
+    # Calculate the product of the averages of each list
+    average = 0.0
+    for sublist in tree_results:
+        average += sum(sublist) / len(sublist)
+    
+    return average
 
 
 def _find_min_max(
@@ -416,11 +409,11 @@ class Explainer:
 
         main_split_points = self._get_split_point(filtered_trees, main_col)
         sub_split_points = self._get_split_point(filtered_trees, sub_col)
+        
 
         results = []
         for sub_point in sub_split_points:
             for main_point in main_split_points:
-
                 all_values = [
                     [
                         rule.value

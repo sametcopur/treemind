@@ -371,52 +371,52 @@ def plot_hexbin(df, figsize=(10, 8), gridsize=20):
 def plot_interaction(df, figsize=(8, 6), sigma=3):
     column1 = df.columns[0]
     column2 = df.columns[1]
-    
+
     xi = np.linspace(df[column1].min(), df[column1].max(), 100)
-    yi = np.linspace(df[column2 ].min(), df[column2 ].max(), 100)
+    yi = np.linspace(df[column2].min(), df[column2].max(), 100)
     xi, yi = np.meshgrid(xi, yi)
 
-    zi = griddata((df[column1], df[column2 ]), df['values'], (xi, yi), method='nearest')
+    zi = griddata((df[column1], df[column2]), df["values"], (xi, yi), method="nearest")
 
     zi_smooth = gaussian_filter(zi, sigma=sigma)
-    
+
     plt.figure(figsize=figsize)
-    plt.contourf(xi, yi, zi_smooth, levels=50, cmap='coolwarm')
+    plt.contourf(xi, yi, zi_smooth, levels=50, cmap="coolwarm")
 
     cb = plt.colorbar()
-    cb.set_label('Interpolated Values')
-    plt.title('Smooth Filled Hexbin Plot with Gaussian Filter')
+    cb.set_label("Interpolated Values")
+    plt.title("Smooth Filled Hexbin Plot with Gaussian Filter")
     plt.xlabel(column1)
-    plt.ylabel(column2 )
+    plt.ylabel(column2)
 
     plt.show()
-    
-    
 
-def plot_dependecy_new(df):
-    figsize = (8,6)
+
+def plot_dependecy_new(df, figsize=(8, 6), sigma=3):
+
     column1 = df.columns[0]
     column2 = df.columns[1]
 
     xi = np.linspace(df[column1].min(), df[column1].max(), 200)
-    yi = np.linspace(df[column2 ].min(), df[column2 ].max(), 200)
+    yi = np.linspace(df[column2].min(), df[column2].max(), 200)
     xi, yi = np.meshgrid(xi, yi)
 
     zi = np.empty_like(xi)
 
-    for index, row in df.sort_values(by = [column1, column2], ascending=[False, False]).iterrows():
-        zi[(xi <= row.values[0] ) & (yi <= row.values[1])] = row.values[2]
-        
-        
-    zi_smooth = gaussian_filter(zi, sigma=0)
-        
+    for index, row in df.sort_values(
+        by=[column1, column2], ascending=[False, False]
+    ).iterrows():
+        zi[(xi <= row.values[0]) & (yi <= row.values[1])] = row.values[2]
+
+    zi_smooth = gaussian_filter(zi, sigma=sigma)
+
     plt.figure(figsize=figsize)
-    plt.contourf(xi, yi, zi_smooth, levels=50, cmap='coolwarm')
+    plt.contourf(xi, yi, zi_smooth, levels=50, cmap="coolwarm")
 
     cb = plt.colorbar()
-    cb.set_label('Interpolated Values')
-    plt.title('Smooth Filled Hexbin Plot with Gaussian Filter')
+    cb.set_label("Interpolated Values")
+    plt.title("Smooth Filled Hexbin Plot with Gaussian Filter")
     plt.xlabel(column1)
-    plt.ylabel(column2 )
+    plt.ylabel(column2)
 
     plt.show()
