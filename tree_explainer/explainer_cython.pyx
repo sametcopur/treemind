@@ -163,8 +163,8 @@ cdef struct Rule:
     int len_col
     int tree_index
     int leaf_index
-    double[::1] lbs  # Lower bounds for each feature
-    double[::1] ubs  # Upper bounds for each feature
+    vector[double] lbs  # Lower bounds for each feature
+    vector[double] ubs  # Upper bounds for each feature
     double value   # Predicted value associated with this rule
 
 
