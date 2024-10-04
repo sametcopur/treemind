@@ -38,13 +38,43 @@ elif sys.platform == 'darwin':  # macOS
 define_macros = [
     ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
 ]
+from setuptools import setup, Extension
+from Cython.Build import cythonize
+import numpy as np
 
 extensions = [
     Extension(
-        name="tree_explainer.Explainer2",
-        sources=["tree_explainer/explainer_cython.pyx"],
-        include_dirs=[np.get_include()],
-        language = "c++",
+        name="tree_explainer.src.explainer",
+        sources=["tree_explainer/src/explainer.pyx"],
+        include_dirs=[np.get_include(), "tree_explainer/src"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros
+    ),
+    Extension(
+        name="tree_explainer.src.rule",
+        sources=["tree_explainer/src/rule.pyx"],
+        include_dirs=[np.get_include(), "tree_explainer/src"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros
+    ),
+    Extension(
+        name="tree_explainer.src.utils",
+        sources=["tree_explainer/src/utils.pyx"],
+        include_dirs=[np.get_include(), "tree_explainer/src"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros
+    ),
+    Extension(
+        name="tree_explainer.src.lgb",
+        sources=["tree_explainer/src/lgb.pyx"],
+        include_dirs=[np.get_include(), "tree_explainer/src"],
+        language="c++",
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
         define_macros=define_macros
@@ -57,6 +87,6 @@ setup(
     description='QPBoost Solver',
     ext_modules=cythonize(
         extensions,
-        compiler_directives={'language_level': "3"}  # Compile for Python 3
+        compiler_directives={'language_level': "3"}
     ),
 )
