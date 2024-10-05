@@ -54,6 +54,19 @@ cdef class Explainer:
         object
             A DataFrame with sub feature split points, main feature split points, and the corresponding values.
         """
+        if self.len_col == -1:
+            raise ValueError("Explainer(model) must be called before this operation.")
+
+        if main_col >= self.len_col or sub_col >= self.len_col:
+            raise ValueError("'main_col' and 'sub_col' cannot be greater than or equal to the total number of columns used to train the model.")
+
+        if main_col < 0 or sub_col < 0:
+            raise ValueError("'main_col' and 'sub_col' cannot be negative.")
+
+        if main_col == sub_col:
+            raise ValueError("'main_col' and 'sub_col' cannot be the same.")
+
+
         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, main_col, sub_col)
         cdef vector[double] main_split_points = get_split_point(filtered_trees, main_col)
         cdef vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
@@ -130,6 +143,9 @@ cdef class Explainer:
         
         Parameters and return values remain the same as the original function.
         """
+        if self.len_col == -1:
+            raise ValueError("Explainer(model) must be called before this operation.")
+
         cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True)
         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))
 
@@ -137,7 +153,6 @@ cdef class Explainer:
         cdef int num_leafs = leafs.shape[1]
         cdef double split_value
 
-        
         cdef int row, col, i
         cdef size_t j, max_len = 0
 
@@ -235,6 +250,15 @@ cdef class Explainer:
             A DataFrame with the split points (main_point), mean, min, and max values
             for the specified feature.
         """
+        if self.len_col == -1:
+            raise ValueError("Explainer(model) must be called before this operation.")
+
+        if col >= self.len_col or col >= self.len_col:
+            raise ValueError("'main_col' and 'sub_col' cannot be greater than or equal to the total number of columns used to train the model.")
+
+        if col < 0:
+            raise ValueError("'col' cannot be negative.")
+
         cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, col)
         cdef vector[double] split_points = get_split_point(filtered_trees, col)
         cdef double point
