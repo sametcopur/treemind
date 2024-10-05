@@ -132,8 +132,15 @@ cdef class Explainer:
         """
         cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True)
         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))
+
+        cdef int num_rows = leafs.shape[0]
+        cdef int num_leafs = leafs.shape[1]
+        cdef double split_value
+
         
-        cdef int row, col, size, i, j, max_len = 0
+        cdef int row, col, i
+        cdef size_t j, max_len = 0
+
         cdef double ub, lb
         cdef int[:] leaf_loc
         cdef cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
@@ -149,8 +156,8 @@ cdef class Explainer:
                 col_split_points.clear()  # Clear previous values
                 split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)
                 
-                for j in range(split_point_array.shape[0]):
-                    col_split_points.push_back(split_point_array[j])
+                for i in range(split_point_array.shape[0]):
+                    col_split_points.push_back(split_point_array[i])
                 
                 split_points[col] = col_split_points
                 if col_split_points.size() > max_len:
@@ -160,10 +167,7 @@ cdef class Explainer:
         else:
             values_1d = np.zeros(self.len_col, dtype=np.float64)
         
-        cdef int num_rows = leafs.shape[0]
-        cdef int num_leafs = leafs.shape[1]
-        cdef double split_value
-        
+
         with nogil:
             for row in range(num_rows):
                 leaf_loc = leafs[row, :]
@@ -195,14 +199,17 @@ cdef class Explainer:
             for col in range(self.len_col):
                 col_split_points = split_points[col]
                 np_array = np.zeros(col_split_points.size(), dtype=np.float64)
+
                 for j in range(col_split_points.size()):
                     np_array[j] = col_split_points[j]
+                    
                 split_points_list.append(np_array)
                 
             return values_2d, split_points_list, raw_score
         else:
             for col in range(self.len_col):
                 values_1d[col] /= num_rows
+                
             return values_1d, raw_score
 
 

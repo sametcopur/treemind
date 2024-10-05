@@ -1,5 +1,7 @@
 from libcpp.vector cimport vector
 
+ctypedef unsigned long size_t
+
 cdef double max(double a, double b)
 
 cdef double min(double a, double b)

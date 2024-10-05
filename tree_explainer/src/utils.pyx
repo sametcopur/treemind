@@ -64,8 +64,7 @@ cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
     cdef vector[double] sublist
     cdef double sublist_mean
     cdef double total
-    cdef int i
-    cdef int sublist_size 
+    cdef size_t i, sublist_size 
 
     for sublist in tree_results:
         sublist_size = sublist.size()
@@ -75,7 +74,7 @@ cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
         
         sums += total / sublist_size
     
-    return sums
+    return sums 
 
 @boundscheck(False)
 @nonecheck(False)
@@ -104,13 +103,14 @@ cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noe
     """
     cdef double min_value = 0.0
     cdef double max_value = 0.0
-    cdef int i
+    cdef size_t i, vector_size, results_size = tree_results.size()
     cdef vector[double] vector_i
 
-    for i in range(tree_results.size()):
+    for i in range(results_size):
         vector_i = tree_results[i]
+        vector_size = vector_i.size()
 
-        if vector_i.size() > 1:
+        if vector_size > 1:
             min_value += <double>min_element(vector_i.begin(), vector_i.end())[0]
             max_value += <double>max_element(vector_i.begin(), vector_i.end())[0]
         else:

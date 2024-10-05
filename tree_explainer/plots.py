@@ -8,6 +8,8 @@ import pandas as pd
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 
+from typing import Tuple
+
 sns.set_theme()
 
 
@@ -240,42 +242,6 @@ def plot_points(values, points, scale=1):
 
     plt.show()
 
-
-def plot_dependecy(df, figsize=(10, 8)):
-    sub_column_name = df.columns[0]
-    main_columns_name = df.columns[1]
-
-    plt.figure(figsize=figsize)
-    scatter = plt.scatter(
-        x=df[main_columns_name],
-        y=df[sub_column_name],
-        c=df["values"],  # Renkler values sütununa göre
-        cmap="coolwarm",  # Eski renk paleti
-        s=(df["values"] - df["values"].min()) * 30
-        + 100,  # Nokta boyutunu değerlerle dinamik olarak ayarlama
-        edgecolor="black",  # Noktaların kenar rengi
-        vmin=df["values"].min(),  # Renk geçişinin başlangıcı
-        vmax=df["values"].max(),  # Renk geçişinin bitişi
-    )
-
-    # Colorbar ekleme
-    cbar = plt.colorbar(scatter, label="Values")
-    cbar.ax.tick_params(labelsize=12)  # Colorbar yazı boyutunu ayarlama
-
-    # Eksen etiketleri ve başlık
-    plt.xlabel(main_columns_name, fontsize=14)
-    plt.ylabel(sub_column_name, fontsize=14)
-    plt.title("Dependency Plot", fontsize=16)
-
-    plt.grid(True, linestyle="--", alpha=0.7)
-
-    plt.xlim(df[main_columns_name].min() - 1, df[main_columns_name].max() + 1)
-    plt.ylim(df[sub_column_name].min() - 1, df[sub_column_name].max() + 1)
-
-    plt.tight_layout()  # Grafik alanını optimize etme
-    plt.show()
-
-
 def plot_feature(df: pd.DataFrame, figsize=(10, 6)):
     column_name = df.columns[0]
 
@@ -328,52 +294,13 @@ def plot_feature(df: pd.DataFrame, figsize=(10, 6)):
     plt.show()
 
 
-def plot_hexbin(df, figsize=(10, 8), gridsize=20):
-    sub_column_name = df.columns[0]
-    main_columns_name = df.columns[1]
 
-    plt.figure(figsize=figsize)
+def plot_interaction(df, figsize: Tuple[int, int ]=(8, 6), sigma: int =3, grid_size: int = 100):
+    column1 = df.columns[1]
+    column2 = df.columns[0]
 
-    x = df[main_columns_name]
-    y = df[sub_column_name]
-    values = df["values"]
-
-    # Hexbin plot oluştur
-    hb = plt.hexbin(
-        x,
-        y,
-        C=values,
-        gridsize=gridsize,
-        cmap="RdYlGn",
-        edgecolors="face",
-        vmin=values.min(),
-        vmax=values.max(),
-    )
-
-    # Colorbar ekleme
-    cbar = plt.colorbar(hb, label="Values")
-    cbar.ax.tick_params(labelsize=12)
-
-    # Eksen etiketleri ve başlık
-    plt.xlabel(main_columns_name, fontsize=14)
-    plt.ylabel(sub_column_name, fontsize=14)
-    plt.title("Hexbin Plot", fontsize=16)
-
-    plt.grid(True, linestyle="--", alpha=0.7)
-
-    plt.xlim(x.min() - 1, x.max() + 1)
-    plt.ylim(y.min() - 1, y.max() + 1)
-
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_interaction(df, figsize=(8, 6), sigma=3):
-    column1 = df.columns[0]
-    column2 = df.columns[1]
-
-    xi = np.linspace(df[column1].min(), df[column1].max(), 100)
-    yi = np.linspace(df[column2].min(), df[column2].max(), 100)
+    xi = np.linspace(df[column1].min(), df[column1].max(), grid_size)
+    yi = np.linspace(df[column2].min(), df[column2].max(), grid_size)
     xi, yi = np.meshgrid(xi, yi)
 
     zi = griddata((df[column1], df[column2]), df["values"], (xi, yi), method="nearest")
@@ -391,32 +318,3 @@ def plot_interaction(df, figsize=(8, 6), sigma=3):
 
     plt.show()
 
-
-def plot_dependecy_new(df, figsize=(8, 6), sigma=3):
-
-    column1 = df.columns[0]
-    column2 = df.columns[1]
-
-    xi = np.linspace(df[column1].min(), df[column1].max(), 200)
-    yi = np.linspace(df[column2].min(), df[column2].max(), 200)
-    xi, yi = np.meshgrid(xi, yi)
-
-    zi = np.empty_like(xi)
-
-    for index, row in df.sort_values(
-        by=[column1, column2], ascending=[False, False]
-    ).iterrows():
-        zi[(xi <= row.values[0]) & (yi <= row.values[1])] = row.values[2]
-
-    zi_smooth = gaussian_filter(zi, sigma=sigma)
-
-    plt.figure(figsize=figsize)
-    plt.contourf(xi, yi, zi_smooth, levels=50, cmap="coolwarm")
-
-    cb = plt.colorbar()
-    cb.set_label("Interpolated Values")
-    plt.title("Smooth Filled Hexbin Plot with Gaussian Filter")
-    plt.xlabel(column1)
-    plt.ylabel(column2)
-
-    plt.show()

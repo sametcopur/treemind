@@ -31,7 +31,7 @@ elif sys.platform == 'darwin':  # macOS
         "-O3", "-ffast-math", "-mcpu=apple-m1",
         "-funroll-loops", "-finline-functions", "-ftree-vectorize",
         "-fstrict-aliasing", "-fstack-protector-strong",
-        "-ffunction-sections", "-fdata-sections" 
+        "-ffunction-sections", "-fdata-sections", "-Wno-unreachable-code-fallthrough"
     ]
     extra_link_args = ["-Wl,-dead_strip"]
 
