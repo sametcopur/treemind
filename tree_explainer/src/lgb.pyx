@@ -6,14 +6,17 @@ from libcpp.algorithm cimport sort
 import pandas as pd
 cimport numpy as cnp
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
+from libcpp.pair cimport pair
 
+ctypedef pair[double, double] RangePair
+
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 cdef class Node:
     cdef str node_index
     cdef str left_child
     cdef str right_child
-    cdef int split_feature  # -1 if leaf node
+    cdef int split_feature
     cdef double threshold
     cdef double value
     cdef str parent_index

@@ -4,12 +4,22 @@ import numpy as np
 from typing import Union, Tuple, List, Any
 
 class Explainer:
+    """
+    The Explainer class provides methods to analyze a trained model by examining feature dependencies,
+    split points, and predicted values. It offers functionality to analyze the relationship between
+    features, examine the impact of individual features on predictions, and interpret the model's
+    decision-making process.
+
+    Attributes
+    ----------
+    model : Any
+        The trained model instance used for analysis.
+    """
     model: Any
 
     def analyze_dependency(self, main_col: int, sub_col: int) -> pd.DataFrame:
         """
-        Analyzes the dependency between two features by calculating values based on the split points
-        of the main and sub columns across all trees.
+        Analyzes the dependency between two features
 
         Parameters
         ----------

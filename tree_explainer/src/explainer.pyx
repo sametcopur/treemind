@@ -1,16 +1,21 @@
 from libcpp.vector cimport vector
-
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck
-from .rule cimport filter_trees, get_split_point, check_value
-from .utils cimport find_mean, replace_inf, find_min_max
-from .lgb cimport analyze_lightgbm
-
 from libc.math cimport INFINITY
 
 import numpy as np
 cimport numpy as cnp 
 import pandas as pd
-   
+
+from libcpp.pair cimport pair
+
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck
+
+from .rule cimport filter_trees, get_split_point, check_value
+from .utils cimport find_mean, replace_inf, find_min_max
+from .lgb cimport analyze_lightgbm
+from .xgb cimport analyze_xgboost
+
+cdef vector[pair[double, double]] feature_ranges
+
 
 cdef class Explainer:
     def __init__(self):
@@ -20,14 +25,31 @@ cdef class Explainer:
         self.columns = None
 
     def __call__(self, model):
-        if "lightgbm" in model.__module__: 
-            if "basic" not in model.__module__:
+        cdef str module_name = model.__module__
+
+        if "lightgbm" in module_name: 
+            if "basic" not in module_name:
                 self.model = model.booster_
             else:
                 self.model = model
-            self.columns =  self.columns = self.model.feature_name()
+            self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
             self.trees = analyze_lightgbm(self.model, self.len_col)
+
+        elif "xgboost" in module_name:
+            if "core" not in module_name:
+                self.model = model.get_booster()
+            else:
+                self.model = model
+
+            self.len_col = self.model.num_features()
+            if self.model.feature_names is None:
+                self.columns = [f"Feature_{i}" for i in range(self.len_col)]
+            else:
+                self.columns = self.model.feature_name()
+
+            self.trees = analyze_xgboost(self.model, self.len_col)
+    
         else:
             raise ValueError("MAAAL")
 
