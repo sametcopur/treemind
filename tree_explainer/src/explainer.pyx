@@ -178,22 +178,15 @@ cdef class Explainer:
             if not (hasattr(x, "__module__") and x.__module__ == "xgboost.core"):
                 raise ValueError("x must be a DMatrix. Please update it using xgboost.DMatrix(x) and provide it back to the explainer.")
 
-        cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
-
-        cdef unordered_map[int, unordered_map[int, int]] leaf_index_map
-        cdef unordered_map[int, int] tree_leaf_map
+        cdef int[:, ::1] leafs
         cdef vector[Rule] tree
 
         cdef double raw_score = np.mean(self.model.predict(x, raw_score=True) if self.model_type == "lightgbm"  else self.model.predict(x, output_margin=True).astype(np.float64)).item()
 
-        cdef int num_rows = leafs.shape[0]
-        cdef int num_leafs = leafs.shape[1]
-        cdef double split_value
+        cdef int row, col, i, leaf_value, rule_index, max_index
+        cdef size_t j, max_len = 0
 
-        cdef int row, col, i, leaf_value, rule_index
-        cdef size_t k, j, max_len = 0
-
-        cdef double ub, lb
+        cdef double ub, lb, split_value
         cdef int[:] leaf_loc
         cdef cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
         cdef cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
@@ -201,29 +194,47 @@ cdef class Explainer:
         cdef vector[double] col_split_points
         cdef Rule rule
 
+        cdef list leaf_indices, max_indices, mappings
+        cdef dict mapping
+        cdef cnp.ndarray[cnp.int32_t, ndim=1, mode="c"] values_1d_int, key, values, mapping_array
+        cdef cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] values_2d_int
+
 
         if self.model_type == "xgboost":
-            with nogil:
-                for k in range(self.trees.size()):
-                    tree = self.trees[k]
-                    for j in range(tree.size()):
-                        tree_leaf_map[tree[j].leaf_index] = j
+            mappings = []
+            max_indices = []
+            
+            for tree in self.trees:
+                leaf_indices = [rule.leaf_index for rule in tree]
+                max_index = max(leaf_indices)
+                mapping_array = np.full(max_index + 1, -1, dtype=np.int32)
+                
+                for i, rule in enumerate(tree):
+                    mapping_array[rule.leaf_index] = i
+                
+                mappings.append(mapping_array)
+                max_indices.append(max_index)
+            
+            values_2d_int = self.model.predict(x, pred_leaf=True).astype(np.int32)
+            
+            for i, (mapping_array, max_index) in enumerate(zip(mappings, max_indices)):
+                mask = values_2d_int[:, i] <= max_index
+                values_2d_int[mask, i] = mapping_array[values_2d_int[mask, i]]
+            
+            leafs = values_2d_int
 
-                    leaf_index_map[k] = tree_leaf_map
-
-                for row in range(num_rows):
-                    for i in range(num_leafs):
-                        leaf_value = leafs[row, i]
-                        tree_leaf_map = leaf_index_map[i]
-                        leafs[row, i] = tree_leaf_map[leaf_value]
-                    
+                
+        else:
+           leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
+                
+        cdef int num_rows = leafs.shape[0]
+        cdef int num_leafs = leafs.shape[1]
             
         if detailed:
             split_points.resize(self.len_col)
-            
             for col in range(self.len_col):
 
-                col_split_points.clear()  # Clear previous values
+                col_split_points.clear()
                 split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)
                 
                 for i in range(split_point_array.shape[0]):
