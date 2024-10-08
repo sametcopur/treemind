@@ -1,4 +1,6 @@
 from libcpp.vector cimport vector
+from libcpp.unordered_map cimport unordered_map
+
 from libc.math cimport INFINITY
 
 import numpy as np
@@ -23,6 +25,7 @@ cdef class Explainer:
         self.model = None
         self.len_col = -1
         self.columns = None
+        self.model_type = "None"
 
     def __call__(self, model):
         cdef str module_name = model.__module__
@@ -34,6 +37,7 @@ cdef class Explainer:
                 self.model = model
             self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
+            self.model_type = "lightgbm"
             self.trees = analyze_lightgbm(self.model, self.len_col)
 
         elif "xgboost" in module_name:
@@ -43,11 +47,13 @@ cdef class Explainer:
                 self.model = model
 
             self.len_col = self.model.num_features()
+
             if self.model.feature_names is None:
                 self.columns = [f"Feature_{i}" for i in range(self.len_col)]
             else:
                 self.columns = self.model.feature_name()
 
+            self.model_type = "xgboost"
             self.trees = analyze_xgboost(self.model, self.len_col)
     
         else:
@@ -168,15 +174,24 @@ cdef class Explainer:
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
-        cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True)
-        cdef double raw_score = np.mean(self.model.predict(x, raw_score=True))
+        if self.model_type == "xgboost":
+            if not (hasattr(x, "__module__") and x.__module__ == "xgboost.core"):
+                raise ValueError("x must be a DMatrix. Please update it using xgboost.DMatrix(x) and provide it back to the explainer.")
+
+        cdef int[:, ::1] leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
+
+        cdef unordered_map[int, unordered_map[int, int]] leaf_index_map
+        cdef unordered_map[int, int] tree_leaf_map
+        cdef vector[Rule] tree
+
+        cdef double raw_score = np.mean(self.model.predict(x, raw_score=True) if self.model_type == "lightgbm"  else self.model.predict(x, output_margin=True).astype(np.float64)).item()
 
         cdef int num_rows = leafs.shape[0]
         cdef int num_leafs = leafs.shape[1]
         cdef double split_value
 
-        cdef int row, col, i
-        cdef size_t j, max_len = 0
+        cdef int row, col, i, leaf_value, rule_index
+        cdef size_t k, j, max_len = 0
 
         cdef double ub, lb
         cdef int[:] leaf_loc
@@ -185,18 +200,37 @@ cdef class Explainer:
         cdef vector[vector[double]] split_points
         cdef vector[double] col_split_points
         cdef Rule rule
-        
+
+
+        if self.model_type == "xgboost":
+            with nogil:
+                for k in range(self.trees.size()):
+                    tree = self.trees[k]
+                    for j in range(tree.size()):
+                        tree_leaf_map[tree[j].leaf_index] = j
+
+                    leaf_index_map[k] = tree_leaf_map
+
+                for row in range(num_rows):
+                    for i in range(num_leafs):
+                        leaf_value = leafs[row, i]
+                        tree_leaf_map = leaf_index_map[i]
+                        leafs[row, i] = tree_leaf_map[leaf_value]
+                    
+            
         if detailed:
             split_points.resize(self.len_col)
             
             for col in range(self.len_col):
+
                 col_split_points.clear()  # Clear previous values
                 split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)
                 
                 for i in range(split_point_array.shape[0]):
                     col_split_points.push_back(split_point_array[i])
                 
-                split_points[col] = col_split_points
+                split_points.push_back(col_split_points)
+
                 if col_split_points.size() > max_len:
                     max_len = col_split_points.size()
             
@@ -226,7 +260,7 @@ cdef class Explainer:
                                     values_2d[col, j] += rule.value
                         else:
                             values_1d[col] += rule.value
-        
+    
         if detailed:
             for col in range(self.len_col):
                 for j in range(max_len):
