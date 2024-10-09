@@ -1,5 +1,4 @@
 from libcpp.vector cimport vector
-from libcpp.unordered_map cimport unordered_map
 
 from libc.math cimport INFINITY
 
@@ -9,14 +8,15 @@ import pandas as pd
 
 from libcpp.pair cimport pair
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck
+from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 from .rule cimport filter_trees, get_split_point, check_value
-from .utils cimport find_mean, replace_inf, find_min_max
+from .utils cimport replace_inf, find_min_max, pre_allocate_vector, find_mean
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost
 
 cdef vector[pair[double, double]] feature_ranges
+
 
 
 cdef class Explainer:
@@ -26,6 +26,7 @@ cdef class Explainer:
         self.len_col = -1
         self.columns = None
         self.model_type = "None"
+
 
     def __call__(self, model):
         cdef str module_name = model.__module__
@@ -65,6 +66,7 @@ cdef class Explainer:
     @initializedcheck(False)
     @overflowcheck(False)
     @cdivision(True)
+    @infer_types(True)
     cpdef object analyze_dependency(self, int main_col, int sub_col):
         """
         Analyzes the dependency between two features by calculating values based on the split points
@@ -99,45 +101,50 @@ cdef class Explainer:
         cdef vector[double] main_split_points = get_split_point(filtered_trees, main_col)
         cdef vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
 
-        cdef vector[vector[double]] all_values
-        cdef vector[double] tree_values
-        cdef vector[Rule] tree
-        cdef vector[double] mean_values
-        cdef vector[double] sub_points
-        cdef vector[double] main_points
+        cdef size_t estimated_size = main_split_points.size() * sub_split_points.size()
+        cdef vector[double] mean_values = pre_allocate_vector(estimated_size)
+        cdef vector[double] sub_points = pre_allocate_vector(estimated_size)
+        cdef vector[double] main_points = pre_allocate_vector(estimated_size)
  
-        cdef double sub_point, main_point 
-        cdef bint result_main, result_sub
+        cdef double sub_point, main_point
         cdef str main_column_name, sub_column_name
-        cdef Rule rule
+
+        cdef size_t i, j, k, l
+        cdef Rule* rule_ptr
+        cdef vector[Rule]* tree_ptr
+
 
         cdef object df
-        
+        cdef double count, tree_sum, ensembe_sum
+                
         with nogil:
-            for sub_point in sub_split_points:   
-                for main_point in main_split_points:
-                    all_values.clear()
-
-                    for tree in filtered_trees:
-                        tree_values.clear()
-
-                        for rule in tree:
-                            result_main = check_value(&rule, main_col, main_point)
-                            result_sub = check_value(&rule, sub_col, sub_point)
-                            
-                            if result_main & result_sub:
-                                tree_values.push_back(rule.value)
-
-                        if tree_values.size() > 0:
-                            all_values.push_back(tree_values)
-
-                    if all_values.size() == 0:
+            for i in range(sub_split_points.size()):
+                sub_point = sub_split_points[i]
+                for j in range(main_split_points.size()):
+                    main_point = main_split_points[j]
+                    ensemble_sum = 0.0
+                    
+                    for k in range(filtered_trees.size()):
+                        tree_ptr = &filtered_trees[k]
+                        tree_sum = 0.0
+                        count = 0.0
+                        
+                        for l in range(tree_ptr.size()):
+                            rule_ptr = &(tree_ptr[0][l])
+                            if check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point):
+                                tree_sum += rule_ptr.value
+                                count += 1.0
+                        
+                        if count > 0:
+                            ensemble_sum += (tree_sum / count)
+                    
+                    if ensemble_sum == 0.0:
                         continue
-
-                    mean_values.push_back(find_mean(all_values))
+                        
+                    mean_values.push_back(ensemble_sum)
                     sub_points.push_back(sub_point)
                     main_points.push_back(main_point)
-                    
+                            
 
         cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
         cdef cnp.ndarray[cnp.float64_t, ndim=1] sub_points_arr = np.asarray(sub_points, dtype=np.float64)
@@ -165,6 +172,7 @@ cdef class Explainer:
     @wraparound(False)
     @overflowcheck(False)
     @cdivision(True)
+    @infer_types(True)
     cpdef tuple analyze_row(self, object x, bint detailed = True):
         """
         Optimized version of analyze_row function using C++ vectors of doubles.
@@ -301,6 +309,7 @@ cdef class Explainer:
     @initializedcheck(False)
     @overflowcheck(False)
     @cdivision(True)
+    @infer_types(True)
     cpdef object analyze_feature(self, int col):
         """
         Analyzes a specific feature by calculating the mean, min, and max values

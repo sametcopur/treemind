@@ -3,6 +3,7 @@ from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from .rule cimport Rule
+from .utils cimport pre_allocate_vector
 
 import numpy as np
 
@@ -12,7 +13,7 @@ import numpy as np
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     """
     Initializes a new Rule struct with the given parameters.
@@ -46,7 +47,7 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef void update_rule(Rule* rule, int index, double lb, double ub):
     """
     Updates the lower and upper bounds for a feature at the specified index.
@@ -71,8 +72,8 @@ cdef void update_rule(Rule* rule, int index, double lb, double ub):
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
-cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :
+@infer_types(True)
+cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noexcept nogil:
     """
     Checks whether the rule has been fully defined for the given feature indices.
 
@@ -100,8 +101,8 @@ cdef inline bint check_rule(Rule* rule, vector[int] feature_indices) :
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
-cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:
+@infer_types(True)
+cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nogil:
     """
     Checks if the given value lies within the bounds for the specified feature index.
 
@@ -128,7 +129,7 @@ cdef inline bint check_value(Rule* rule, int i, double value) noexcept nogil:
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
@@ -138,7 +139,7 @@ cdef int compare_rules(const Rule& a, const Rule& b):
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col = -1):
     """
     Filters rules across all trees based on the specified main and optional sub-column.
@@ -188,7 +189,7 @@ cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col,
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.

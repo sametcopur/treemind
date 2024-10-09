@@ -11,3 +11,5 @@ cdef object replace_inf(object data, str column_name)
 cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil
     
 cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results)  noexcept nogil
+
+cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil

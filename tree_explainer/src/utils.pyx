@@ -6,6 +6,11 @@ from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivis
 import numpy as np
 cimport numpy as cnp
 
+cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil:
+    cdef vector[double] vec
+    vec.reserve(size)
+    return vec
+
 
 @boundscheck(False)
 @nonecheck(False)
@@ -13,7 +18,7 @@ cimport numpy as cnp
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef inline double max(double a, double b):
     return a if a > b else b
 
@@ -23,10 +28,12 @@ cdef inline double max(double a, double b):
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef inline double min(double a, double b):
     return a if a < b else b
 
+
+@infer_types(True)
 cdef object replace_inf(object data, str column_name):
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
@@ -37,44 +44,6 @@ cdef object replace_inf(object data, str column_name):
 
     return data
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
-cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
-    """
-    Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
-
-    Parameters
-    ----------
-    tree_results : vector[vector[float]]
-        A vector of vectors where each inner vector contains float values representing possible
-        outcomes from a tree. The function calculates the average over all possible combinations
-        of one element from each vector.
-
-    Returns
-    -------
-    average : float
-        The average of the sums of all possible combinations of one element from each sublist.
-    """
-    cdef double sums = 0.0
-    cdef vector[double] sublist
-    cdef double sublist_mean
-    cdef double total
-    cdef size_t i, sublist_size 
-
-    for sublist in tree_results:
-        sublist_size = sublist.size()
-        total = 0.0
-        for i in range(sublist_size):
-            total += sublist[i]
-        
-        sums += total / sublist_size
-    
-    return sums 
 
 @boundscheck(False)
 @nonecheck(False)
@@ -82,7 +51,7 @@ cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-@infer_types(False)
+@infer_types(True)
 cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noexcept nogil:
     """
     Finds the minimum and maximum possible values from tree combinations using C++ vectors.
@@ -118,3 +87,43 @@ cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noe
             max_value += vector_i[0]
 
     return min_value, max_value
+
+
+@boundscheck(False)
+@nonecheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
+cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
+    """
+    Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
+
+    Parameters
+    ----------
+    tree_results : vector[vector[float]]
+        A vector of vectors where each inner vector contains float values representing possible
+        outcomes from a tree. The function calculates the average over all possible combinations
+        of one element from each vector.
+
+    Returns
+    -------
+    average : float
+        The average of the sums of all possible combinations of one element from each sublist.
+    """
+    cdef double sums = 0.0
+    cdef vector[double] sublist
+    cdef double sublist_mean
+    cdef double total
+    cdef size_t i, sublist_size 
+
+    for sublist in tree_results:
+        sublist_size = sublist.size()
+        total = 0.0
+        for i in range(sublist_size):
+            total += sublist[i]
+        
+        sums += total / sublist_size
+    
+    return sums 

@@ -3,6 +3,7 @@ from numpy.typing import ArrayLike
 import numpy as np
 from typing import Union, Tuple, List, Any
 
+
 class Explainer:
     """
     The Explainer class provides methods to analyze a trained model by examining feature dependencies,
