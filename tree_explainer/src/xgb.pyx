@@ -10,6 +10,9 @@ ctypedef pair[double, double] RangePair
 
 import json
 import numpy as np
+cimport numpy as cnp
+
+import importlib
 
 cdef class XGBNode:
     cdef int nodeid
@@ -133,3 +136,36 @@ cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, doubl
 
     # Restore previous range
     feature_ranges[feature_index] = prev_range
+
+cdef int[:,::1] xgb_leaf_correction(vector[vector[Rule]] trees, int[:,::1] leafs):
+    cdef:
+        list leaf_indices, mappings = [], max_indices = []
+        vector[Rule] tree
+        int max_index, i
+        Rule rule
+        cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] leafs_arr = np.asarray(leafs)
+        cnp.ndarray[cnp.int32_t, ndim=1, mode="c"] key, values, mapping_array
+        cnp.ndarray[cnp.npy_bool, ndim=1, mode="c"] mask
+        
+    for tree in trees:
+        leaf_indices = [rule.leaf_index for rule in tree]
+        max_index = max(leaf_indices)
+        mapping_array = np.full(max_index + 1, -1, dtype=np.int32)
+        
+        for i, rule in enumerate(tree):
+            mapping_array[rule.leaf_index] = i
+        
+        mappings.append(mapping_array)
+        max_indices.append(max_index)
+
+    for i, (mapping_array, max_index) in enumerate(zip(mappings, max_indices)):
+        mask = leafs_arr[:, i] <= max_index
+        leafs_arr[mask, i] = mapping_array[leafs_arr[mask, i]]
+
+    leafs = leafs_arr
+
+    return leafs
+
+cdef object convert_d_matrix(object x):
+    DMatrix = getattr(importlib.import_module("xgboost"), "DMatrix")
+    return DMatrix(x)

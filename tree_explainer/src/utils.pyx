@@ -1,16 +1,23 @@
 from libcpp.vector cimport vector
-from libcpp.algorithm cimport max_element, min_element
+from .rule cimport filter_trees, get_split_point, check_value
+
+from libc.math cimport INFINITY
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 import numpy as np
 cimport numpy as cnp
 
+@boundscheck(False)
+@nonecheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
 cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil:
     cdef vector[double] vec
     vec.reserve(size)
     return vec
-
 
 @boundscheck(False)
 @nonecheck(False)
@@ -19,7 +26,7 @@ cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil:
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef inline double max(double a, double b):
+cdef inline double cmax(double a, double b) noexcept nogil:
     return a if a > b else b
 
 @boundscheck(False)
@@ -29,7 +36,7 @@ cdef inline double max(double a, double b):
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef inline double min(double a, double b):
+cdef inline double cmin(double a, double b) noexcept nogil:
     return a if a < b else b
 
 
@@ -45,85 +52,117 @@ cdef object replace_inf(object data, str column_name):
     return data
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
-cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results) noexcept nogil:
-    """
-    Finds the minimum and maximum possible values from tree combinations using C++ vectors.
+cdef tuple[vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees):
+        cdef:
+            vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
+            vector[double] split_points = get_split_point(filtered_trees, col)
+            
+            size_t estimated_size = split_points.size()
 
-    Parameters
-    ----------
-    tree_results : vector[vector[double]]
-        A C++ vector of vectors where each inner vector represents possible outcomes from a tree.
-        Each inner vector contains float values corresponding to the outputs of that tree.
+            vector[double] max_vals = pre_allocate_vector(estimated_size)
+            vector[double] min_vals = pre_allocate_vector(estimated_size)
+            vector[double] mean_values = pre_allocate_vector(estimated_size)
+            vector[double] points = pre_allocate_vector(estimated_size)
 
-    Returns
-    -------
-    min_value : double
-        The minimum possible value obtained by summing the minimum value from each vector.
+            Rule* rule_ptr
+            vector[Rule]* tree_ptr
+            size_t i, k, l
 
-    max_value : double
-        The maximum possible value obtained by summing the maximum value from each vector.
-    """
-    cdef double min_value = 0.0
-    cdef double max_value = 0.0
-    cdef size_t i, vector_size, results_size = tree_results.size()
-    cdef vector[double] vector_i
-
-    for i in range(results_size):
-        vector_i = tree_results[i]
-        vector_size = vector_i.size()
-
-        if vector_size > 1:
-            min_value += <double>min_element(vector_i.begin(), vector_i.end())[0]
-            max_value += <double>max_element(vector_i.begin(), vector_i.end())[0]
-        else:
-            min_value += vector_i[0]
-            max_value += vector_i[0]
-
-    return min_value, max_value
-
-
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
-cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil:
-    """
-    Calculates the average of the sums of combinations in a memory-efficient way for large inputs.
-
-    Parameters
-    ----------
-    tree_results : vector[vector[float]]
-        A vector of vectors where each inner vector contains float values representing possible
-        outcomes from a tree. The function calculates the average over all possible combinations
-        of one element from each vector.
-
-    Returns
-    -------
-    average : float
-        The average of the sums of all possible combinations of one element from each sublist.
-    """
-    cdef double sums = 0.0
-    cdef vector[double] sublist
-    cdef double sublist_mean
-    cdef double total
-    cdef size_t i, sublist_size 
-
-    for sublist in tree_results:
-        sublist_size = sublist.size()
-        total = 0.0
-        for i in range(sublist_size):
-            total += sublist[i]
-        
-        sums += total / sublist_size
+            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val
     
-    return sums 
+        with nogil:
+            for i in range(split_points.size()):
+                point = split_points[i]
+
+                ensemble_sum = 0.0
+                ensemble_max_val = 0.0
+                ensemble_min_val = 0.0
+                
+                for k in range(filtered_trees.size()):
+                    tree_ptr = &filtered_trees[k]
+                    tree_sum = 0.0
+                    count = 0.0
+                    tree_max_val = -INFINITY
+                    tree_min_val = INFINITY
+                    
+                    for l in range(tree_ptr.size()):
+                        rule_ptr = &(tree_ptr[0][l])
+                        if check_value(rule_ptr, col, point):
+                            rule_val = rule_ptr.value
+                            tree_sum += rule_val
+                            count += 1.0
+
+                            tree_max_val = cmax(tree_max_val, rule_val)
+                            tree_min_val = cmin(tree_min_val, rule_val)                            
+                    
+                    if count > 0:
+                        ensemble_sum += (tree_sum / count)
+                        ensemble_max_val += tree_max_val
+                        ensemble_min_val += tree_min_val
+                
+                
+                if ensemble_sum == 0.0:
+                    continue
+                    
+                points.push_back(point)
+                mean_values.push_back(ensemble_sum)
+                min_vals.push_back(ensemble_min_val)
+                max_vals.push_back(ensemble_max_val)
+
+        return points, mean_values, min_vals, max_vals
+        
+
+
+cdef tuple[vector[double], 
+            vector[double], 
+            vector[double]] _analyze_dependency(vector[vector[Rule]] trees, 
+                                                int main_col, 
+                                                int sub_col):
+    cdef:
+        vector[vector[Rule]] filtered_trees = filter_trees(trees, main_col, sub_col)
+        vector[double] main_split_points = get_split_point(filtered_trees, main_col)
+        vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
+
+        size_t estimated_size = main_split_points.size() * sub_split_points.size()
+
+        vector[double] mean_values = pre_allocate_vector(estimated_size)
+        vector[double] sub_points = pre_allocate_vector(estimated_size)
+        vector[double] main_points = pre_allocate_vector(estimated_size)
+
+        double sub_point, main_point
+        size_t i, j, k, l
+        Rule* rule_ptr
+        vector[Rule]* tree_ptr
+
+        double count, tree_sum, ensemble_sum
+
+    with nogil:
+        for i in range(sub_split_points.size()):
+            sub_point = sub_split_points[i]
+            for j in range(main_split_points.size()):
+                main_point = main_split_points[j]
+                ensemble_sum = 0.0
+                
+                for k in range(filtered_trees.size()):
+                    tree_ptr = &filtered_trees[k]
+                    tree_sum = 0.0
+                    count = 0.0
+                    
+                    for l in range(tree_ptr.size()):
+                        rule_ptr = &(tree_ptr[0][l])
+                        if check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point):
+                            tree_sum += rule_ptr.value
+                            count += 1.0
+                    
+                    if count > 0:
+                        ensemble_sum += (tree_sum / count)
+                
+                if ensemble_sum == 0.0:
+                    continue
+                    
+                mean_values.push_back(ensemble_sum)
+                sub_points.push_back(sub_point)
+                main_points.push_back(main_point)
+
+
+    return main_points, sub_points, mean_values

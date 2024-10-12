@@ -1,15 +1,18 @@
 from libcpp.vector cimport vector
+from .rule cimport Rule
+
+cimport numpy as cnp
 
 ctypedef unsigned long size_t
 
-cdef double max(double a, double b)
+cdef double cmax(double a, double b) noexcept nogil
 
-cdef double min(double a, double b)
+cdef double cmin(double a, double b) noexcept nogil
 
 cdef object replace_inf(object data, str column_name)
 
-cdef double find_mean(vector[vector[double]] tree_results) noexcept nogil
-    
-cdef tuple[double, double] find_min_max(vector[vector[double]] tree_results)  noexcept nogil
+cdef tuple[vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees)
 
+cdef tuple[vector[double], vector[double], vector[double]] _analyze_dependency(vector[vector[Rule]] trees, int main_col, int sub_col)
+   
 cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil

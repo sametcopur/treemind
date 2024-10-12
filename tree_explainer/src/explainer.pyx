@@ -10,14 +10,12 @@ from libcpp.pair cimport pair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
-from .rule cimport filter_trees, get_split_point, check_value
-from .utils cimport replace_inf, find_min_max, pre_allocate_vector, find_mean
+from .rule cimport get_split_point
+from .utils cimport replace_inf, _analyze_feature, _analyze_dependency
 from .lgb cimport analyze_lightgbm
-from .xgb cimport analyze_xgboost
+from .xgb cimport analyze_xgboost, xgb_leaf_correction, convert_d_matrix
 
 cdef vector[pair[double, double]] feature_ranges
-
-
 
 cdef class Explainer:
     def __init__(self):
@@ -96,67 +94,21 @@ cdef class Explainer:
         if main_col == sub_col:
             raise ValueError("'main_col' and 'sub_col' cannot be the same.")
 
-
-        cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, main_col, sub_col)
-        cdef vector[double] main_split_points = get_split_point(filtered_trees, main_col)
-        cdef vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
-
-        cdef size_t estimated_size = main_split_points.size() * sub_split_points.size()
-        cdef vector[double] mean_values = pre_allocate_vector(estimated_size)
-        cdef vector[double] sub_points = pre_allocate_vector(estimated_size)
-        cdef vector[double] main_points = pre_allocate_vector(estimated_size)
- 
-        cdef double sub_point, main_point
-        cdef str main_column_name, sub_column_name
-
-        cdef size_t i, j, k, l
-        cdef Rule* rule_ptr
-        cdef vector[Rule]* tree_ptr
-
-
-        cdef object df
-        cdef double count, tree_sum, ensembe_sum
+        cdef:
+             double sub_point, main_point
+             str main_column_name, sub_column_name
+             object df
+             vector[double] mean_values, sub_points,main_points
                 
-        with nogil:
-            for i in range(sub_split_points.size()):
-                sub_point = sub_split_points[i]
-                for j in range(main_split_points.size()):
-                    main_point = main_split_points[j]
-                    ensemble_sum = 0.0
-                    
-                    for k in range(filtered_trees.size()):
-                        tree_ptr = &filtered_trees[k]
-                        tree_sum = 0.0
-                        count = 0.0
-                        
-                        for l in range(tree_ptr.size()):
-                            rule_ptr = &(tree_ptr[0][l])
-                            if check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point):
-                                tree_sum += rule_ptr.value
-                                count += 1.0
-                        
-                        if count > 0:
-                            ensemble_sum += (tree_sum / count)
-                    
-                    if ensemble_sum == 0.0:
-                        continue
-                        
-                    mean_values.push_back(ensemble_sum)
-                    sub_points.push_back(sub_point)
-                    main_points.push_back(main_point)
+        main_points, sub_points, mean_values = _analyze_dependency(self.trees, main_col, sub_col)
                             
-
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] sub_points_arr = np.asarray(sub_points, dtype=np.float64)
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] main_points_arr = np.asarray(main_points, dtype=np.float64)
-
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
 
         df = pd.DataFrame({
-            sub_column_name: sub_points_arr,
-            main_column_name: main_points_arr,
-            'values': mean_values_arr,
+            sub_column_name: sub_points,
+            main_column_name: main_points,
+            'values': mean_values,
         })
 
         df = df.explode(["values"]).reset_index(drop=True)
@@ -164,12 +116,12 @@ cdef class Explainer:
         df = replace_inf(df, main_column_name)
         df = replace_inf(df, sub_column_name)
 
-        return df
+        return df    
 
     @boundscheck(False)
-    @initializedcheck(False)
     @nonecheck(False)
     @wraparound(False)
+    @initializedcheck(False)
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
@@ -183,72 +135,37 @@ cdef class Explainer:
             raise ValueError("Explainer(model) must be called before this operation.")
 
         if self.model_type == "xgboost":
-            if not (hasattr(x, "__module__") and x.__module__ == "xgboost.core"):
-                raise ValueError("x must be a DMatrix. Please update it using xgboost.DMatrix(x) and provide it back to the explainer.")
+            x = convert_d_matrix(x)
 
-        cdef int[:, ::1] leafs
-        cdef vector[Rule] tree
+        cdef:
+            int[:, ::1] leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
+            double raw_score = np.mean(self.model.predict(x, raw_score=True) if self.model_type == "lightgbm"  else self.model.predict(x, output_margin=True).astype(np.float64)).item()
+        
+            int num_rows = leafs.shape[0]
+            int num_leafs = leafs.shape[1]
 
-        cdef double raw_score = np.mean(self.model.predict(x, raw_score=True) if self.model_type == "lightgbm"  else self.model.predict(x, output_margin=True).astype(np.float64)).item()
+            int row, col, size, i
+            size_t j, max_len = 0
+            double ub, lb, split_value
+            int[:] leaf_loc
+            cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d, np_array
+            cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
+            vector[vector[double]] split_points
+            vector[double] col_split_points
+            Rule rule
 
-        cdef int row, col, i, leaf_value, rule_index, max_index
-        cdef size_t j, max_len = 0
-
-        cdef double ub, lb, split_value
-        cdef int[:] leaf_loc
-        cdef cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
-        cdef cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
-        cdef vector[vector[double]] split_points
-        cdef vector[double] col_split_points
-        cdef Rule rule
-
-        cdef list leaf_indices, max_indices, mappings
-        cdef dict mapping
-        cdef cnp.ndarray[cnp.int32_t, ndim=1, mode="c"] values_1d_int, key, values, mapping_array
-        cdef cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] values_2d_int
-
+            list split_points_list
 
         if self.model_type == "xgboost":
-            mappings = []
-            max_indices = []
-            
-            for tree in self.trees:
-                leaf_indices = [rule.leaf_index for rule in tree]
-                max_index = max(leaf_indices)
-                mapping_array = np.full(max_index + 1, -1, dtype=np.int32)
-                
-                for i, rule in enumerate(tree):
-                    mapping_array[rule.leaf_index] = i
-                
-                mappings.append(mapping_array)
-                max_indices.append(max_index)
-            
-            values_2d_int = self.model.predict(x, pred_leaf=True).astype(np.int32)
-            
-            for i, (mapping_array, max_index) in enumerate(zip(mappings, max_indices)):
-                mask = values_2d_int[:, i] <= max_index
-                values_2d_int[mask, i] = mapping_array[values_2d_int[mask, i]]
-            
-            leafs = values_2d_int
+            leafs = xgb_leaf_correction(self.trees, leafs)
 
-                
-        else:
-           leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
-                
-        cdef int num_rows = leafs.shape[0]
-        cdef int num_leafs = leafs.shape[1]
-            
         if detailed:
             split_points.resize(self.len_col)
+            
             for col in range(self.len_col):
-
-                col_split_points.clear()
-                split_point_array = np.asarray(get_split_point(self.trees, col), dtype=np.float64)
+                col_split_points = get_split_point(self.trees, col)
                 
-                for i in range(split_point_array.shape[0]):
-                    col_split_points.push_back(split_point_array[i])
-                
-                split_points.push_back(col_split_points)
+                split_points[col] = col_split_points
 
                 if col_split_points.size() > max_len:
                     max_len = col_split_points.size()
@@ -257,7 +174,6 @@ cdef class Explainer:
         else:
             values_1d = np.zeros(self.len_col, dtype=np.float64)
         
-
         with nogil:
             for row in range(num_rows):
                 leaf_loc = leafs[row, :]
@@ -279,29 +195,16 @@ cdef class Explainer:
                                     values_2d[col, j] += rule.value
                         else:
                             values_1d[col] += rule.value
-    
+        
         if detailed:
-            for col in range(self.len_col):
-                for j in range(max_len):
-                    values_2d[col, j] /= num_rows
-                    
-            split_points_list = []
-            for col in range(self.len_col):
-                col_split_points = split_points[col]
-                np_array = np.zeros(col_split_points.size(), dtype=np.float64)
+            values_2d[col, j] /= num_rows
+            split_points_list = [np.array(split_points[col]) for col in range(self.len_col)]
 
-                for j in range(col_split_points.size()):
-                    np_array[j] = col_split_points[j]
-                    
-                split_points_list.append(np_array)
-                
             return values_2d, split_points_list, raw_score
         else:
-            for col in range(self.len_col):
-                values_1d[col] /= num_rows
-                
+            values_1d /= num_rows
+            
             return values_1d, raw_score
-
 
     @boundscheck(False)
     @nonecheck(False)
@@ -329,58 +232,26 @@ cdef class Explainer:
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
-        if col >= self.len_col or col >= self.len_col:
-            raise ValueError("'main_col' and 'sub_col' cannot be greater than or equal to the total number of columns used to train the model.")
+        if col >= self.len_col:
+            raise ValueError("'col' cannot be greater than or equal to the total number of columns used to train the model.")
 
         if col < 0:
             raise ValueError("'col' cannot be negative.")
 
-        cdef vector[vector[Rule]] filtered_trees = filter_trees(self.trees, col)
-        cdef vector[double] split_points = get_split_point(filtered_trees, col)
-        cdef double point
-        cdef vector[vector[double]] all_values
-        cdef vector[double] tree_values, points, mean_values, min_vals, max_vals
-        cdef vector[Rule] tree
-        cdef str column_name
-        cdef Rule rule
+        cdef:
+            vector[double] points, mean_values, min_vals, max_vals
+            str column_name
+            object df
 
-        with nogil:
-            for point in split_points:
-                all_values.clear()
-
-                for tree in filtered_trees:
-                    tree_values.clear()
-
-                    for rule in tree:
-                        if check_value(&rule, col, point):
-                            tree_values.push_back(rule.value)
-
-                    if tree_values.size() > 0:
-                        all_values.push_back(tree_values)
-
-                if all_values.size() == 0:
-                    continue
-
-                min_val, max_val = find_min_max(all_values)
-                mean_values.push_back(find_mean(all_values))
-                min_vals.push_back(min_val)
-                max_vals.push_back(max_val)
-                points.push_back(point)
+        points, mean_values, min_vals, max_vals = _analyze_feature(col, self.trees)
             
         column_name = self.columns[col]
 
-
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] mean_values_arr = np.asarray(mean_values, dtype=np.float64)
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] max_arr = np.asarray(max_vals, dtype=np.float64)
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] min_arr = np.asarray(min_vals, dtype=np.float64)
-        cdef cnp.ndarray[cnp.float64_t, ndim=1] point_arr = np.asarray(points, dtype=np.float64)
-
-
         df = pd.DataFrame({
-            column_name: point_arr,
-            'mean': mean_values_arr,
-            'min': min_arr,
-            'max': max_arr,
+            column_name: points,
+            'mean': mean_values,
+            'min': min_vals,
+            'max': max_vals,
         })
 
         df = replace_inf(df, column_name)
