@@ -15,6 +15,9 @@ from .utils cimport replace_inf, _analyze_feature, _analyze_dependency
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost, xgb_leaf_correction, convert_d_matrix
 
+from collections import Counter
+from itertools import combinations
+
 cdef vector[pair[double, double]] feature_ranges
 
 cdef class Explainer:
@@ -257,3 +260,39 @@ cdef class Explainer:
         df = replace_inf(df, column_name)
 
         return df
+
+    @boundscheck(False)
+    @nonecheck(False)
+    @wraparound(False)
+    @initializedcheck(False)
+    @overflowcheck(False)
+    @cdivision(True)
+    @infer_types(True)
+    cpdef object count_interaction(self):
+        cdef:
+            vector[Rule] rule_set
+            Rule rule
+            object df, combination_counts = Counter()
+            list finite_indices, comb_df
+            int i, n, r
+            tuple comb
+
+        for rule_set in self.trees:
+            for rule in rule_set:
+                finite_indices = [
+                    i
+                    for i in range(self.len_col)
+                    if rule.lbs[i] != -INFINITY or rule.ubs[i] != INFINITY
+                ]
+                n = len(finite_indices)
+
+                if n >= 2:
+                    for comb in combinations(finite_indices, 2):
+                        combination_counts[comb] += 1
+
+        df = pd.DataFrame(
+            [(comb[0], comb[1], count) for comb, count in combination_counts.items()],
+            columns=["column1_index", "column2_index", "count"],
+        )
+
+        return df.sort_values("count", ascending=False).reset_index(drop=True)

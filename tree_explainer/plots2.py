@@ -7,15 +7,8 @@ from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 from typing import List, Tuple
 
-# sns.set_theme()
-import matplotlib.pyplot as plt
-import numpy as np
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-
-def plot_bar(values: np.ndarray, raw_score: float, columns: list = None) -> None:
+def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) -> None:
     """
     Creates a horizontal bar plot showing the contribution of each feature.
 
@@ -430,8 +423,8 @@ def plot_feature(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     plt.xlabel(column_name, fontsize=14)
     plt.ylabel("Values", fontsize=14)
 
-    plt.axhline(0, color="black", linestyle="--", linewidth=0.7)
-    plt.axvline(0, color="black", linestyle="--", linewidth=0.7)
+    # plt.axhline(0, color="black", linestyle="--", linewidth=0.7)
+    # plt.axvline(0, color="black", linestyle="--", linewidth=0.7)
 
     plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     plt.legend()

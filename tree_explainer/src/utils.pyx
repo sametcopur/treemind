@@ -45,7 +45,7 @@ cdef object replace_inf(object data, str column_name):
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
     cdef double max_main = unique_points.max()
-    cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main)
+    cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main * 0.9)
 
     data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main
 

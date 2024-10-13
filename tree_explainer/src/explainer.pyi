@@ -90,3 +90,18 @@ class Explainer:
             for the specified feature.
         """
         ...
+        
+    def count_interaction(self) -> pd.DataFrame:
+        """
+        Counts how often pairs of features appear together in decision splits across the model's trees.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame with the following columns:
+            - `column1_index` (int): Index of the first feature.
+            - `column2_index` (int): Index of the second feature.
+            - `count` (int): Number of times the feature pair appears together in splits.
+
+        """
+        ...
