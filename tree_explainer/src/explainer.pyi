@@ -91,17 +91,28 @@ class Explainer:
         """
         ...
         
-    def count_interaction(self) -> pd.DataFrame:
+    def count_node(self, interaction: bool = True) -> pd.DataFrame:
         """
-        Counts how often pairs of features appear together in decision splits across the model's trees.
+        Counts how often features (or pairs of features if interaction is True) appear in decision splits across the model's trees.
+
+        Parameters
+        ----------
+        interaction : bool, default True
+            If True, counts how often pairs of features appear together in splits.
+            If False, counts how often individual features appear in splits.
 
         Returns
         -------
         pd.DataFrame
-            A DataFrame with the following columns:
-            - `column1_index` (int): Index of the first feature.
-            - `column2_index` (int): Index of the second feature.
-            - `count` (int): Number of times the feature pair appears together in splits.
-
+            If interaction is True:
+                A DataFrame with the following columns:
+                - `column1_index` (int): Index of the first feature.
+                - `column2_index` (int): Index of the second feature.
+                - `count` (int): Number of times the feature pair appears together in splits.
+            If interaction is False:
+                A DataFrame with the following columns:
+                - `column_index` (int): Index of the feature.
+                - `count` (int): Number of times the feature appears in splits.
         """
         ...
+

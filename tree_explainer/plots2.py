@@ -6,6 +6,8 @@ import pandas as pd
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 from typing import List, Tuple
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 
 def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) -> None:
@@ -484,5 +486,95 @@ def plot_interaction(
     # plt.title("Smooth Interaction Plot with Gaussian Filter")
     plt.xlabel(column1)
     plt.ylabel(column2)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_interaction3(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (10, 8),
+    cmap: str = "coolwarm",
+) -> None:
+    """
+    Plots a filled rectangle plot of interactions between two features,
+    using real data points and filling gaps to the left and bottom.
+    
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A DataFrame containing columns for two features and their interaction values.
+    figsize : tuple of int, optional
+        Figure size, by default (10, 8).
+    cmap : str, optional
+        Colormap to use for the plot, by default "coolwarm".
+    
+    Returns
+    -------
+    None
+        Displays the plot.
+    
+    Notes
+    -----
+    This function creates a plot where each data point is represented by a filled rectangle.
+    The rectangles extend to the left and bottom, filling gaps between data points.
+    """
+    column1 = df.columns[1]  # Assuming the second column is 'worst_concavity'
+    column2 = df.columns[0]  # Assuming the first column is 'worst_perimeter'
+    values = df["values"]
+
+    # Sort the dataframe to ensure correct rectangle placement
+    df_sorted = df.sort_values([column1, column2])
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Get unique sorted values for the two columns
+    unique_x = np.sort(df[column1].unique())
+    unique_y = np.sort(df[column2].unique())
+
+    # Create mappings from value to index for quick lookup
+    x_to_index = {x: idx for idx, x in enumerate(unique_x)}
+    y_to_index = {y: idx for idx, y in enumerate(unique_y)}
+
+    # Convert data columns to NumPy arrays for vectorized operations
+    x = df_sorted[column1].values
+    y = df_sorted[column2].values
+    values = df_sorted["values"].values
+
+    # Map x and y values to their indices
+    x_idx = np.array([x_to_index[val] for val in x])
+    y_idx = np.array([y_to_index[val] for val in y])
+
+    # Compute the left and bottom edges of rectangles
+    left = np.where(x_idx > 0, unique_x[x_idx - 1], df[column1].min())
+    bottom = np.where(y_idx > 0, unique_y[y_idx - 1], df[column2].min())
+
+    # Compute width and height of rectangles
+    width = x - left
+    height = y - bottom
+
+    # Normalize values for color mapping
+    norm = plt.Normalize(values.min(), values.max())
+    colormap = plt.get_cmap(cmap)
+    colors = colormap(norm(values))
+
+    # Create rectangles using list comprehension
+    rectangles = [Rectangle((l, b), w, h) for l, b, w, h in zip(left, bottom, width, height)]
+
+    # Use PatchCollection to add all rectangles at once
+    pc = PatchCollection(rectangles, facecolor=colors, edgecolor='none')
+    ax.add_collection(pc)
+
+    ax.set_xlim(df[column1].min(), df[column1].max())
+    ax.set_ylim(df[column2].min(), df[column2].max())
+
+    # Add colorbar
+    sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label("Impact")
+
+    ax.set_xlabel(column1)
+    ax.set_ylabel(column2)
+    ax.set_title("Interaction Plot")
     plt.tight_layout()
     plt.show()

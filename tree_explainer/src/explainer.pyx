@@ -268,13 +268,13 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object count_interaction(self):
+    cpdef object count_node(self, bint interaction=True):
         cdef:
             vector[Rule] rule_set
             Rule rule
             object df, combination_counts = Counter()
-            list finite_indices, comb_df
-            int i, n, r
+            list finite_indices, data, columns
+            int i, n, comb_size = 2 if interaction else 1
             tuple comb
 
         for rule_set in self.trees:
@@ -286,13 +286,17 @@ cdef class Explainer:
                 ]
                 n = len(finite_indices)
 
-                if n >= 2:
-                    for comb in combinations(finite_indices, 2):
+                if n >= comb_size:
+                    for comb in combinations(finite_indices, comb_size):
                         combination_counts[comb] += 1
 
-        df = pd.DataFrame(
-            [(comb[0], comb[1], count) for comb, count in combination_counts.items()],
-            columns=["column1_index", "column2_index", "count"],
-        )
+        if interaction:
+            data = [(comb[0], comb[1], count) for comb, count in combination_counts.items()]
+            columns = ["column1_index", "column2_index", "count"]
+        else:
+            data = [(comb[0], count) for comb, count in combination_counts.items()]
+            columns = ["column_index", "count"]
+
+        df = pd.DataFrame(data, columns=columns)
 
         return df.sort_values("count", ascending=False).reset_index(drop=True)
