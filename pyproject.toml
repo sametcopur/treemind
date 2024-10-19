@@ -1,0 +1,45 @@
+[project]
+name = "ruleopt"
+version = "1.0.1"
+
+dependencies = [
+
+    "numpy>=1.25.2",
+    "pandas>=2.0.3",
+]
+authors = [
+    { name = "Ilker Birbil", email = 'sibirbil@gmail.com' },
+    { name = "Samet Copur", email = "sametcopur@yahoo.com" },
+    { name = "Ozgür Martin", email = "ozgurmartin@gmail.com" },
+
+]
+description = "Ensemble Tree Explainer"
+readme = "README.md"
+license = {text = "BSD 3-Clause License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+keywords = [
+    "python",
+    "data-science",
+    "machine-learning",
+    "machine-learning-library",
+    "explainable-ai",
+    "gradient boosting",
+]
+
+requires-python = ">=3.9"
+
+[project.urls]
+Documentation = "https://github.com/sametcopur/tree_explainer"
+Repository = "https://github.com/sametcopur/tree_explainer"
+Tracker = "https://github.com/sametcopur/tree_explainer/issues"
+
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-*"
+
+[build-system]
+requires = ["setuptools", "wheel", "Cython", "numpy"]
+build-backend = "setuptools.build_meta"
