@@ -132,7 +132,7 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
 
 cdef tuple[vector[double], 
             vector[double], 
-            vector[double]] _analyze_dependency(vector[vector[Rule]] trees, 
+            vector[double]] _analyze_interaction(vector[vector[Rule]] trees, 
                                                 int main_col, 
                                                 int sub_col):
     cdef:

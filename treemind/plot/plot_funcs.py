@@ -174,11 +174,16 @@ def bar_plot(
     plt.show()
 
 
-def plot_values_points(
-    values: np.ndarray, raw_score: float, points: List[List[float]], scale: float = 1
+def range_plot(
+    values: np.ndarray,
+    raw_score: float,
+    points: List[List[float]],
+    scale: float = 1,
+    columns: List[str] = None,
 ) -> None:
     """
-    Plots a grid of values with color intensity representing the magnitude.
+    Plots a combined grid of values and intervals with color intensity representing the magnitude.
+    Both the range and value are displayed within a single bar.
 
     Parameters
     ----------
@@ -190,17 +195,14 @@ def plot_values_points(
         A list of points associated with the values.
     scale : float, optional
         Scaling factor for the figure size, by default 1.
+    columns : list, optional
+        A list of column names for labeling. If None, column indices will be used.
+
 
     Returns
     -------
     None
-        Displays the grid plot.
-
-    Notes
-    -----
-    Positive values are shown in shades of green, negative in shades of red.
-    The brightness of the color corresponds to the magnitude of the value.
-    Only non-zero values are plotted.
+        Displays the combined grid plot.
     """
 
     # Filter out rows where all values are zero
@@ -224,9 +226,10 @@ def plot_values_points(
     bar_height = 0.8  # Height of each bar
     spacing = 0  # No spacing between bars
 
-    # Plot each value
-    for i, row in enumerate(values):
-        for j, val in enumerate(row):
+    # Plot each value and interval
+    for i, (row, row_points) in enumerate(zip(values, points)):
+        intervals = _create_intervals(row_points)
+        for j, (val, interval) in enumerate(zip(row, intervals)):
             if val != 0:
                 # Select color based on value
                 if val > 0:
@@ -249,20 +252,36 @@ def plot_values_points(
                 brightness = color_hsv[2]
                 text_color = "white" if brightness < 0.5 else "black"
 
-                # Place the value text
+                # Place the range text at the top of the bar
                 ax.text(
                     j * (bar_width + spacing) + bar_width / 2,
-                    i,
+                    i + 0.25,
+                    interval,
+                    ha="center",
+                    va="center",
+                    color=text_color,
+                    fontsize=8,
+                )
+
+                # Place the value text at the bottom of the bar
+                ax.text(
+                    j * (bar_width + spacing) + bar_width / 2,
+                    i - 0.25,
                     f"{val:.3f}",
                     ha="center",
                     va="center",
                     color=text_color,
-                    fontsize=12,
+                    fontsize=10,
                 )
 
     # Set y-axis labels
     ax.set_yticks(np.arange(n_rows))
-    ax.set_yticklabels([f"Column {i}" for i in used_cols])
+
+    if columns is not None:
+        ax.set_yticklabels([columns[i] for i in used_cols])
+
+    else:
+        ax.set_yticklabels([f"Column {i}" for i in used_cols])
 
     # Set x-axis limits
     ax.set_xlim(0, n_cols)
@@ -286,111 +305,7 @@ def plot_values_points(
         bbox=dict(facecolor="white", edgecolor="none", alpha=0.7),
     )
 
-    plt.title("Grid Plot of Values")
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_points(
-    values: np.ndarray, points: List[List[float]], scale: float = 1
-) -> None:
-    """
-    Plots a grid of intervals with color intensity representing the magnitude.
-
-    Parameters
-    ----------
-    values : np.ndarray
-        A 2D array of values corresponding to intervals.
-    points : list of list of float
-        A list of points for each row to create intervals.
-    scale : float, optional
-        Scaling factor for the figure size, by default 1.
-
-    Returns
-    -------
-    None
-        Displays the interval grid plot.
-
-    Notes
-    -----
-    Positive values are shown in shades of green, negative in shades of red.
-    The intervals are displayed within the bars.
-    """
-
-    # Filter out rows where all values are zero
-    used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
-    values = values[used_cols, :]
-    points = [points[i] for i in used_cols]
-
-    # Convert points to intervals
-    intervals = [_create_intervals(row) for row in points]
-
-    n_rows = len(points)
-    max_cols = max(len(row_points) for row_points in points)
-
-    fig, ax = plt.subplots(figsize=(max_cols * 2 * scale, n_rows * scale))
-
-    # Color maps for positive and negative values
-    cmap_pos = sns.light_palette("green", as_cmap=True)
-    cmap_neg = sns.light_palette("red", as_cmap=True)
-
-    # Find the maximum and minimum values for normalization
-    max_value = np.max(values) if np.max(values) > 0 else 1
-    min_value = np.min(values) if np.min(values) < 0 else -1
-
-    bar_width = 1  # Width of each bar
-    bar_height = 0.8  # Height of each bar
-    spacing = 0  # No spacing between bars
-
-    # Plot each interval
-    for i, (row_values, row_intervals) in enumerate(zip(values, intervals)):
-        for j, (val, interval) in enumerate(zip(row_values, row_intervals)):
-            # Select color based on value
-            if val > 0:
-                color = cmap_pos(val / max_value)
-            else:
-                color = cmap_neg(abs(val) / abs(min_value))
-
-            # Draw the bar
-            ax.barh(
-                i,
-                bar_width,
-                left=j * (bar_width + spacing),
-                color=color,
-                height=bar_height,
-                alpha=0.9,
-            )
-
-            # Compute brightness for text color
-            color_hsv = rgb_to_hsv(color[:3])
-            brightness = color_hsv[2]
-            text_color = "white" if brightness < 0.5 else "black"
-
-            # Place the interval text
-            ax.text(
-                j * (bar_width + spacing) + bar_width / 2,
-                i,
-                interval,
-                ha="center",
-                va="center",
-                color=text_color,
-                fontsize=10,
-            )
-
-    # Set y-axis labels
-    ax.set_yticks(np.arange(n_rows))
-    ax.set_yticklabels([f"Column {i}" for i in used_cols])
-
-    # Set x-axis limits
-    ax.set_xlim(0, max_cols)
-
-    # Remove axis spines
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-
-    plt.title("Grid Plot of Intervals")
+    plt.title("Combined Grid Plot of Values and Intervals")
     plt.tight_layout()
     plt.show()
 
@@ -408,9 +323,9 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
         - 'mean': The mean value of the feature within this range.
         - 'min': The minimum value of the feature within this range.
         - 'max': The maximum value of the feature within this range.
-        
+
     figsize : tuple of int, optional
-        Size of the figure to be created, by default (10, 6). This parameter controls the 
+        Size of the figure to be created, by default (10, 6). This parameter controls the
         width and height of the plot.
 
     Returns
@@ -420,16 +335,16 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
 
     Notes
     -----
-    This function visualizes how a particular feature behaves over different ranges of 
-    values, as defined by the split points of a decision tree-based model. The tree split 
-    points represent thresholds used by the model to partition the feature space into 
-    segments. The plot shows the mean value of the feature for each segment, while shading 
+    This function visualizes how a particular feature behaves over different ranges of
+    values, as defined by the split points of a decision tree-based model. The tree split
+    points represent thresholds used by the model to partition the feature space into
+    segments. The plot shows the mean value of the feature for each segment, while shading
     between the minimum and maximum values to illustrate the variability within that range.
 
-    The x-axis represents the feature values, divided into intervals determined by the 
-    tree's split points. The y-axis shows the corresponding mean, minimum, and maximum 
-    values for each interval. The plot provides insight into how the feature's value 
-    distribution varies across the different split-defined segments. It can be helpful for 
+    The x-axis represents the feature values, divided into intervals determined by the
+    tree's split points. The y-axis shows the corresponding mean, minimum, and maximum
+    values for each interval. The plot provides insight into how the feature's value
+    distribution varies across the different split-defined segments. It can be helpful for
     understanding the relationship between the feature and the model's predictions.
     """
 
@@ -484,6 +399,7 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     plt.tight_layout()
     plt.show()
 
+
 def interaction_plot(
     df: pd.DataFrame,
     figsize: Tuple[int, int] = (10, 8),
@@ -499,20 +415,20 @@ def interaction_plot(
     df : pd.DataFrame
         A DataFrame containing columns for two features and their interaction values.
         The DataFrame should include at least three columns:
-        
+
         - The first column represents the primary feature (main_col).
         - The second column represents the secondary feature (sub_col).
         - The third column contains the interaction values (typically the impact on
           the model's prediction scores).
-          
+
     figsize : tuple of int, optional
         Size of the figure to be created, by default (10, 8).
         This parameter controls the width and height of the plot.
-        
+
     cmap : str, optional
         Colormap to use for filling the rectangles, by default "coolwarm".
         The colormap represents the intensity of the interaction values.
-        
+
     column_names : list of str, optional
         Names of the columns to be used for plotting. Should be a list of exactly
         two column names, corresponding to the features whose interactions are being plotted.

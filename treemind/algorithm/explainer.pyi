@@ -12,7 +12,7 @@ class Explainer:
     decision-making process.
     """
 
-    def analyze_dependency(self, main_col: int, sub_col: int) -> pd.DataFrame:
+    def analyze_interaction(self, main_col: int, sub_col: int) -> pd.DataFrame:
         """
         Analyzes the dependency between two features
 
@@ -45,11 +45,11 @@ class Explainer:
         """
         ...
     
-    def analyze_row(
+    def analyze_data(
         self, x: ArrayLike, detailed: bool = True
     ) -> Union[Tuple[np.ndarray, List[np.ndarray], float], Tuple[np.ndarray, float]]:
         """
-        Analyzes a single row of input data to extract predicted values and split points.
+        Analyzes input data to extract predicted values and split points.
 
         Parameters
         ----------

@@ -11,7 +11,7 @@ from libcpp.pair cimport pair
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 from .rule cimport get_split_point
-from .utils cimport _analyze_feature, _analyze_dependency, add_lower_bound
+from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost, xgb_leaf_correction, convert_d_matrix
 
@@ -68,23 +68,7 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object analyze_dependency(self, int main_col, int sub_col):
-        """
-        Analyzes the dependency between two features by calculating values based on the split points
-        of the main and sub columns across all trees.
-
-        Parameters
-        ----------
-        main_col : int
-            The column index of the main feature.
-        sub_col : int
-            The column index of the sub feature.
-
-        Returns
-        -------
-        object
-            A DataFrame with sub feature split points, main feature split points, and the corresponding values.
-        """
+    cpdef object analyze_interaction(self, int main_col, int sub_col):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -103,7 +87,7 @@ cdef class Explainer:
              object df
              vector[double] mean_values, sub_points,main_points
                 
-        main_points, sub_points, mean_values = _analyze_dependency(self.trees, main_col, sub_col)
+        main_points, sub_points, mean_values = _analyze_interaction(self.trees, main_col, sub_col)
                             
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
@@ -128,12 +112,7 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef tuple analyze_row(self, object x, bint detailed = True):
-        """
-        Optimized version of analyze_row function using C++ vectors of doubles.
-        
-        Parameters and return values remain the same as the original function.
-        """
+    cpdef tuple analyze_data(self, object x, bint detailed = True):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -200,7 +179,7 @@ cdef class Explainer:
                             values_1d[col] += rule.value
         
         if detailed:
-            values_2d[col, j] /= num_rows
+            values_2d /= num_rows
             split_points_list = [np.array(split_points[col]) for col in range(self.len_col)]
 
             return values_2d, split_points_list, raw_score
