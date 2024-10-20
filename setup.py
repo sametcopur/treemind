@@ -41,7 +41,6 @@ elif sys.platform == "darwin":  # macOS
     extra_compile_args = [
         "-O3",
         "-ffast-math",
-        "-mcpu=apple-m1",
         "-funroll-loops",
         "-finline-functions",
         "-ftree-vectorize",

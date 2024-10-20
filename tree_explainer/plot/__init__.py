@@ -1,15 +1,15 @@
 from .plot_funcs import (
-    plot_bar,
-    plot_feature,
-    plot_interaction,
+    bar_plot,
+    feature_plot,
+    interaction_plot,
     plot_points,
     plot_values_points,
 )
 
 __all__ = [
-    "plot_bar",
-    "plot_feature",
-    "plot_interaction",
+    "bar_plot",
+    "feature_plot",
+    "interaction_plot",
     "plot_points",
     "plot_values_points",
 ]

@@ -5,22 +5,17 @@ from typing import List
 
 def _check_columns(obj):
     try:
-        # Check if the object supports indexing
-        obj[0]
-    except (TypeError, IndexError):
-        # Raise an exception if it doesn't support indexing or is empty
-        raise TypeError("The given object is not indexable.")
+        # Attempt to convert the object to a NumPy array
+        arr = np.asarray(obj)
+    except Exception as e:
+        # Raise TypeError if the object isn't array-like
+        raise TypeError("The given object is not array-like.") from e
 
-    # Check if the object has only one dimension
-    if hasattr(obj, 'ndim') and obj.ndim != 1:
+    # Check if the array is one-dimensional
+    if arr.ndim != 1:
         raise ValueError("The given object is not one-dimensional.")
-
-    # If the object is a list, tuple, or numpy array, confirm it's 1D
-    if hasattr(obj, '__len__') and isinstance(obj, (list, tuple, np.ndarray)):
-        # It passes all checks, so it's a 1D sequence
-        return True
-
-    # If it doesn't meet the criteria, raise an error
+    
+        
 
 def _create_intervals(point_row: List[float]) -> List[str]:
     """

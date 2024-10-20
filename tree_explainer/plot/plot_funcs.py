@@ -7,8 +7,17 @@ from typing import List, Tuple
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 from .plot_utils import _create_intervals, _replace_infinity, _check_columns
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import List
 
-def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) -> None:
+
+def bar_plot(
+    values: np.ndarray,
+    raw_score: float,
+    columns: List[str] = None,
+    max_col: int = 20,
+) -> None:
     """
     Creates a horizontal bar plot showing the contribution of each feature.
 
@@ -20,6 +29,9 @@ def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) ->
         The raw score associated with the contributions.
     columns : list, optional
         A list of column names for labeling. If None, column indices will be used.
+    max_col : int, optional
+        The maximum number of features to display in the plot. If None, all features with
+        non-zero contributions will be displayed.
 
     Returns
     -------
@@ -30,17 +42,23 @@ def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) ->
     -----
     Positive contributions are shown in green, negative in red.
     The function only considers features with non-zero contributions.
+    If `max_col` is specified, only the features with the largest absolute contributions
+    will be displayed.
     """
     # Input validation
     if not isinstance(values, np.ndarray):
         raise TypeError("The 'values' parameter must be a numpy.ndarray.")
     if not isinstance(raw_score, (int, float)):
-        raise TypeError("The 'raw_score' parameter must be a numeric type (int or float).")
+        raise TypeError(
+            "The 'raw_score' parameter must be a numeric type (int or float)."
+        )
     if columns is not None:
+        # Assuming _check_columns is a function defined elsewhere
         _check_columns(columns)
-        
         if len(columns) != len(values):
-            raise ValueError("The length of 'columns' must match the length of 'values'.")
+            raise ValueError(
+                "The length of 'columns' must match the length of 'values'."
+            )
 
     # Identify non-zero contributions
     used_cols = np.where(values != 0)[0]
@@ -53,13 +71,15 @@ def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) ->
     adjusted_values = values[sorted_indices]
     used_cols = used_cols[sorted_indices]
 
+    # Limit the number of features displayed
+    if max_col is not None:
+        adjusted_values = adjusted_values[-max_col:]
+        used_cols = used_cols[-max_col:]
+
     # Assign colors based on positive or negative contributions
     colors_list = ["green" if val > 0 else "red" for val in adjusted_values]
 
     fig, ax = plt.subplots()
-    bars = ax.barh(np.arange(len(used_cols)), adjusted_values, color=colors_list)
-
-    ax.axvline(0, color="black", linewidth=0.8)
 
     # Use provided columns or default to "Column X" labels
     if columns is None:
@@ -67,43 +87,77 @@ def plot_bar(values: np.ndarray, raw_score: float, columns: List[str] = None) ->
     else:
         y_labels = [columns[i] for i in used_cols]
 
-    ax.set_yticks(np.arange(len(used_cols)))
+    y_positions = np.arange(len(used_cols))
+
+    # Create horizontal bars
+    bars = ax.barh(y_positions, adjusted_values, color=colors_list)
+
+    ax.axvline(0, color="black", linewidth=0.8)
+
+    ax.set_yticks(y_positions)
     ax.set_yticklabels(y_labels)
     ax.set_xlabel("Contribution")
     ax.invert_yaxis()  # Highest contributions at the top
 
+    # Calculate data range
     max_val = max(adjusted_values)
     min_val = min(adjusted_values)
+    data_range = max_val - min_val if max_val != min_val else max_val
 
-    # Set consistent padding for both small and large bars
-    # Define a reasonable minimum and maximum padding
-    min_padding = 0.0 if min_val > 0 else 0.4  # Minimum padding for very small bars
-    max_padding = 0.0 if max_val < 0 else 1.3  # Maximum padding for very large bars
+    # Define padding as a fraction of the data range
+    padding_fraction = 0.05  # 5% of the data range
+    left_padding = data_range * padding_fraction
+    right_padding = data_range * padding_fraction
 
-    # Calculate the padding relative to the magnitude of the bars but within the defined limits
-    left_padding = max(min_padding, min(abs(min_val) * 0.2, max_padding))
-    right_padding = max(min_padding, min(abs(max_val) * 0.2, max_padding))
-
-    # Set the x-limits with consistent padding
+    # Adjust x-limits with scaled padding
     ax.set_xlim([min_val - left_padding, max_val + right_padding])
 
+    # Add text labels with proportional offset
+    texts = []
     for index, bar in enumerate(bars):
         bar_value = adjusted_values[index]
-        sign = "+" if bar_value > 0 else "-"  # Adding the sign before the value
-
-        # Set text color to match the bar color (green or red)
+        sign = "+" if bar_value > 0 else "-"
         text_color = "green" if bar_value > 0 else "red"
+        ha = "left" if bar_value > 0 else "right"
+        # Use the exact y-position of the bar
+        y_pos = y_positions[index]
 
-        # Adjust the text position to be closer to the bar and in line with its edge
-        offset = 0.04 if bar_value > 0 else -0.04
-        ax.text(
-            bar.get_width() + offset,  # Closer offset for outside text
-            bar.get_y() + bar.get_height() / 2,
-            f"{sign}{abs(bar_value):.2f}",  # Formatting value with sign
-            ha="left" if bar_value > 0 else "right",  # Align text based on the sign
+        # Add text labels
+        text = ax.text(
+            bar.get_width(),
+            y_pos,
+            f"{sign}{abs(bar_value):.2f}",
+            ha=ha,
             va="center",
-            color=text_color,  # Text color matches the bar
+            color=text_color,
         )
+        texts.append(text)
+
+    # Draw the figure to get accurate text positions
+    fig.canvas.draw()
+
+    # Get the renderer
+    renderer = fig.canvas.get_renderer()
+
+    # Measure text extents and adjust xlim if necessary
+    max_right = ax.get_xlim()[1]
+    max_left = ax.get_xlim()[0]
+
+    for text in texts:
+        bbox = text.get_window_extent(renderer=renderer)
+        bbox_data = bbox.transformed(ax.transData.inverted())
+
+        if text.get_ha() == "left":
+            if bbox_data.x1 > max_right:
+                # Add extra space on the right
+                max_right = bbox_data.x1 + data_range * 0.05  # Add extra padding
+        else:  # 'right' alignment
+            if bbox_data.x0 < max_left:
+                # Add extra space on the left
+                max_left = bbox_data.x0 - data_range * 0.05  # Add extra padding
+
+    # Apply the new xlim
+    ax.set_xlim([max_left, max_right])
 
     # Position the raw score text inside the plot area
     ax.text(
@@ -341,25 +395,42 @@ def plot_points(
     plt.show()
 
 
-def plot_feature(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
+def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     """
-    Plots the mean, min, and max values of a feature.
+    Plots the mean, min, and max values of a feature based on tree split points.
 
     Parameters
     ----------
     df : pd.DataFrame
-        A DataFrame containing the feature data with columns 'feature_lb', 'feature_ub', 'mean', 'min', 'max'.
+        A DataFrame containing the feature data with the following columns:
+        - 'feature_lb': The lower bound of the feature range (tree split point).
+        - 'feature_ub': The upper bound of the feature range (tree split point).
+        - 'mean': The mean value of the feature within this range.
+        - 'min': The minimum value of the feature within this range.
+        - 'max': The maximum value of the feature within this range.
+        
     figsize : tuple of int, optional
-        Figure size, by default (10, 6).
+        Size of the figure to be created, by default (10, 6). This parameter controls the 
+        width and height of the plot.
 
     Returns
     -------
     None
-        Displays the feature plot.
+        This function does not return any values. Instead, it displays the feature plot.
 
     Notes
     -----
-    The function plots the mean line and fills between min and max values.
+    This function visualizes how a particular feature behaves over different ranges of 
+    values, as defined by the split points of a decision tree-based model. The tree split 
+    points represent thresholds used by the model to partition the feature space into 
+    segments. The plot shows the mean value of the feature for each segment, while shading 
+    between the minimum and maximum values to illustrate the variability within that range.
+
+    The x-axis represents the feature values, divided into intervals determined by the 
+    tree's split points. The y-axis shows the corresponding mean, minimum, and maximum 
+    values for each interval. The plot provides insight into how the feature's value 
+    distribution varies across the different split-defined segments. It can be helpful for 
+    understanding the relationship between the feature and the model's predictions.
     """
 
     column_name = df.columns[1]
@@ -413,35 +484,61 @@ def plot_feature(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     plt.tight_layout()
     plt.show()
 
-
-def plot_interaction(
+def interaction_plot(
     df: pd.DataFrame,
     figsize: Tuple[int, int] = (10, 8),
     cmap: str = "coolwarm",
+    column_names: List[str] | None = None,
 ) -> None:
     """
-    Plots a filled rectangle plot of interactions between two features,
-    using real data points and filling gaps to the left and bottom.
+    Plots a filled rectangle plot to visualize interactions between two features,
+    using model split points and filling gaps to the left and bottom.
 
     Parameters
     ----------
     df : pd.DataFrame
         A DataFrame containing columns for two features and their interaction values.
+        The DataFrame should include at least three columns:
+        
+        - The first column represents the primary feature (main_col).
+        - The second column represents the secondary feature (sub_col).
+        - The third column contains the interaction values (typically the impact on
+          the model's prediction scores).
+          
     figsize : tuple of int, optional
-        Figure size, by default (10, 8).
+        Size of the figure to be created, by default (10, 8).
+        This parameter controls the width and height of the plot.
+        
     cmap : str, optional
-        Colormap to use for the plot, by default "coolwarm".
+        Colormap to use for filling the rectangles, by default "coolwarm".
+        The colormap represents the intensity of the interaction values.
+        
+    column_names : list of str, optional
+        Names of the columns to be used for plotting. Should be a list of exactly
+        two column names, corresponding to the features whose interactions are being plotted.
+        If None, the function will use the first two columns of the DataFrame. If provided,
+        it must be a list with two elements.
 
     Returns
     -------
     None
-        Displays the plot.
+        This function does not return any values. Instead, it displays the interaction plot.
 
     Notes
     -----
-    This function creates a plot where each data point is represented by a filled rectangle.
-    The rectangles extend to the left and bottom, filling gaps between data points.
+    This function visualizes the interaction between two features based on model split points
+    rather than using raw data points. The model split points refer to the thresholds or
+    decision boundaries used by a decision tree-based model (such as gradient boosting or
+    random forest) to partition the feature space. Each rectangle on the plot represents
+    a region defined by these split points.
+
+    The filled rectangles extend to the left and bottom to cover the gaps between the split
+    points. The color of each rectangle corresponds to the interaction value, which indicates
+    how much the combination of the two features influences the model's prediction. The
+    color intensity is determined by the specified colormap (`cmap`), with a legend displayed
+    to the right showing the range of interaction values.
     """
+
     df = (
         pd.concat(
             [
@@ -461,8 +558,20 @@ def plot_interaction(
         )
     )
 
-    column1 = df.columns[1]
-    column2 = df.columns[0]
+    if column_names is not None:
+        if not isinstance(column_names, list):
+            raise TypeError(
+                "`column_names` should be a list of two strings representing column names."
+            )
+        if len(column_names) != 2:
+            raise ValueError("`column_names` must contain exactly two elements.")
+
+        column1 = column_names[0]
+        column2 = column_names[1]
+
+    else:
+        column1 = df.columns[0]
+        column2 = df.columns[1]
 
     df = _replace_infinity(df, column1, infinity_type="positive")
     df = _replace_infinity(df, column1, infinity_type="negative")

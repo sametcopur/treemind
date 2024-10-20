@@ -1,9 +1,6 @@
-
 numpy>=1.25.2
 pandas>=2.0.3
-matplotlib
-seaborn
-
-numpydoc>=1.6.0
+scipy>=1.11.4
 myst-parser>=2.0.0
 sphinx_rtd_theme>=2.0.0
+sphinx_autodoc_typehints

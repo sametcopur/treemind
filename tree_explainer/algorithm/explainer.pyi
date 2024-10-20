@@ -10,13 +10,7 @@ class Explainer:
     split points, and predicted values. It offers functionality to analyze the relationship between
     features, examine the impact of individual features on predictions, and interpret the model's
     decision-making process.
-
-    Attributes
-    ----------
-    model : Any
-        The trained model instance used for analysis.
     """
-    model: Any
 
     def analyze_dependency(self, main_col: int, sub_col: int) -> pd.DataFrame:
         """
