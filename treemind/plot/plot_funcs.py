@@ -173,7 +173,6 @@ def bar_plot(
     plt.tight_layout()
     plt.show()
 
-
 def range_plot(
     values: np.ndarray,
     raw_score: float,
@@ -183,7 +182,7 @@ def range_plot(
 ) -> None:
     """
     Plots a combined grid of values and intervals with color intensity representing the magnitude.
-    Both the range and value are displayed within a single bar.
+    Both the range and value are displayed within a single bar. Bars have width 0.7 and height 0.6 with no spacing.
 
     Parameters
     ----------
@@ -194,10 +193,9 @@ def range_plot(
     points : list of list of float
         A list of points associated with the values.
     scale : float, optional
-        Scaling factor for the figure size, by default 1.
+        Scaling factor for the figure size and text sizes, by default 1.
     columns : list, optional
         A list of column names for labeling. If None, column indices will be used.
-
 
     Returns
     -------
@@ -212,7 +210,7 @@ def range_plot(
 
     n_rows, n_cols = values.shape
 
-    fig, ax = plt.subplots(figsize=(n_cols * 2 * scale, n_rows * scale))
+    fig, ax = plt.subplots(figsize=(n_cols * 0.7 * scale, n_rows * 0.6 * scale))
 
     # Color maps for positive and negative values
     cmap_pos = sns.light_palette("green", as_cmap=True)
@@ -222,9 +220,12 @@ def range_plot(
     max_value = np.max(values) if np.max(values) > 0 else 1
     min_value = np.min(values) if np.min(values) < 0 else -1
 
-    bar_width = 1  # Width of each bar
-    bar_height = 0.8  # Height of each bar
-    spacing = 0  # No spacing between bars
+    bar_width = 0.7  # Width of each bar
+    bar_height = 0.6  # Height of each bar
+
+    # Calculate base font sizes
+    base_interval_font_size = 4.5 * scale  # Reduced size
+    base_value_font_size = 5.5 * scale     # Reduced size
 
     # Plot each value and interval
     for i, (row, row_points) in enumerate(zip(values, points)):
@@ -241,7 +242,7 @@ def range_plot(
                 ax.barh(
                     i,
                     bar_width,
-                    left=j * (bar_width + spacing),
+                    left=j * bar_width,
                     color=color,
                     height=bar_height,
                     alpha=0.9,
@@ -254,37 +255,36 @@ def range_plot(
 
                 # Place the range text at the top of the bar
                 ax.text(
-                    j * (bar_width + spacing) + bar_width / 2,
-                    i + 0.25,
+                    j * bar_width + bar_width / 2,
+                    i + 0.15,
                     interval,
                     ha="center",
                     va="center",
                     color=text_color,
-                    fontsize=8,
+                    fontsize=base_interval_font_size,
                 )
 
                 # Place the value text at the bottom of the bar
                 ax.text(
-                    j * (bar_width + spacing) + bar_width / 2,
-                    i - 0.25,
+                    j * bar_width + bar_width / 2,
+                    i - 0.15,
                     f"{val:.3f}",
                     ha="center",
                     va="center",
                     color=text_color,
-                    fontsize=10,
+                    fontsize=base_value_font_size,
                 )
 
     # Set y-axis labels
     ax.set_yticks(np.arange(n_rows))
 
     if columns is not None:
-        ax.set_yticklabels([columns[i] for i in used_cols])
-
+        ax.set_yticklabels([columns[i] for i in used_cols], fontsize=9 * scale)
     else:
-        ax.set_yticklabels([f"Column {i}" for i in used_cols])
+        ax.set_yticklabels([f"Column {i}" for i in used_cols], fontsize=9 * scale)
 
     # Set x-axis limits
-    ax.set_xlim(0, n_cols)
+    ax.set_xlim(0, n_cols * bar_width)
 
     # Remove axis spines
     ax.spines["top"].set_visible(False)
@@ -300,15 +300,14 @@ def range_plot(
         horizontalalignment="right",
         verticalalignment="top",
         transform=ax.transAxes,
-        fontsize=15,
+        fontsize=12 * scale,
         fontweight="bold",
         bbox=dict(facecolor="white", edgecolor="none", alpha=0.7),
     )
 
-    plt.title("Combined Grid Plot of Values and Intervals")
+    plt.title("Combined Grid Plot of Values and Intervals", fontsize=12 * scale)
     plt.tight_layout()
     plt.show()
-
 
 def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     """
