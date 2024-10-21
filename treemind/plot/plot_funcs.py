@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import rgb_to_hsv
+from matplotlib.colors import rgb_to_hsv, TwoSlopeNorm
 import seaborn as sns
 import pandas as pd
 from typing import List, Tuple
@@ -526,7 +526,7 @@ def interaction_plot(
     height = y - bottom
 
     # Normalize values for color mapping
-    norm = plt.Normalize(values.min(), values.max())
+    norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
     colormap = plt.get_cmap(cmap)
     colors = colormap(norm(values))
 

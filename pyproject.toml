@@ -13,7 +13,7 @@ authors = [
     { name = "Ozgür Martin", email = "ozgurmartin@gmail.com" },
 
 ]
-description = "Ensemble Tree Explainer"
+description = "Ensemble treemind"
 readme = "README.md"
 license = {text = "BSD 3-Clause License"}
 classifiers = [
@@ -33,9 +33,9 @@ keywords = [
 requires-python = ">=3.9"
 
 [project.urls]
-Documentation = "https://github.com/sametcopur/tree_explainer"
-Repository = "https://github.com/sametcopur/tree_explainer"
-Tracker = "https://github.com/sametcopur/tree_explainer/issues"
+Documentation = "https://github.com/sametcopur/treemind"
+Repository = "https://github.com/sametcopur/treemind"
+Tracker = "https://github.com/sametcopur/treemind/issues"
 
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-*"

@@ -1,7 +1,7 @@
 feature_plot
 ============
 
-.. autofunction:: tree_explainer.plot.feature_plot
+.. autofunction:: treemind.plot.feature_plot
     :no-index:
 
 **Example Usage**
@@ -10,8 +10,8 @@ Below is an example of how to use the `feature_plot` function:
 
 .. code-block:: python
 
-    from tree_explainer import Explainer
-    from tree_explainer.plot import feature_plot
+    from treemind import Explainer
+    from treemind.plot import feature_plot
 
     # Assume 'model' is a trained LightGBM or XGBoost model object
 

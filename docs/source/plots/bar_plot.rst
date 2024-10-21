@@ -1,7 +1,7 @@
 bar_plot
 ========
 
-.. autofunction:: tree_explainer.plot.bar_plot
+.. autofunction:: treemind.plot.bar_plot
     :no-index:
 
 **Example Usage**
@@ -10,8 +10,8 @@ Below is an example of how to use the `bar_plot` function:
 
 .. code-block:: python
 
-    from tree_explainer import Explainer
-    from tree_explainer.plot import bar_plot
+    from treemind import Explainer
+    from treemind.plot import bar_plot
 
     # Assume 'model' is a trained LightGBM or XGBoost model object
 

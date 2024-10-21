@@ -1,3 +1,3 @@
-.. autoclass:: tree_explainer.Explainer
+.. autoclass:: treemind.Explainer
     :members:
     :special-members: __call__

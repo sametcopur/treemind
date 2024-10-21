@@ -1,4 +1,4 @@
-Tree Explainer Algorithm
+treemind Algorithm
 ========================
 
 **Tree 1:**
