@@ -22,6 +22,7 @@ cdef class XGBNode:
     cdef int no
     cdef list children
     cdef double leaf_value
+    cdef double cover
 
 @boundscheck(False)
 @nonecheck(False)
@@ -36,9 +37,9 @@ cdef vector[vector[Rule]] analyze_xgboost(object model, int len_col):
     cdef dict node_dict
     cdef vector[pair[double, double]] feature_ranges
     cdef int tree_index = 0
-    cdef list dumps = model.get_dump(dump_format='json')
+    cdef list dumps = model.get_dump(dump_format='json', with_stats=True)
     cdef str dump
-    cdef dict tree_json
+    cdef dict tree_json, column_dict = (None if model.feature_names is None else dict(zip(model.feature_names, range(len(model.feature_names)))))
 
     for dump in dumps:
         tree_json = json.loads(dump)
@@ -46,14 +47,13 @@ cdef vector[vector[Rule]] analyze_xgboost(object model, int len_col):
         node_dict = {}
         parse_xgboost_node(tree_json, node_dict)
 
-
         feature_ranges = vector[pair[double, double]](len_col)
         for i in range(len_col):
             feature_ranges[i] = pair[double, double](-INFINITY, INFINITY)
 
         rules = vector[Rule]()
 
-        traverse_xgboost(node_dict, 0, feature_ranges, rules, tree_index)
+        traverse_xgboost(node_dict, 0, feature_ranges, rules, tree_index, column_dict)
 
         sort(rules.begin(), rules.end(), compare_rules)
         trees.push_back(rules)
@@ -80,6 +80,7 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
     node.no = node_json.get('no', -1)
     node.children = node_json.get('children', [])
     node.leaf_value = node_json.get('leaf', np.nan)
+    node.cover = node_json.get('cover', np.nan)
 
     node_dict[node.nodeid] = node
 
@@ -94,7 +95,7 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(False)
-cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, double]]& feature_ranges, vector[Rule]& rules, int tree_index):    
+cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, double]]& feature_ranges, vector[Rule]& rules, int tree_index, dict column_dict):    
     cdef XGBNode node = node_dict[nodeid]
     cdef int feature_index
     cdef double threshold
@@ -113,11 +114,16 @@ cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, doubl
                 update_rule(&rule, feature_index, lb, ub)
 
         rule.value = node.leaf_value
+        rule.count = node.cover
+        
         rules.push_back(rule)
         return
 
     # Split node
-    feature_index = int(node.split [1:])  # Extract the index after 'f'
+    if column_dict is None:
+        feature_index = int(node.split [1:])  # Extract the index after 'f'
+    else:
+        feature_index = column_dict[node.split]
 
     threshold = node.split_condition
     # Save previous range
@@ -125,14 +131,14 @@ cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, doubl
 
     # 'Yes' child: feature value < threshold
     feature_ranges[feature_index] = pair[double, double](feature_ranges[feature_index].first, threshold)
-    traverse_xgboost(node_dict, node.yes, feature_ranges, rules, tree_index)
+    traverse_xgboost(node_dict, node.yes, feature_ranges, rules, tree_index, column_dict)
 
     # Restore previous range
     feature_ranges[feature_index] = prev_range
 
     # 'No' child: feature value >= threshold
     feature_ranges[feature_index] = pair[double, double](threshold, feature_ranges[feature_index].second)
-    traverse_xgboost(node_dict, node.no, feature_ranges, rules, tree_index)
+    traverse_xgboost(node_dict, node.no, feature_ranges, rules, tree_index, column_dict)
 
     # Restore previous range
     feature_ranges[feature_index] = prev_range

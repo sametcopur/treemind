@@ -53,7 +53,7 @@ cdef class Explainer:
             if self.model.feature_names is None:
                 self.columns = [f"Feature_{i}" for i in range(self.len_col)]
             else:
-                self.columns = self.model.feature_name()
+                self.columns = self.model.feature_names
 
             self.model_type = "xgboost"
             self.trees = analyze_xgboost(self.model, self.len_col)

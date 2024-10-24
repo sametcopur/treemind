@@ -2,7 +2,7 @@ from libcpp.vector cimport vector
 
 cdef struct Rule:
     double value
-    int count
+    double count
     vector[double] lbs 
     vector[double] ubs 
     int len_col
