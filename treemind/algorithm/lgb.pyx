@@ -36,6 +36,7 @@ cdef void traverse_lightgbm_tree(dict node, vector[RangePair]& feature_ranges, v
                 update_rule(&rule, feature_index, lb, ub)
 
         rule.value = node["leaf_value"]
+        rule.count = node["leaf_count"]
         rules.push_back(rule)
         return
 
@@ -76,7 +77,7 @@ cdef vector[vector[Rule]] analyze_lightgbm(object model, int len_col):
     cdef dict node
     cdef vector[RangePair] feature_ranges
 
-    # Use tree_list instead of trees_df
+
     cdef list tree_list = model.dump_model()["tree_info"]
 
     for tree_index in range(len(tree_list)):

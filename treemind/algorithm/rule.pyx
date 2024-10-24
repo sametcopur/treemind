@@ -39,6 +39,7 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     rule.lbs = vector[double](len_col, -INFINITY)
     rule.ubs = vector[double](len_col, INFINITY)
     rule.value = np.nan
+    rule.count = -1
     return rule
 
 @boundscheck(False)

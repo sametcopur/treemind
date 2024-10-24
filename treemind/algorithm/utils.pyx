@@ -85,7 +85,7 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
             vector[Rule]* tree_ptr
             size_t i, k, l
 
-            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val
+            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val, n_count
     
         with nogil:
             for i in range(split_points.size()):
@@ -106,8 +106,9 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
                         rule_ptr = &(tree_ptr[0][l])
                         if check_value(rule_ptr, col, point):
                             rule_val = rule_ptr.value
-                            tree_sum += rule_val
-                            count += 1.0
+                            n_count = rule_ptr.count
+                            tree_sum += rule_val * n_count
+                            count += n_count
 
                             tree_max_val = cmax(tree_max_val, rule_val)
                             tree_min_val = cmin(tree_min_val, rule_val)                            
@@ -151,7 +152,7 @@ cdef tuple[vector[double],
         Rule* rule_ptr
         vector[Rule]* tree_ptr
 
-        double count, tree_sum, ensemble_sum
+        double count, tree_sum, ensemble_sum, n_count
 
     with nogil:
         for i in range(sub_split_points.size()):
@@ -164,12 +165,14 @@ cdef tuple[vector[double],
                     tree_ptr = &filtered_trees[k]
                     tree_sum = 0.0
                     count = 0.0
+                    tree_sum = 0.0
                     
                     for l in range(tree_ptr.size()):
                         rule_ptr = &(tree_ptr[0][l])
                         if check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point):
-                            tree_sum += rule_ptr.value
-                            count += 1.0
+                            n_count = rule_ptr.count
+                            tree_sum += rule_ptr.value * n_count
+                            count += n_count
                     
                     if count > 0:
                         ensemble_sum += (tree_sum / count)

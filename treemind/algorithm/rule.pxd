@@ -2,11 +2,13 @@ from libcpp.vector cimport vector
 
 cdef struct Rule:
     double value
+    int count
     vector[double] lbs 
     vector[double] ubs 
     int len_col
     int tree_index
     int leaf_index
+
 
 
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index)

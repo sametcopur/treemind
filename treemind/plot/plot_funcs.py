@@ -525,8 +525,17 @@ def interaction_plot(
     width = x - left
     height = y - bottom
 
-    # Normalize values for color mapping
-    norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
+
+    if values.max() < 0:  # Tüm değerler negatifse
+        colormap = plt.get_cmap('Blues')
+        norm = TwoSlopeNorm(vmin=values.min(), vcenter=values.max(), vmax=0)
+    elif values.min() > 0:  # Tüm değerler pozitifse
+        colormap = plt.get_cmap('Reds')
+        norm = TwoSlopeNorm(vmin=0, vcenter=values.min(), vmax=values.max())
+    else:  # Hem negatif hem pozitif değerler varsa
+        colormap = plt.get_cmap(cmap)
+        norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
+
     colormap = plt.get_cmap(cmap)
     colors = colormap(norm(values))
 
@@ -546,6 +555,29 @@ def interaction_plot(
     sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax)
+    
+    # Gerçek minimum ve maksimum değerleri al
+    real_min = values.min()
+    real_max = values.max()
+    
+    # Pozitif ve negatif değerler için aralık sayısını belirle
+    n_intervals = 10 # İstediğiniz aralık sayısı
+    
+    if real_min < 0 and real_max > 0:  # Hem pozitif hem negatif değerler varsa
+        # Pozitif değerler için tick'ler
+        pos_ticks = np.linspace(0, real_max, n_intervals//2 +1)
+        # Negatif değerler için tick'ler
+        neg_ticks = np.linspace(real_min, 0, n_intervals//2+1)[:-1]  # 0'ı tekrar etmemek için
+        # Tüm tick'leri birleştir
+        ticks = np.concatenate([neg_ticks, pos_ticks])
+    elif real_min >= 0:  # Sadece pozitif değerler varsa
+        ticks = np.linspace(real_min, real_max, n_intervals)
+    else:  # Sadece negatif değerler varsa
+        ticks = np.linspace(real_min, real_max, n_intervals)
+    
+    # Colorbar'ı güncelle
+    cbar.set_ticks(ticks)
+    cbar.set_ticklabels([f"{x:.2f}" for x in ticks])
     cbar.set_label("Impact")
 
     ax.set_xlabel(column1)
