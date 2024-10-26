@@ -11,5 +11,6 @@ treemind documentation
    :caption: Contents:
 
    algorithm
+   example
    performance
    api_reference

@@ -30,8 +30,12 @@ cdef class Explainer:
 
 
     def __call__(self, model):
-        cdef str module_name = model.__module__
+        if not hasattr(model, '__module__'):
+            raise ValueError("The provided model is neither a LightGBM nor an XGBoost model. Please provide a supported model type.")
 
+        module_name = model.__module__
+
+        # Handle LightGBM models
         if "lightgbm" in module_name: 
             if "basic" not in module_name:
                 self.model = model.booster_
@@ -42,6 +46,7 @@ cdef class Explainer:
             self.model_type = "lightgbm"
             self.trees = analyze_lightgbm(self.model, self.len_col)
 
+        # Handle XGBoost models
         elif "xgboost" in module_name:
             if "core" not in module_name:
                 self.model = model.get_booster()
@@ -57,9 +62,11 @@ cdef class Explainer:
 
             self.model_type = "xgboost"
             self.trees = analyze_xgboost(self.model, self.len_col)
-    
+
+        # Raise an error if the model is not LightGBM or XGBoost
         else:
-            raise ValueError("MAAAL")
+            raise ValueError("The provided model is neither a LightGBM nor an XGBoost model. Please provide a supported model type.")
+
 
     @boundscheck(False)
     @nonecheck(False)
@@ -69,6 +76,9 @@ cdef class Explainer:
     @cdivision(True)
     @infer_types(True)
     cpdef object analyze_interaction(self, int main_col, int sub_col):
+        if not (isinstance(main_col, int) and isinstance(sub_col, int)):
+            raise ValueError("The 'main_col' and 'sub_col' parameter must be an integer.")
+
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -115,6 +125,9 @@ cdef class Explainer:
     cpdef tuple analyze_data(self, object x, bint detailed = True):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
+
+        if not isinstance(detailed, bool):
+            raise ValueError("The 'detailed' parameter must be set explicitly to either True or False.")
 
         if self.model_type == "xgboost":
             x = convert_d_matrix(x)
@@ -196,21 +209,9 @@ cdef class Explainer:
     @cdivision(True)
     @infer_types(True)
     cpdef object analyze_feature(self, int col):
-        """
-        Analyzes a specific feature by calculating the mean, min, and max values
-        based on split points across trees for the given column.
+        if not isinstance(col, int):
+            raise ValueError("The 'col' parameter must be an integer.")
 
-        Parameters
-        ----------
-        col : int
-            The column index of the feature to analyze.
-
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame with the split points (main_point), mean, min, and max values
-            for the specified feature.
-        """
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -248,6 +249,9 @@ cdef class Explainer:
     @cdivision(True)
     @infer_types(True)
     cpdef object count_node(self, bint interaction=True):
+        if not isinstance(interaction, bool):
+            raise ValueError("The 'interaction' parameter must be set explicitly to either True or False.")
+
         cdef:
             vector[Rule] rule_set
             Rule rule

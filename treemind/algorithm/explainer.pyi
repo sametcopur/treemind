@@ -57,6 +57,10 @@ class Explainer:
             Input data for which predictions are made.
         detailed : bool, optional
             If True, returns detailed split points for each feature. Default is True.
+            
+        This method requires the `detailed` parameter to be `False` in the output from 
+        the `analyze_data` method of the `treemind.Explainer` class (`analyze_data(self, x: ArrayLike, detailed: bool = False) 
+        -> Tuple[np.ndarray, float]`).
 
         Returns
         -------

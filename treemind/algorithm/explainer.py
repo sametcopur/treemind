@@ -80,7 +80,7 @@ class Explainer:
         Returns
         -------
         pd.DataFrame
-            A DataFrame with the split points (main_point), mean, min, and max values
+            A DataFrame with the feature_lb, feature_ub, mean, min, and max values
             for the specified feature.
         """
         ...

@@ -1,64 +1,107 @@
 import numpy as np
+import pandas as pd
+import seaborn as sns
+
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb_to_hsv, TwoSlopeNorm
-import seaborn as sns
-import pandas as pd
-from typing import List, Tuple
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-from .plot_utils import _create_intervals, _replace_infinity, _check_columns
-import numpy as np
-import matplotlib.pyplot as plt
-from typing import List
+
+from .plot_utils import (
+    _create_intervals,
+    _replace_infinity,
+    _validate_feature_plot_parameters,
+    _validate_range_plot_parameters,
+    _validate_interaction_plot_parameters,
+    _validate_bar_plot_parameters,
+)
+
+from typing import List, Tuple
+from numpy.typing import ArrayLike
 
 
 def bar_plot(
     values: np.ndarray,
     raw_score: float,
-    columns: List[str] = None,
-    max_col: int = 20,
+    figsize: Tuple[int, int] = (8, 6),
+    columns: ArrayLike = None,
+    max_col: int | None = 20,
+    title: str | None = None,
+    title_fontsize: float = 12.0,
+    label_fontsize: float = 12.0,
+    show_raw_score: bool = True,
 ) -> None:
     """
-    Creates a horizontal bar plot showing the contribution of each feature.
-
+    Creates a horizontal bar plot illustrating the contribution of each feature 
+    in a dataset. This plot highlights the positive and negative contributions 
+    distinctly with color-coded bars, providing a clear visual representation 
+    of each feature’s impact on a model’s output or a decision-making process.
+    
     Parameters
     ----------
     values : np.ndarray
-        An array of contribution values for each feature.
+        An array containing the contribution values of each feature. Each value
+        represents the magnitude and direction (positive or negative) of the
+        feature's contribution to the overall outcome.
     raw_score : float
-        The raw score associated with the contributions.
-    columns : list, optional
-        A list of column names for labeling. If None, column indices will be used.
-    max_col : int, optional
-        The maximum number of features to display in the plot. If None, all features with
-        non-zero contributions will be displayed.
-
+        The expected value of the model given the provided dataset.
+    figsize : tuple of int, optional, default=(8, 6)
+        The dimensions (width, height) of the figure, which determines the size
+        of the plot.
+    columns : list or ArrayLike, optional
+        A list of names for the features, used as labels on the y-axis. If `None`,
+        feature indices are labeled as "Column X" for each feature.
+    max_col : int or None, optional, default=20
+        The maximum number of features to display in the plot, chosen based on 
+        their absolute contribution values. If `None`, all features with non-zero
+        contributions will be shown.
+    title : str or None, optional
+        The title displayed at the top of the plot. If `None`, no title is shown.
+    title_fontsize : float, optional, default=12.0
+        Font size for the plot title.
+    label_fontsize : float, optional, default=12.0
+        Font size for the y-axis labels (feature names).
+    show_raw_score : bool, optional, default=True
+        Whether to display the `raw_score` value on the plot. If `True`, the raw 
+        score is displayed at the top-right corner of the plot area.
+    
     Returns
     -------
     None
-        Displays the bar plot.
-
+        The function displays a matplotlib figure and does not return any values.
+    
     Notes
     -----
-    Positive contributions are shown in green, negative in red.
-    The function only considers features with non-zero contributions.
-    If `max_col` is specified, only the features with the largest absolute contributions
-    will be displayed.
+    - The function filters out features with zero contributions, focusing on 
+      features with impactful contributions.
+    - Contributions are displayed as horizontal bars. Positive contributions 
+      are colored green, while negative contributions are red.
+    - If `max_col` is provided, the function shows the features with the largest
+      absolute contributions, sorted in ascending order, ensuring that the most
+      impactful features are visible.
+    - For visual clarity, padding is added to the x-axis limits based on the 
+      data range, allowing sufficient space for text labels next to each bar.
+    - The raw score (if `show_raw_score=True`) is displayed inside the plot 
+      area, positioned at the top-right, providing context for the feature contributions.
+    
+    Raises
+    ------
+    ValueError
+        If all contribution values are zero, a ValueError is raised since there 
+        is nothing to visualize.
     """
-    # Input validation
-    if not isinstance(values, np.ndarray):
-        raise TypeError("The 'values' parameter must be a numpy.ndarray.")
-    if not isinstance(raw_score, (int, float)):
-        raise TypeError(
-            "The 'raw_score' parameter must be a numeric type (int or float)."
-        )
-    if columns is not None:
-        # Assuming _check_columns is a function defined elsewhere
-        _check_columns(columns)
-        if len(columns) != len(values):
-            raise ValueError(
-                "The length of 'columns' must match the length of 'values'."
-            )
+
+    _validate_bar_plot_parameters(
+        values=values,
+        raw_score=raw_score,
+        columns=columns,
+        title=title,
+        max_col=max_col,
+        figsize=figsize,
+        title_fontsize=title_fontsize,
+        label_fontsize=label_fontsize,
+        show_raw_score=show_raw_score,
+    )
 
     # Identify non-zero contributions
     used_cols = np.where(values != 0)[0]
@@ -79,13 +122,13 @@ def bar_plot(
     # Assign colors based on positive or negative contributions
     colors_list = ["green" if val > 0 else "red" for val in adjusted_values]
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=figsize)
 
     # Use provided columns or default to "Column X" labels
     if columns is None:
-        y_labels = [f"Column {i}" for i in used_cols]
+        ylabels = [f"Column {i}" for i in used_cols]
     else:
-        y_labels = [columns[i] for i in used_cols]
+        ylabels = [columns[i] for i in used_cols]
 
     y_positions = np.arange(len(used_cols))
 
@@ -95,7 +138,7 @@ def bar_plot(
     ax.axvline(0, color="black", linewidth=0.8)
 
     ax.set_yticks(y_positions)
-    ax.set_yticklabels(y_labels)
+    ax.set_yticklabels(ylabels, fontsize=label_fontsize)
     ax.set_xlabel("Contribution")
     ax.invert_yaxis()  # Highest contributions at the top
 
@@ -160,53 +203,144 @@ def bar_plot(
     ax.set_xlim([max_left, max_right])
 
     # Position the raw score text inside the plot area
-    ax.text(
-        1.00,
-        1.00,
-        f"Raw Score: {raw_score:.3f}",
-        fontsize=10,
-        ha="right",
-        va="bottom",
-        transform=ax.transAxes,
-    )
+    if show_raw_score:
+        ax.text(
+            1.00,
+            1.00,
+            f"Raw Score: {raw_score:.3f}",
+            fontsize=10,
+            ha="right",
+            va="bottom",
+            transform=ax.transAxes,
+        )
 
     plt.tight_layout()
+
+    if title is not None:
+        plt.title(title, fontsize=title_fontsize)
+
     plt.show()
+
 
 def range_plot(
     values: np.ndarray,
     raw_score: float,
-    points: List[List[float]],
-    scale: float = 1,
+    split_points: List[List[float]],
+    scale: float = 2.0,
     columns: List[str] = None,
+    max_col: int = 20,
+    title: str = None,
+    label_fontsize: float = 9,
+    title_fontsize: float = 12,
+    interval_fontsize: float = 4.5,
+    value_fontsize: float = 5.5,
+    show_raw_score: bool = True,
 ) -> None:
     """
-    Plots a combined grid of values and intervals with color intensity representing the magnitude.
-    Both the range and value are displayed within a single bar. Bars have width 0.7 and height 0.6 with no spacing.
+    Plots a combined grid of values and intervals with color intensity representing the magnitude of values.
+    Rows are sorted by a custom range calculation to emphasize the most variable rows:
+
+    This method requires the `detailed` parameter to be `True` in the output from
+    the `analyze_data` method of the `treemind.Explainer` class (`analyze_data(self, x: ArrayLike, detailed: bool = True) 
+    -> Tuple[np.ndarray, List[np.ndarray], float`).
 
     Parameters
     ----------
     values : np.ndarray
-        A 2D array of values to be plotted.
+        A 2D array where each row contains values to plot in the grid.
     raw_score : float
-        The raw score associated with the values.
-    points : list of list of float
-        A list of points associated with the values.
+        The raw score associated with the values, displayed in the plot's upper right.
+    split_points : List[np.ndarray[float]]
+        A list of point intervals corresponding to the values in each row.
     scale : float, optional
-        Scaling factor for the figure size and text sizes, by default 1.
-    columns : list, optional
-        A list of column names for labeling. If None, column indices will be used.
+        Scaling factor for figure size and font sizes, by default 1.
+    columns : List[str], optional
+        A list of column names for labeling rows; if None, uses row indices.
+    max_col : int, optional
+        Maximum number of rows to display after sorting. If None, all rows are shown.
+    title : str, optional
+        Title of the plot; if None, uses a default title.
+    label_fontsize : float, optional
+        Font size for the y-axis labels, default is 9.
+    title_fontsize : float, optional
+        Font size for the plot title, default is 12.
+    interval_fontsize : float, optional
+        Font size for interval labels displayed on each bar, default is 4.5.
+    value_fontsize : float, optional
+        Font size for value labels displayed below each bar, default is 5.5.
+    show_raw_score : bool, optional
+        If True, displays the raw score in the plot; default is True.
 
     Returns
     -------
     None
         Displays the combined grid plot.
+
+    Notes
+    -----
+    - Rows with only zero values are automatically excluded.
+    - Color intensity represents the magnitude of each value, with green for positive and red for negative.
+    - Font color is determined by the brightness of the bar color for optimal readability.
     """
+
+    _validate_range_plot_parameters(
+        values=values,
+        raw_score=raw_score,
+        split_points=split_points,
+        scale=scale,
+        columns=columns,
+        max_col=max_col,
+        title=title,
+        label_fontsize=label_fontsize,
+        title_fontsize=title_fontsize,
+        interval_fontsize=interval_fontsize,
+        value_fontsize=value_fontsize,
+        show_raw_score=show_raw_score,
+    )
 
     # Filter out rows where all values are zero
     used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
     values = values[used_cols, :]
-    points = [x for i, x in enumerate(points) if i in used_cols]
+    split_points = [x for i, x in enumerate(split_points) if i in used_cols]
+
+    if columns is not None:
+        columns = [columns[i] for i in used_cols]
+
+    # Calculate custom ranges for each row based on actual value lengths
+    value_ranges = []
+    for row, row_points in zip(values, split_points):
+        # Use only the length of values for this row
+        row_values = row[: len(row_points)]
+        max_val = np.max(row_values)
+        min_val = np.min(row_values)
+
+        if max_val > 0 and min_val < 0:
+            # If we have both positive and negative values, use algebraic sum
+            range_val = abs(max_val + min_val)
+        else:
+            # Otherwise use absolute difference
+            range_val = abs(max_val - min_val)
+
+        value_ranges.append(range_val)
+
+    # Convert to numpy array for sorting
+    value_ranges = np.array(value_ranges)
+
+    # Get sorting indices (ascending order - smaller differences first)
+    sort_indices = np.argsort(value_ranges)[::-1]
+
+    # Sort the values, points, and columns
+    values = values[sort_indices]
+    split_points = [split_points[i] for i in sort_indices]
+    if columns is not None:
+        columns = [columns[i] for i in sort_indices]
+
+    # Apply max_col filter from bottom up
+    if max_col is not None:
+        values = values[:max_col, :]
+        split_points = split_points[:max_col]
+        if columns is not None:
+            columns = columns[:max_col]
 
     n_rows, n_cols = values.shape
 
@@ -216,21 +350,29 @@ def range_plot(
     cmap_pos = sns.light_palette("green", as_cmap=True)
     cmap_neg = sns.light_palette("red", as_cmap=True)
 
-    # Find the maximum and minimum values for normalization
-    max_value = np.max(values) if np.max(values) > 0 else 1
-    min_value = np.min(values) if np.min(values) < 0 else -1
+    # Calculate max and min values using only valid lengths per row
+    max_values = []
+    min_values = []
+    for row, row_points in zip(values, split_points):
+        row_values = row[: len(row_points)]
+        max_values.append(np.max(row_values))
+        min_values.append(np.min(row_values))
+
+    max_value = max(max_values) if max_values and max(max_values) > 0 else 1
+    min_value = min(min_values) if min_values and min(min_values) < 0 else -1
 
     bar_width = 0.7  # Width of each bar
     bar_height = 0.6  # Height of each bar
 
     # Calculate base font sizes
-    base_interval_font_size = 4.5 * scale  # Reduced size
-    base_value_font_size = 5.5 * scale     # Reduced size
+    base_interval_font_size = interval_fontsize * scale  # Reduced size
+    base_value_font_size = value_fontsize * scale  # Reduced size
 
     # Plot each value and interval
-    for i, (row, row_points) in enumerate(zip(values, points)):
+    for i, (row, row_points) in enumerate(zip(values, split_points)):
         intervals = _create_intervals(row_points)
-        for j, (val, interval) in enumerate(zip(row, intervals)):
+        # Only plot up to the length of points for this row
+        for j, (val, interval) in enumerate(zip(row[: len(row_points)], intervals)):
             if val != 0:
                 # Select color based on value
                 if val > 0:
@@ -278,10 +420,15 @@ def range_plot(
     # Set y-axis labels
     ax.set_yticks(np.arange(n_rows))
 
+    ax.set_xticks([])
+    ax.set_xticklabels([])
+
     if columns is not None:
-        ax.set_yticklabels([columns[i] for i in used_cols], fontsize=9 * scale)
+        ax.set_yticklabels(columns, fontsize=label_fontsize * scale)
     else:
-        ax.set_yticklabels([f"Column {i}" for i in used_cols], fontsize=9 * scale)
+        ax.set_yticklabels(
+            [f"Column {i}" for i in range(n_rows)], fontsize=label_fontsize * scale
+        )
 
     # Set x-axis limits
     ax.set_xlim(0, n_cols * bar_width)
@@ -293,44 +440,90 @@ def range_plot(
     ax.spines["bottom"].set_visible(False)
 
     # Add raw score text
-    ax.text(
-        0.98,
-        0.98,
-        f"Raw Score: {raw_score:.3f}",
-        horizontalalignment="right",
-        verticalalignment="top",
-        transform=ax.transAxes,
-        fontsize=12 * scale,
-        fontweight="bold",
-        bbox=dict(facecolor="white", edgecolor="none", alpha=0.7),
-    )
+    if show_raw_score:
+        ax.text(
+            1,
+            1,
+            f"Raw Score: {raw_score:.3f}",
+            horizontalalignment="right",
+            verticalalignment="top",
+            transform=ax.transAxes,
+            fontsize=7 * scale,
+            fontweight="bold",
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.7),
+        )
 
-    plt.title("Combined Grid Plot of Values and Intervals", fontsize=12 * scale)
+    if title is not None:
+        plt.title(title, fontsize=title_fontsize * scale)
+
     plt.tight_layout()
     plt.show()
 
-def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
+
+def feature_plot(
+    df: pd.DataFrame,
+    figsize: Tuple[int, int] = (10, 6),
+    show_min_max: bool = True,
+    xticks_n: int = 10,
+    yticks_n: int = 10,
+    ticks_decimal: int = 3,
+    ticks_fontsize: int | float = 10,
+    title_fontsize: int | float = 16,
+    label_fontsizes: int | float = 14,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+) -> None:
     """
     Plots the mean, min, and max values of a feature based on tree split points.
+    
+    This method takes as input the output DataFrame from the `analyze_feature` 
+    method of the `treemind.Explainer` class (`analyze_feature(self, col: int) -> pd.DataFrame`).
 
     Parameters
     ----------
     df : pd.DataFrame
-        A DataFrame containing the feature data with the following columns:
-        - 'feature_lb': The lower bound of the feature range (tree split point).
-        - 'feature_ub': The upper bound of the feature range (tree split point).
-        - 'mean': The mean value of the feature within this range.
-        - 'min': The minimum value of the feature within this range.
-        - 'max': The maximum value of the feature within this range.
+        DataFrame containing the feature data with the following columns:
+        - 'feature_lb': Lower bound of the feature range (tree split point).
+        - 'feature_ub': Upper bound of the feature range (tree split point).
+        - 'mean': Mean value of the feature within this range.
+        - 'min': Minimum value of the feature within this range.
+        - 'max': Maximum value of the feature within this range.
 
-    figsize : tuple of int, optional
-        Size of the figure to be created, by default (10, 6). This parameter controls the
-        width and height of the plot.
+    figsize : tuple of int, optional, default (10, 6)
+        Width and height of the plot in inches.
+
+    show_min_max : bool, optional, default True
+        If True, shaded areas representing the min and max values will be displayed.
+
+    xticks_n : int, optional, default 10
+        Number of tick marks to display on the x-axis.
+
+    yticks_n : int, optional, default 10
+        Number of tick marks to display on the y-axis.
+
+    ticks_decimal : int, optional, default 3
+        Number of decimal places to show for tick labels on both axes.
+
+    ticks_fontsize : float, optional, default 10
+        Font size for the x-axis and y-axis tick labels.
+
+    title_fontsize : float, optional, default 16
+        Font size for the plot title.
+
+    title : str, optional, default None
+        Title of the plot. If None, an automatic title will be generated.
+
+    xlabel : str, optional, default None
+        Label for the x-axis. If None, it will default to the feature name.
+
+    ylabel : str, optional, default None
+        Label for the y-axis. Defaults to "Value" if not specified.
 
     Returns
     -------
     None
-        This function does not return any values. Instead, it displays the feature plot.
+        Displays the plot.
 
     Notes
     -----
@@ -347,8 +540,27 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
     understanding the relationship between the feature and the model's predictions.
     """
 
+    # Validate parameters
+    _validate_feature_plot_parameters(
+        df=df,
+        figsize=figsize,
+        show_min_max=show_min_max,
+        xticks_n=xticks_n,
+        yticks_n=yticks_n,
+        ticks_fontsize=ticks_fontsize,
+        ticks_decimal=ticks_decimal,
+        title=title,
+        title_fontsize=title_fontsize,
+        label_fontsizes=label_fontsizes,
+        xlabel=xlabel,
+        ylabel=ylabel,
+    )
+
     column_name = df.columns[1]
-    plot_column_name = column_name[:-3]
+
+    # Set default labels if None
+    xlabel = xlabel if xlabel is not None else column_name[:-3]
+    ylabel = ylabel if ylabel is not None else "Value"
 
     df = _replace_infinity(df, column_name=column_name)
 
@@ -373,28 +585,59 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
         drawstyle="steps-post",
     )
 
-    plt.fill_between(
-        df[column_name],
-        df["min"],
-        df["max"],
-        color="gray",
-        alpha=0.3,
-        label="Min-Max Range",
-        step="post",
-    )
+    if show_min_max:
+        plt.fill_between(
+            df[column_name],
+            df["min"],
+            df["max"],
+            color="gray",
+            alpha=0.3,
+            label="Min-Max Range",
+            step="post",
+        )
 
-    plt.title(f"Contribution of {plot_column_name}", fontsize=16, fontweight="bold")
+    # Set the plot title
+    if title is None:
+        plt.title(
+            f"Contribution of {xlabel}", fontsize=title_fontsize, fontweight="bold"
+        )
+    else:
+        plt.title(title, fontsize=title_fontsize, fontweight="bold")
 
     plt.gca().set_facecolor("whitesmoke")
 
-    x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=10)
-    plt.xticks(x_ticks, [f"{tick:.2f}" for tick in x_ticks], fontsize=10)
+    # Set x-ticks
+    x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=xticks_n)
+    plt.xticks(
+        x_ticks,
+        [f"{tick:.{ticks_decimal}f}" for tick in x_ticks],
+        fontsize=ticks_fontsize,
+    )
 
-    plt.xlabel(plot_column_name, fontsize=14)
-    plt.ylabel("Value", fontsize=14)
+    # Determine y-ticks range
+    if show_min_max:
+        y_min = df["min"].min()
+        y_max = df["max"].max()
+    else:
+        y_min = df["mean"].min()
+        y_max = df["mean"].max()
+
+    # Set y-ticks
+    y_ticks = np.linspace(y_min, y_max, num=yticks_n)
+    plt.yticks(
+        y_ticks,
+        [f"{tick:.{ticks_decimal}f}" for tick in y_ticks],
+        fontsize=ticks_fontsize,
+    )
+
+    plt.xlabel(xlabel, fontsize=label_fontsizes)
+    plt.ylabel(ylabel, fontsize=label_fontsizes)
 
     plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-    plt.legend()
+
+    if show_min_max:
+        plt.legend()
+
     plt.tight_layout()
     plt.show()
 
@@ -402,57 +645,67 @@ def feature_plot(df: pd.DataFrame, figsize: Tuple[int, int] = (10, 6)) -> None:
 def interaction_plot(
     df: pd.DataFrame,
     figsize: Tuple[int, int] = (10, 8),
-    cmap: str = "coolwarm",
-    column_names: List[str] | None = None,
+    axis_ticks_n: int = 10,
+    cbar_ticks_n: int = 10,
+    ticks_decimal: int = 3,
+    ticks_fontsize: int | float = 10,
+    title_fontsize: int | float = 16,
+    label_fontsizes: int | float = 14,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    color_bar_label: str | None = None,
 ) -> None:
     """
     Plots a filled rectangle plot to visualize interactions between two features,
     using model split points and filling gaps to the left and bottom.
+    
+    This method takes as input the output DataFrame from the `analyze_interaction` 
+    method of the `treemind.Explainer` class (`analyze_interaction(self, main_col: int, sub_col: int) -> pd.DataFrame`).
 
     Parameters
     ----------
     df : pd.DataFrame
-        A DataFrame containing columns for two features and their interaction values.
-        The DataFrame should include at least three columns:
-
-        - The first column represents the primary feature (main_col).
-        - The second column represents the secondary feature (sub_col).
-        - The third column contains the interaction values (typically the impact on
-          the model's prediction scores).
-
+        A DataFrame containing interaction data with columns `_lb`, `_ub`, `_lb`, `_ub`, and `value`.
+        The first four columns represent intervals for two features, where each pair (_lb, _ub) defines
+        the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
     figsize : tuple of int, optional
-        Size of the figure to be created, by default (10, 8).
-        This parameter controls the width and height of the plot.
-
-    cmap : str, optional
-        Colormap to use for filling the rectangles, by default "coolwarm".
-        The colormap represents the intensity of the interaction values.
-
-    column_names : list of str, optional
-        Names of the columns to be used for plotting. Should be a list of exactly
-        two column names, corresponding to the features whose interactions are being plotted.
-        If None, the function will use the first two columns of the DataFrame. If provided,
-        it must be a list with two elements.
-
-    Returns
-    -------
-    None
-        This function does not return any values. Instead, it displays the interaction plot.
-
-    Notes
-    -----
-    This function visualizes the interaction between two features based on model split points
-    rather than using raw data points. The model split points refer to the thresholds or
-    decision boundaries used by a decision tree-based model (such as gradient boosting or
-    random forest) to partition the feature space. Each rectangle on the plot represents
-    a region defined by these split points.
-
-    The filled rectangles extend to the left and bottom to cover the gaps between the split
-    points. The color of each rectangle corresponds to the interaction value, which indicates
-    how much the combination of the two features influences the model's prediction. The
-    color intensity is determined by the specified colormap (`cmap`), with a legend displayed
-    to the right showing the range of interaction values.
+        Size of the figure, by default (10, 8).
+    xticks_n : int, optional
+        Number of ticks on x-axis, by default 10.
+    yticks_n : int, optional
+        Number of ticks on y-axis, by default 10.
+    cbar_ticks_n : int, optional
+        Number of ticks on the colorbar, by default 10.
+    ticks_decimal : int, optional
+        Number of decimal places for tick labels, by default 3.
+    ticks_fontsize : int or float, optional
+        Font size for axis tick labels, by default 10.
+    title_fontsize : int or float, optional
+        Font size for plot title, by default 16.
+    title : str, optional
+        Plot title, by default None.
+    xlabel : str, optional
+        X-axis label, by default None.
+    ylabel : str, optional
+        Y-axis label, by default None.
+    color_bar_label : str, optional
+        Colorbar label, by default None.
     """
+    _validate_interaction_plot_parameters(
+        df=df,
+        figsize=figsize,
+        axis_ticks_n=axis_ticks_n,
+        cbar_ticks_n=cbar_ticks_n,
+        ticks_decimal=ticks_decimal,
+        ticks_fontsize=ticks_fontsize,
+        title_fontsize=title_fontsize,
+        label_fontsizes=label_fontsizes,
+        title=title,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        color_bar_label=color_bar_label,
+    )
 
     df = (
         pd.concat(
@@ -473,20 +726,8 @@ def interaction_plot(
         )
     )
 
-    if column_names is not None:
-        if not isinstance(column_names, list):
-            raise TypeError(
-                "`column_names` should be a list of two strings representing column names."
-            )
-        if len(column_names) != 2:
-            raise ValueError("`column_names` must contain exactly two elements.")
-
-        column1 = column_names[0]
-        column2 = column_names[1]
-
-    else:
-        column1 = df.columns[0]
-        column2 = df.columns[1]
+    column1 = xlabel if xlabel is not None else df.columns[0]
+    column2 = ylabel if ylabel is not None else df.columns[1]
 
     df = _replace_infinity(df, column1, infinity_type="positive")
     df = _replace_infinity(df, column1, infinity_type="negative")
@@ -525,18 +766,16 @@ def interaction_plot(
     width = x - left
     height = y - bottom
 
-
-    if values.max() < 0:  # Tüm değerler negatifse
-        colormap = plt.get_cmap('Blues')
-        norm = TwoSlopeNorm(vmin=values.min(), vcenter=values.max(), vmax=0)
-    elif values.min() > 0:  # Tüm değerler pozitifse
-        colormap = plt.get_cmap('Reds')
-        norm = TwoSlopeNorm(vmin=0, vcenter=values.min(), vmax=values.max())
-    else:  # Hem negatif hem pozitif değerler varsa
-        colormap = plt.get_cmap(cmap)
+    if values.max() < 0:  # All values are negative
+        colormap = plt.get_cmap("Blues")
+        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+    elif values.min() > 0:  # All values are positive
+        colormap = plt.get_cmap("Reds")
+        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+    else:  # Both negative and positive values
+        colormap = plt.get_cmap("coolwarm")
         norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
 
-    colormap = plt.get_cmap(cmap)
     colors = colormap(norm(values))
 
     # Create rectangles using list comprehension
@@ -548,40 +787,55 @@ def interaction_plot(
     pc = PatchCollection(rectangles, facecolor=colors, edgecolor="none")
     ax.add_collection(pc)
 
-    ax.set_xlim(df[column1].min(), df[column1].max())
-    ax.set_ylim(df[column2].min(), df[column2].max())
+    # Set axis limits
+    x_min, x_max = df[column1].min(), df[column1].max()
+    y_min, y_max = df[column2].min(), df[column2].max()
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+
+    # Set x-axis ticks
+    x_ticks = np.linspace(x_min, x_max, axis_ticks_n)
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(
+        [f"{x:.{ticks_decimal}f}" for x in x_ticks], fontsize=ticks_fontsize
+    )
+
+    # Set y-axis ticks
+    y_ticks = np.linspace(y_min, y_max, axis_ticks_n)
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels(
+        [f"{y:.{ticks_decimal}f}" for y in y_ticks], fontsize=ticks_fontsize
+    )
 
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax)
-    
-    # Gerçek minimum ve maksimum değerleri al
+
+    # Get real minimum and maximum values
     real_min = values.min()
     real_max = values.max()
-    
-    # Pozitif ve negatif değerler için aralık sayısını belirle
-    n_intervals = 10 # İstediğiniz aralık sayısı
-    
-    if real_min < 0 and real_max > 0:  # Hem pozitif hem negatif değerler varsa
-        # Pozitif değerler için tick'ler
-        pos_ticks = np.linspace(0, real_max, n_intervals//2 +1)
-        # Negatif değerler için tick'ler
-        neg_ticks = np.linspace(real_min, 0, n_intervals//2+1)[:-1]  # 0'ı tekrar etmemek için
-        # Tüm tick'leri birleştir
-        ticks = np.concatenate([neg_ticks, pos_ticks])
-    elif real_min >= 0:  # Sadece pozitif değerler varsa
-        ticks = np.linspace(real_min, real_max, n_intervals)
-    else:  # Sadece negatif değerler varsa
-        ticks = np.linspace(real_min, real_max, n_intervals)
-    
-    # Colorbar'ı güncelle
-    cbar.set_ticks(ticks)
-    cbar.set_ticklabels([f"{x:.2f}" for x in ticks])
-    cbar.set_label("Impact")
 
-    ax.set_xlabel(column1)
-    ax.set_ylabel(column2)
-    ax.set_title("Interaction Plot")
+    if real_min < 0 and real_max > 0:  # Both positive and negative values
+        pos_ticks = np.linspace(0, real_max, cbar_ticks_n // 2 + 1)
+        neg_ticks = np.linspace(real_min, 0, cbar_ticks_n // 2 + 1)[:-1]
+        ticks = np.concatenate([neg_ticks, pos_ticks])
+    else:  # Only negative or only positive values
+        ticks = np.linspace(real_min, real_max, cbar_ticks_n)
+
+    # Update colorbar
+    cbar.set_ticks(ticks)
+    cbar.set_ticklabels([f"{x:.{ticks_decimal}f}" for x in ticks])
+    cbar.ax.tick_params(labelsize=ticks_fontsize)
+    cbar.set_label(
+        "Impact" if color_bar_label is None else color_bar_label,
+        fontsize=label_fontsizes,
+    )
+
+    ax.set_xlabel(column1, fontsize=label_fontsizes)
+    ax.set_ylabel(column2, fontsize=label_fontsizes)
+    ax.set_title(
+        "Interaction Plot" if title is None else title, fontsize=title_fontsize
+    )
     plt.tight_layout()
     plt.show()
