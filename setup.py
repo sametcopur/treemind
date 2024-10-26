@@ -1,4 +1,4 @@
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
 import numpy as np
 import sys
@@ -106,5 +106,6 @@ setup(
     name="treemind",
     version="0.0.1",
     description="treemind",
+    packages=find_packages(include=["treemind", "treemind.*"]),
     ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
 )
