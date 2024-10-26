@@ -24,19 +24,7 @@ pip install treemind
 
 These features help users interpret ensemble models comprehensively, providing both quantitative insights and visual explanations.
 
-### treemind Algorithm Overview
-
-The treemind algorithm combines predictions from multiple decision trees by analyzing split points and calculating the average outcomes for different feature intervals. The process involves:
-
-1. **Identifying Split Points:** The algorithm identifies distinct split points across all trees for a given feature. These split points determine the intervals where the predictions need to be calculated.
-
-2. **Analyzing Intervals:** For each interval, the algorithm determines the possible leaf nodes in each tree that correspond to that range. These leaf nodes provide the raw prediction scores for the given feature values.
-
-3. **Calculating Combinations of Raw Scores:** It computes all possible combinations of raw scores from the leaf nodes across the trees within the interval.
-
-4. **Averaging the Results:** The algorithm calculates the average of the combined raw scores for each interval, yielding a final predicted outcome for that range.
-
-By repeating this process for all feature intervals, the algorithm generates a comprehensive prediction by aggregating the results from all decision trees.
+`treemind` operates with two distinct algorithmic approaches. For detailed information, please visit [here](https://treemind.readthedocs.io/en/latest/algorithm.html).
 
 ### Usage
 
@@ -51,7 +39,7 @@ from lightgbm import LGBMClassifier
 
 # Import the Explainer class and plotting utility from the TreeMind library
 from treemind import Explainer
-from treemind.plot import plot_feature
+from treemind.plot import feature_plot
 
 # Set a random state for reproducibility
 random_state = 42
@@ -84,7 +72,7 @@ feature_df = explainer.analyze_feature(2)
 
 # Plot the analysis results for the selected feature
 # This visualization helps understand the impact of the feature across different splits
-plot_feature(feature_df)
+feature_plot(feature_df)
 ```
 ### Documentation
 For more detailed information about the API and advanced usage, please refer to the full  [documentation](https://treemind.readthedocs.io/en/latest/).
