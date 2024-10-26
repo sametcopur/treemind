@@ -1,6 +1,7 @@
-numpy>=1.25.2
-pandas>=2.0.3
-scipy>=1.11.4
-myst-parser>=2.0.0
-sphinx_rtd_theme>=2.0.0
+numpy>=1.26.4
+pandas>=2.2.2
+matplotlib>=3.9.2
+seaborn>=0.13.
+sphinx_rtd_theme
 sphinx_autodoc_typehints
+

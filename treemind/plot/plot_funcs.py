@@ -52,8 +52,7 @@ def bar_plot(
         feature indices are labeled as "Column X" for each feature.
     max_col : int or None, optional, default=20
         The maximum number of features to display in the plot, chosen based on 
-        their absolute contribution values. If `None`, all features with non-zero
-        contributions will be shown.
+        their absolute contribution values. If `None`, all features will be shown.
     title : str or None, optional
         The title displayed at the top of the plot. If `None`, no title is shown.
     title_fontsize : float, optional, default=12.0
@@ -235,24 +234,26 @@ def range_plot(
         The raw score associated with the values, displayed in the plot's upper right.
     split_points : List[np.ndarray[float]]
         A list of point intervals corresponding to the values in each row.
-    scale : float, optional
-        Scaling factor for figure size and font sizes, by default 1.
-    columns : List[str], optional
-        A list of column names for labeling rows; if None, uses row indices.
-    max_col : int, optional
-        Maximum number of rows to display after sorting. If None, all rows are shown.
+    scale : float, optional, default 2.0
+        Scaling factor for figure size
+    columns : list or ArrayLike, optional
+        A list of names for the features, used as labels on the y-axis. If `None`,
+        feature indices are labeled as "Column X" for each feature.
+    max_col : int or None, optional, default=20
+        The maximum number of features to display in the plot, chosen based on 
+        their absolute contribution values. If `None`, all features will be shown.
     title : str or None, optional
         The title displayed at the top of the plot. If `None`, no title is shown.
-    label_fontsize : float, optional
-        Font size for the y-axis labels, default is 9.
+    label_fontsize : float, optional, default is 9.0
+        Font size for the y-axis labels
     title_fontsize : float, optional, default 12.0
-        Font size for the plot title.
-    interval_fontsize : float, optional
-        Font size for interval labels displayed on each bar, default is 4.5.
-    value_fontsize : float, optional
-        Font size for value labels displayed below each bar, default is 5.5.
-    show_raw_score : bool, optional
-        If True, displays the raw score in the plot; default is True.
+        Font size for the plot title
+    interval_fontsize : float, optional, default 4.5.
+        Font size for interval labels displayed on each bar,
+    value_fontsize : float, optional, default 5.5.
+        Font size for value labels displayed below each bar
+    show_raw_score : bool, optional, default True
+        If True, displays the raw score in the plot
 
     Returns
     -------

@@ -8,7 +8,6 @@ if sys.platform == "win32":
     extra_compile_args = [
         "/O2",
         "/fp:fast",
-        "/arch:AVX2",
         "/GL",
         "/Ot",
         "/Ox",
