@@ -24,13 +24,13 @@ def _check_columns(columns):
 def _validate_bar_plot_parameters(
     values: np.ndarray,
     raw_score: float,
-    columns: ArrayLike = None,
-    max_col: Union[int, None] = 20,
-    figsize: Tuple[int, int] = (8, 6),
-    title: Union[str, None] = None,
-    title_fontsize: float = 12.0,
-    label_fontsize: float = 12.0,
-    show_raw_score: bool = True,
+    columns: ArrayLike,
+    max_col: Union[int, None],
+    figsize: Tuple[float, float],
+    title: Union[str, None],
+    title_fontsize: float,
+    label_fontsize: float,
+    show_raw_score: bool,
 ) -> None:
     """
     Validates parameters for the bar_plot function.
@@ -116,7 +116,7 @@ def _validate_bar_plot_parameters(
 
 def _validate_interaction_plot_parameters(
     df: pd.DataFrame,
-    figsize: Tuple[int, int],
+    figsize: Tuple[float, float],
     axis_ticks_n: int,
     cbar_ticks_n: int,
     ticks_decimal: int,
@@ -187,13 +187,12 @@ def _validate_interaction_plot_parameters(
             "and the last column must be 'value'."
         )
 
-    # Check `figsize` is a tuple of two positive integers
-    if (
-        not isinstance(figsize, tuple)
-        or len(figsize) != 2
-        or not all(isinstance(i, int) and i > 0 for i in figsize)
-    ):
-        raise ValueError("`figsize` must be a tuple of two positive integers.")
+
+    # Check figsize
+    if not isinstance(figsize, tuple) or len(figsize) != 2:
+        raise TypeError("The 'figsize' parameter must be a tuple of two numeric values.")
+    if not all(isinstance(dim, (int, float)) for dim in figsize):
+        raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
     # Check `xticks_n`, `yticks_n`, `cbar_ticks_n` are positive integers
     for param, name in [(axis_ticks_n, "axis_ticks_n"), (cbar_ticks_n, "cbar_ticks_n")]:
@@ -331,7 +330,7 @@ def _validate_range_plot_parameters(
 
 def _validate_feature_plot_parameters(
     df: pd.DataFrame,
-    figsize: Tuple[int, int],
+    figsize: Tuple[float, float],
     show_min_max: bool,
     xticks_n: int,
     yticks_n: int,
@@ -392,13 +391,12 @@ def _validate_feature_plot_parameters(
             "The DataFrame must contain exactly one '_lb' column and one '_ub' column."
         )
 
-    # Validate figsize
-    if not (
-        isinstance(figsize, tuple)
-        and len(figsize) == 2
-        and all(isinstance(x, (int, float)) and x > 0 for x in figsize)
-    ):
-        raise ValueError("figsize must be a tuple of two positive numbers.")
+
+    # Check figsize
+    if not isinstance(figsize, tuple) or len(figsize) != 2:
+        raise TypeError("The 'figsize' parameter must be a tuple of two numeric values.")
+    if not all(isinstance(dim, (int, float)) for dim in figsize):
+        raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
     # Validate show_min_max
     if not isinstance(show_min_max, bool):

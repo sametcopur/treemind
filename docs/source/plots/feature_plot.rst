@@ -1,8 +1,4 @@
-feature_plot
-============
-
 .. autofunction:: treemind.plot.feature_plot
-    :no-index:
 
 **Example Usage**
 
@@ -28,5 +24,5 @@ Below is an example of how to use the `feature_plot` function:
 
 **Output**
 
-.. image:: ../_static/feature_plot.png
+.. image:: ../_static/api/feature_plot.png
     :alt: feature_plot example

@@ -1,8 +1,4 @@
-interaction_plot
-================
-
 .. autofunction:: treemind.plot.interaction_plot
-    :no-index:
 
 **Example Usage**
 
@@ -28,5 +24,5 @@ Below is an example of how to use the `interaction_plot` function:
 
 **Output**
 
-.. image:: ../_static/interaction_plot.png
+.. image:: ../_static/api/interaction_plot.png
     :alt: interaction_plot example

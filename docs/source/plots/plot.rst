@@ -1,9 +1,9 @@
-plot
-=====
+.. _plot:
 
-.. toctree::
-   :maxdepth: 2
+``treemind.plot``
+==================
 
-   bar_plot
-   feature_plot
-   interaction_plot
+.. include:: feature_plot.rst
+.. include:: interaction_plot.rst
+.. include:: range_plot.rst
+.. include:: bar_plot.rst

@@ -1,9 +1,8 @@
 [project]
-name = "ruleopt"
-version = "1.0.1"
+name = "treemind"
+version = "0.0.1"
 
 dependencies = [
-
     "numpy>=1.25.2",
     "pandas>=2.0.3",
 ]

@@ -6,6 +6,8 @@ Note that similar configurations can be applied to other models, such as using `
 ``XGBRegressor`` and ``xgb.train`` in XGBoost. Both classifiers and regressors are supported in the same way, allowing flexibility across different 
 tree-based algorithms.
 
+For detailed information, please refer to the `API Reference <api_reference.html#api_reference>`_.
+
 Setup Code
 ----------
 

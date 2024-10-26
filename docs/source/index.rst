@@ -10,7 +10,8 @@ treemind documentation
    :maxdepth: 2
    :caption: Contents:
 
-   algorithm
+   getting_started
    example
-   performance
+   algorithm
+   experiment
    api_reference

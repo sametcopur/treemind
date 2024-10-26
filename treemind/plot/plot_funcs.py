@@ -45,9 +45,8 @@ def bar_plot(
         feature's contribution to the overall outcome.
     raw_score : float
         The expected value of the model given the provided dataset.
-    figsize : tuple of int, optional, default=(8, 6)
-        The dimensions (width, height) of the figure, which determines the size
-        of the plot.
+    figsize : tuple of float, optional, default=(8.0, 6.0)
+        Width and height of the plot in inches.
     columns : list or ArrayLike, optional
         A list of names for the features, used as labels on the y-axis. If `None`,
         feature indices are labeled as "Column X" for each feature.
@@ -68,27 +67,11 @@ def bar_plot(
     Returns
     -------
     None
-        The function displays a matplotlib figure and does not return any values.
+        Displays the plot.
     
     Notes
     -----
-    - The function filters out features with zero contributions, focusing on 
-      features with impactful contributions.
-    - Contributions are displayed as horizontal bars. Positive contributions 
-      are colored green, while negative contributions are red.
-    - If `max_col` is provided, the function shows the features with the largest
-      absolute contributions, sorted in ascending order, ensuring that the most
-      impactful features are visible.
-    - For visual clarity, padding is added to the x-axis limits based on the 
-      data range, allowing sufficient space for text labels next to each bar.
-    - The raw score (if `show_raw_score=True`) is displayed inside the plot 
-      area, positioned at the top-right, providing context for the feature contributions.
-    
-    Raises
-    ------
-    ValueError
-        If all contribution values are zero, a ValueError is raised since there 
-        is nothing to visualize.
+    - Rows with only zero values are automatically excluded.
     """
 
     _validate_bar_plot_parameters(
@@ -230,8 +213,8 @@ def range_plot(
     columns: List[str] = None,
     max_col: int = 20,
     title: str = None,
-    label_fontsize: float = 9,
-    title_fontsize: float = 12,
+    label_fontsize: float = 9.0,
+    title_fontsize: float = 12.0,
     interval_fontsize: float = 4.5,
     value_fontsize: float = 5.5,
     show_raw_score: bool = True,
@@ -258,12 +241,12 @@ def range_plot(
         A list of column names for labeling rows; if None, uses row indices.
     max_col : int, optional
         Maximum number of rows to display after sorting. If None, all rows are shown.
-    title : str, optional
-        Title of the plot; if None, uses a default title.
+    title : str or None, optional
+        The title displayed at the top of the plot. If `None`, no title is shown.
     label_fontsize : float, optional
         Font size for the y-axis labels, default is 9.
-    title_fontsize : float, optional
-        Font size for the plot title, default is 12.
+    title_fontsize : float, optional, default 12.0
+        Font size for the plot title.
     interval_fontsize : float, optional
         Font size for interval labels displayed on each bar, default is 4.5.
     value_fontsize : float, optional
@@ -274,13 +257,11 @@ def range_plot(
     Returns
     -------
     None
-        Displays the combined grid plot.
+        Displays the plot.
 
     Notes
     -----
     - Rows with only zero values are automatically excluded.
-    - Color intensity represents the magnitude of each value, with green for positive and red for negative.
-    - Font color is determined by the brightness of the bar color for optimal readability.
     """
 
     _validate_range_plot_parameters(
@@ -463,13 +444,13 @@ def range_plot(
 def feature_plot(
     df: pd.DataFrame,
     figsize: Tuple[int, int] = (10, 6),
-    show_min_max: bool = True,
+    show_min_max: bool = False,
     xticks_n: int = 10,
     yticks_n: int = 10,
     ticks_decimal: int = 3,
-    ticks_fontsize: int | float = 10,
-    title_fontsize: int | float = 16,
-    label_fontsizes: int | float = 14,
+    ticks_fontsize: float = 10.0,
+    title_fontsize: float = 16.0,
+    label_fontsizes: float = 14.0,
     title: str | None = None,
     xlabel: str | None = None,
     ylabel: str | None = None,
@@ -489,34 +470,24 @@ def feature_plot(
         - 'mean': Mean value of the feature within this range.
         - 'min': Minimum value of the feature within this range.
         - 'max': Maximum value of the feature within this range.
-
-    figsize : tuple of int, optional, default (10, 6)
+    figsize : tuple of int, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
-
-    show_min_max : bool, optional, default True
+    show_min_max : bool, optional, default False
         If True, shaded areas representing the min and max values will be displayed.
-
     xticks_n : int, optional, default 10
         Number of tick marks to display on the x-axis.
-
     yticks_n : int, optional, default 10
         Number of tick marks to display on the y-axis.
-
     ticks_decimal : int, optional, default 3
-        Number of decimal places to show for tick labels on both axes.
-
-    ticks_fontsize : float, optional, default 10
-        Font size for the x-axis and y-axis tick labels.
-
-    title_fontsize : float, optional, default 16
+        Number of decimal places for tick labels
+    ticks_fontsize : float, optional, default 10.0
+        Font size for axis tick labels,
+    title_fontsize : float, optional, default 16.0
         Font size for the plot title.
-
     title : str, optional, default None
-        Title of the plot. If None, an automatic title will be generated.
-
+        The title displayed at the top of the plot. If `None`, no title is shown.
     xlabel : str, optional, default None
         Label for the x-axis. If None, it will default to the feature name.
-
     ylabel : str, optional, default None
         Label for the y-axis. Defaults to "Value" if not specified.
 
@@ -524,20 +495,6 @@ def feature_plot(
     -------
     None
         Displays the plot.
-
-    Notes
-    -----
-    This function visualizes how a particular feature behaves over different ranges of
-    values, as defined by the split points of a decision tree-based model. The tree split
-    points represent thresholds used by the model to partition the feature space into
-    segments. The plot shows the mean value of the feature for each segment, while shading
-    between the minimum and maximum values to illustrate the variability within that range.
-
-    The x-axis represents the feature values, divided into intervals determined by the
-    tree's split points. The y-axis shows the corresponding mean, minimum, and maximum
-    values for each interval. The plot provides insight into how the feature's value
-    distribution varies across the different split-defined segments. It can be helpful for
-    understanding the relationship between the feature and the model's predictions.
     """
 
     # Validate parameters
@@ -644,21 +601,20 @@ def feature_plot(
 
 def interaction_plot(
     df: pd.DataFrame,
-    figsize: Tuple[int, int] = (10, 8),
+    figsize: Tuple[float, float] = (10.0, 8.0),
     axis_ticks_n: int = 10,
     cbar_ticks_n: int = 10,
     ticks_decimal: int = 3,
-    ticks_fontsize: int | float = 10,
-    title_fontsize: int | float = 16,
-    label_fontsizes: int | float = 14,
+    ticks_fontsize: float = 10.0,
+    title_fontsize: float = 16.0,
+    label_fontsizes: float = 14.0,
     title: str | None = None,
     xlabel: str | None = None,
     ylabel: str | None = None,
     color_bar_label: str | None = None,
 ) -> None:
     """
-    Plots a filled rectangle plot to visualize interactions between two features,
-    using model split points and filling gaps to the left and bottom.
+    Plots to visualize interactions between two features using model split points.
     
     This method takes as input the output DataFrame from the `analyze_interaction` 
     method of the `treemind.Explainer` class (`analyze_interaction(self, main_col: int, sub_col: int) -> pd.DataFrame`).
@@ -669,28 +625,31 @@ def interaction_plot(
         A DataFrame containing interaction data with columns `_lb`, `_ub`, `_lb`, `_ub`, and `value`.
         The first four columns represent intervals for two features, where each pair (_lb, _ub) defines
         the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
-    figsize : tuple of int, optional
-        Size of the figure, by default (10, 8).
-    xticks_n : int, optional
-        Number of ticks on x-axis, by default 10.
-    yticks_n : int, optional
-        Number of ticks on y-axis, by default 10.
-    cbar_ticks_n : int, optional
-        Number of ticks on the colorbar, by default 10.
-    ticks_decimal : int, optional
-        Number of decimal places for tick labels, by default 3.
-    ticks_fontsize : int or float, optional
-        Font size for axis tick labels, by default 10.
-    title_fontsize : int or float, optional
-        Font size for plot title, by default 16.
-    title : str, optional
-        Plot title, by default None.
-    xlabel : str, optional
-        X-axis label, by default None.
-    ylabel : str, optional
-        Y-axis label, by default None.
-    color_bar_label : str, optional
-        Colorbar label, by default None.
+    figsize : tuple of float, optional, default (10.0, 6.0)
+        Width and height of the plot in inches.
+    axis_ticks_n : int, optional, default 10
+        Number of ticks on both axis
+    cbar_ticks_n : int, optional, default 10
+        Number of ticks on the colorbar
+    ticks_decimal : int, optional, default 3
+        Number of decimal places for tick labels
+    ticks_fontsize : float, optional, default 10.0
+        Font size for axis tick labels,
+    title_fontsize : int or float, optional, default 16.
+        Font size for plot title, by
+    title : str or None, optional
+        The title displayed at the top of the plot. If `None`, no title is shown.
+    xlabel : str, optional, default None
+        Label for the x-axis. If None, it will default to the feature name.
+    xlabel : str, optional, default None
+        Label for the y-axis. If None, it will default to the feature name.
+    color_bar_label : str, optional, default None
+        Colorbar label, If None, it will default to "Impact".
+        
+    Returns
+    -------
+    None
+        Displays the plot.
     """
     _validate_interaction_plot_parameters(
         df=df,

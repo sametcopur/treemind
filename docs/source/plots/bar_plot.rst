@@ -1,8 +1,4 @@
-bar_plot
-========
-
 .. autofunction:: treemind.plot.bar_plot
-    :no-index:
 
 **Example Usage**
 
@@ -30,5 +26,5 @@ Below is an example of how to use the `bar_plot` function:
 
 **Output**
 
-.. image:: ../_static/bar_plot.png
+.. image:: ../_static/api/bar_plot.png
     :alt: bar_plot example

@@ -122,7 +122,7 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef tuple analyze_data(self, object x, bint detailed = True):
+    cpdef tuple analyze_data(self, object x, bint detailed = False):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 

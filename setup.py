@@ -105,7 +105,7 @@ extensions = [
 
 setup(
     name="treemind",
-    version="0.1",
-    description="Tree Mind",
+    version="0.0.1",
+    description="treemind",
     ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
 )
