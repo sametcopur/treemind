@@ -28,7 +28,7 @@ These features help users interpret ensemble models comprehensively, providing b
 
 ### Usage
 
-To use `treemind`, you need to initialize the `treemind` class with your specific parameters and fit it to your data. Here's a basic example:
+To use `treemind`, you need to initialize the `treemind` class and fit it to your model. Here's a basic example:
 
 
 ```python
