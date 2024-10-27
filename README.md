@@ -46,7 +46,7 @@ random_state = 42
 
 # Load the Iris dataset (alternatively, you can load a different dataset like breast cancer)
 # The data is split into features (X) and target variable (y)
-X, y = load_iris(return_X_y=True)
+X, y = load_breast_cancer(return_X_y=True)
 
 # Split the dataset into training and testing sets
 # The test size is set to 20%, meaning 80% of the data will be used for training
