@@ -540,7 +540,7 @@ def feature_plot(
         y="mean",
         color="blue",
         linewidth=2,
-        drawstyle="steps-post",
+        drawstyle="steps-pre",
     )
 
     if show_min_max:
@@ -568,7 +568,7 @@ def feature_plot(
     x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=xticks_n)
     plt.xticks(
         x_ticks,
-        [f"{tick:.{ticks_decimal}f}" for tick in x_ticks],
+        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
         fontsize=ticks_fontsize,
     )
 
@@ -757,14 +757,16 @@ def interaction_plot(
     x_ticks = np.linspace(x_min, x_max, axis_ticks_n)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(
-        [f"{x:.{ticks_decimal}f}" for x in x_ticks], fontsize=ticks_fontsize
+        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
+        fontsize=ticks_fontsize,
     )
 
     # Set y-axis ticks
     y_ticks = np.linspace(y_min, y_max, axis_ticks_n)
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(
-        [f"{y:.{ticks_decimal}f}" for y in y_ticks], fontsize=ticks_fontsize
+        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in y_ticks[1:-1]] + ["+∞"],
+        fontsize=ticks_fontsize,
     )
 
     # Add colorbar
