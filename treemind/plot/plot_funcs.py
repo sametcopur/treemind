@@ -801,3 +801,113 @@ def interaction_plot(
     )
     plt.tight_layout()
     plt.show()
+
+
+def interaction_scatter_plot(
+    X: pd.DataFrame,
+    df: pd.DataFrame,
+    col_1_index: int,
+    col_2_index: int,
+    figsize: Tuple[float, float] = (10.0, 8.0),
+    ticks_fontsize: float = 10.0,
+    title_fontsize: float = 16.0,
+    label_fontsizes: float = 14.0,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    color_bar_label: str | None = None,
+) -> None:
+    """
+    Creates a scatter plot based on interaction data and feature values.
+
+    Parameters
+    ----------
+    X : pd.DataFrame
+        Input data containing feature values
+    df : pd.DataFrame
+        Interaction data with columns _lb, _ub for both features and value column
+    col_1_index : int
+        Index of first feature in X
+    col_2_index : int
+        Index of second feature in X
+    """
+
+    # Extract values from X
+    if type(X) == pd.DataFrame:
+        x_values = X.iloc[:, col_1_index].values
+        y_values = X.iloc[:, col_2_index].values
+        
+    # Extract values from X
+    else:
+        x_values = X[:, col_1_index]
+        y_values = X[:, col_2_index]
+
+    cols = df.columns
+
+    # Convert bounds to arrays for vectorized comparison
+    x_lb_vals = df[cols[0]].values[:, np.newaxis]
+    x_ub_vals = df[cols[1]].values[:, np.newaxis]
+    y_lb_vals = df[cols[2]].values[:, np.newaxis]
+    y_ub_vals = df[cols[3]].values[:, np.newaxis]
+    df_values = df["value"].values
+
+    # Check if x and y values fall within any of the intervals
+    x_in_bounds = (x_values >= x_lb_vals) & (x_values <= x_ub_vals)
+    y_in_bounds = (y_values >= y_lb_vals) & (y_values <= y_ub_vals)
+
+    # Initialize array for values
+    values = np.zeros(len(X))
+
+    # Combine x and y conditions and assign values
+    mask = x_in_bounds & y_in_bounds
+    matching_indices = mask.any(axis=0)
+    values[matching_indices] = df_values[mask.argmax(axis=0)[matching_indices]]
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Determine colormap based on value range
+    if values.max() < 0:  # All values are negative
+        colormap = plt.get_cmap("Blues")
+        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+    elif values.min() > 0:  # All values are positive
+        colormap = plt.get_cmap("Reds")
+        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+    else:  # Both negative and positive values
+        colormap = plt.get_cmap("coolwarm")
+        norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
+
+    # Create scatter plot
+    scatter = ax.scatter(
+        x_values, y_values, c=values, cmap=colormap, norm=norm, edgecolors="black"
+    )
+
+
+    # Set axis labels
+    ax.set_xlabel(
+        xlabel if xlabel is not None else f"Feature {col_1_index}",
+        fontsize=label_fontsizes,
+    )
+    ax.set_ylabel(
+        ylabel if ylabel is not None else f"Feature {col_2_index}",
+        fontsize=label_fontsizes,
+    )
+
+    # Add colorbar with specified number of ticks
+    cbar = plt.colorbar(scatter)
+
+    cbar.ax.tick_params(labelsize=ticks_fontsize)
+
+    cbar.set_label(
+        "Impact" if color_bar_label is None else color_bar_label,
+        fontsize=label_fontsizes,
+    )
+
+    # Set title
+    ax.set_title(
+        "Interaction Scatter Plot" if title is None else title, fontsize=title_fontsize
+    )
+
+    plt.tight_layout()
+    plt.show()
+
+    print()
