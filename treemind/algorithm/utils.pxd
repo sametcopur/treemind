@@ -11,9 +11,9 @@ cdef double cmin(double a, double b) noexcept nogil
 
 cdef object replace_inf(object data, str column_name)
 
-cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees)
+cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, const vector[vector[Rule]] trees)
 
-cdef tuple[vector[double], vector[double], vector[double],vector[double]] _analyze_interaction(vector[vector[Rule]] trees, int main_col, int sub_col)
+cdef tuple[vector[double], vector[double], vector[double],vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, int main_col, int sub_col)
    
 cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil
 

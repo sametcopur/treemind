@@ -69,7 +69,7 @@ cdef add_lower_bound(object data, int loc, str column):
 
 
 
-cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees):
+cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, const vector[vector[Rule]] trees):
         cdef:
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
             vector[double] split_points = get_split_point(filtered_trees, col)
@@ -79,8 +79,8 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 
             vector[double] max_vals, min_vals, mean_values, points, average_counts
 
-            Rule* rule_ptr
-            vector[Rule]* tree_ptr
+            const Rule* rule_ptr
+            const vector[Rule]* tree_ptr
             size_t i, k, l, tree_size
 
             double point, ensemble_sum, ensemble_max_val, ensemble_min_val
@@ -152,7 +152,7 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 cdef tuple[vector[double], 
             vector[double], 
             vector[double],
-            vector[double]] _analyze_interaction(vector[vector[Rule]] trees, 
+            vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, 
                                                 int main_col, 
                                                 int sub_col):
     cdef:
@@ -168,8 +168,8 @@ cdef tuple[vector[double],
                 
         double sub_point, main_point
         size_t i, j, k, l, tree_size
-        Rule* rule_ptr
-        vector[Rule]* tree_ptr
+        const Rule* rule_ptr
+        const vector[Rule]* tree_ptr
 
         double count, tree_sum, ensemble_sum
         double n_count, iter_count, ensemble_count, tree_count
