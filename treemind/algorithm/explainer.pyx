@@ -222,11 +222,11 @@ cdef class Explainer:
             raise ValueError("'col' cannot be negative.")
 
         cdef:
-            vector[double] points, mean_values, min_vals, max_vals
+            vector[double] points, mean_values, min_vals, max_vals, counts
             str column_name
             object df
 
-        points, mean_values, min_vals, max_vals = _analyze_feature(col, self.trees)
+        points, mean_values, min_vals, max_vals, counts = _analyze_feature(col, self.trees)
             
         column_name = self.columns[col]
 
@@ -235,6 +235,7 @@ cdef class Explainer:
             'mean': mean_values,
             'min': min_vals,
             'max': max_vals,
+            "count": counts
         })
 
         df.insert(0, f"{column_name}_lb", df[f'{column_name}_ub'].shift(1).fillna(-np.inf))

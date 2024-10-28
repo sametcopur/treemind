@@ -7,6 +7,8 @@ from matplotlib.colors import rgb_to_hsv, TwoSlopeNorm
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
+from scipy.stats import gaussian_kde
+
 from .plot_utils import (
     _create_intervals,
     _replace_infinity,
@@ -32,11 +34,11 @@ def bar_plot(
     show_raw_score: bool = True,
 ) -> None:
     """
-    Creates a horizontal bar plot illustrating the contribution of each feature 
-    in a dataset. This plot highlights the positive and negative contributions 
-    distinctly with color-coded bars, providing a clear visual representation 
+    Creates a horizontal bar plot illustrating the contribution of each feature
+    in a dataset. This plot highlights the positive and negative contributions
+    distinctly with color-coded bars, providing a clear visual representation
     of each feature’s impact on a model’s output or a decision-making process.
-    
+
     Parameters
     ----------
     values : np.ndarray
@@ -51,7 +53,7 @@ def bar_plot(
         A list of names for the features, used as labels on the y-axis. If `None`,
         feature indices are labeled as "Column X" for each feature.
     max_col : int or None, optional, default=20
-        The maximum number of features to display in the plot, chosen based on 
+        The maximum number of features to display in the plot, chosen based on
         their absolute contribution values. If `None`, all features will be shown.
     title : str or None, optional
         The title displayed at the top of the plot. If `None`, no title is shown.
@@ -60,14 +62,14 @@ def bar_plot(
     label_fontsize : float, optional, default=12.0
         Font size for the y-axis labels (feature names).
     show_raw_score : bool, optional, default=True
-        Whether to display the `raw_score` value on the plot. If `True`, the raw 
+        Whether to display the `raw_score` value on the plot. If `True`, the raw
         score is displayed at the top-right corner of the plot area.
-    
+
     Returns
     -------
     None
         Displays the plot.
-    
+
     Notes
     -----
     - Rows with only zero values are automatically excluded.
@@ -223,7 +225,7 @@ def range_plot(
     Rows are sorted by a custom range calculation to emphasize the most variable rows:
 
     This method requires the `detailed` parameter to be `True` in the output from
-    the `analyze_data` method of the `treemind.Explainer` class (`analyze_data(self, x: ArrayLike, detailed: bool = True) 
+    the `analyze_data` method of the `treemind.Explainer` class (`analyze_data(self, x: ArrayLike, detailed: bool = True)
     -> Tuple[np.ndarray, List[np.ndarray], float`).
 
     Parameters
@@ -240,7 +242,7 @@ def range_plot(
         A list of names for the features, used as labels on the y-axis. If `None`,
         feature indices are labeled as "Column X" for each feature.
     max_col : int or None, optional, default=20
-        The maximum number of features to display in the plot, chosen based on 
+        The maximum number of features to display in the plot, chosen based on
         their absolute contribution values. If `None`, all features will be shown.
     title : str or None, optional
         The title displayed at the top of the plot. If `None`, no title is shown.
@@ -444,11 +446,13 @@ def range_plot(
 
 def feature_plot(
     df: pd.DataFrame,
-    figsize: Tuple[int, int] = (10, 6),
+    figsize: Tuple[int, int] = (12, 8),
     show_min_max: bool = False,
+    show_range: bool = True,
     xticks_n: int = 10,
     yticks_n: int = 10,
-    ticks_decimal: int = 3,
+    xticks_decimal: int = 1,
+    yticks_decimal: int = 1,
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
@@ -458,8 +462,8 @@ def feature_plot(
 ) -> None:
     """
     Plots the mean, min, and max values of a feature based on tree split points.
-    
-    This method takes as input the output DataFrame from the `analyze_feature` 
+
+    This method takes as input the output DataFrame from the `analyze_feature`
     method of the `treemind.Explainer` class (`analyze_feature(self, col: int) -> pd.DataFrame`).
 
     Parameters
@@ -471,16 +475,21 @@ def feature_plot(
         - 'mean': Mean value of the feature within this range.
         - 'min': Minimum value of the feature within this range.
         - 'max': Maximum value of the feature within this range.
+        - 'count' : Average leaf_count within this range.
     figsize : tuple of int, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
     show_min_max : bool, optional, default False
         If True, shaded areas representing the min and max values will be displayed.
+    show_range : bool, default True
+        If True, show leaf distribution within range.
     xticks_n : int, optional, default 10
         Number of tick marks to display on the x-axis.
     yticks_n : int, optional, default 10
         Number of tick marks to display on the y-axis.
-    ticks_decimal : int, optional, default 3
-        Number of decimal places for tick labels
+    xticks_decimal : int, optional, default 1
+        Number of decimal places for x-tick labels
+    yticks_decimal : int, optional, default 1
+        Number of decimal places for y-tick labels
     ticks_fontsize : float, optional, default 10.0
         Font size for axis tick labels,
     title_fontsize : float, optional, default 16.0
@@ -497,16 +506,17 @@ def feature_plot(
     None
         Displays the plot.
     """
-
-    # Validate parameters
+    # Parameter validation
     _validate_feature_plot_parameters(
         df=df,
         figsize=figsize,
         show_min_max=show_min_max,
+        show_range=show_range,
         xticks_n=xticks_n,
         yticks_n=yticks_n,
         ticks_fontsize=ticks_fontsize,
-        ticks_decimal=ticks_decimal,
+        xticks_decimal=xticks_decimal,
+        yticks_decimal=yticks_decimal,
         title=title,
         title_fontsize=title_fontsize,
         label_fontsizes=label_fontsizes,
@@ -515,12 +525,14 @@ def feature_plot(
     )
 
     column_name = df.columns[1]
+    lb_column_name = df.columns[0]
 
     # Set default labels if None
     xlabel = xlabel if xlabel is not None else column_name[:-3]
     ylabel = ylabel if ylabel is not None else "Value"
 
     df = _replace_infinity(df, column_name=column_name)
+    df = _replace_infinity(df, column_name=lb_column_name, infinity_type="negative")
 
     extend_ratio = 0.05 * (df[column_name].max() - df[column_name].min())
 
@@ -532,43 +544,90 @@ def feature_plot(
 
     df = pd.concat([min_row.to_frame().T, df, max_row.to_frame().T], ignore_index=True)
 
-    plt.figure(figsize=figsize)
+    if show_range:
+        fig, (ax1, ax2) = plt.subplots(
+            2, 1, gridspec_kw={"height_ratios": [1, 4]}, sharex=True, figsize=figsize
+        )
+        main_ax = ax2
+    else:
+        fig, main_ax = plt.subplots(figsize=figsize)
 
+    # HISTOGRAM - only if show_range is True
+    if show_range:
+        mid_points = (df[lb_column_name] + df[column_name]) / 2
+        weights = df["count"]
+        min_value = df[column_name].min()
+        max_value = df[column_name].max()
+
+        kde = gaussian_kde(
+            np.repeat(mid_points, weights.astype(int)), bw_method="silverman"
+        )
+
+        x_range = np.linspace(min_value, max_value, 200)
+        kde_values = kde(x_range)
+
+        ax1.plot(x_range, kde_values, color="#4C72B0", lw=2, alpha=0.7)
+        ax1.fill_between(x_range, kde_values, color="#4C72B0", alpha=0.3)
+
+        ax1.set_ylabel("")
+        ax1.set_yticklabels([])
+        ax1.tick_params(left=False, labelleft=False, bottom=False)
+
+        for spine in ax1.spines.values():
+            spine.set_visible(False)
+
+        ax1.spines["bottom"].set_visible(True)
+        ax1.spines["bottom"].set_color("black")
+        ax1.spines["bottom"].set_linewidth(2)
+
+        # Set the plot title on ax1 if show_range is True
+        if title is None:
+            ax1.set_title(
+                f"Contribution of {xlabel}", fontsize=title_fontsize, fontweight="bold"
+            )
+        else:
+            ax1.set_title(title, fontsize=title_fontsize, fontweight="bold")
+
+    # Plot the mean line with steps-pre drawstyle
     sns.lineplot(
         data=df,
         x=column_name,
         y="mean",
-        color="blue",
+        color="#3A5894",
         linewidth=2,
         drawstyle="steps-pre",
+        ax=main_ax,
     )
 
+    # Fill between the min and max if specified
     if show_min_max:
-        plt.fill_between(
+        main_ax.fill_between(
             df[column_name],
             df["min"],
             df["max"],
             color="gray",
             alpha=0.3,
             label="Min-Max Range",
-            step="post",
+            step="pre",
         )
 
-    # Set the plot title
-    if title is None:
-        plt.title(
-            f"Contribution of {xlabel}", fontsize=title_fontsize, fontweight="bold"
-        )
-    else:
-        plt.title(title, fontsize=title_fontsize, fontweight="bold")
+    # Set the plot title on main_ax if show_range is False
+    if not show_range:
+        if title is None:
+            main_ax.set_title(
+                f"Contribution of {xlabel}", fontsize=title_fontsize, fontweight="bold"
+            )
+        else:
+            main_ax.set_title(title, fontsize=title_fontsize, fontweight="bold")
 
-    plt.gca().set_facecolor("whitesmoke")
+    # Set background color
+    main_ax.set_facecolor("whitesmoke")
 
     # Set x-ticks
     x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=xticks_n)
-    plt.xticks(
-        x_ticks,
-        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
+    main_ax.set_xticks(x_ticks)
+    main_ax.set_xticklabels(
+        ["-∞"] + [f"{tick:.{xticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
         fontsize=ticks_fontsize,
     )
 
@@ -582,22 +641,32 @@ def feature_plot(
 
     # Set y-ticks
     y_ticks = np.linspace(y_min, y_max, num=yticks_n)
-    plt.yticks(
-        y_ticks,
-        [f"{tick:.{ticks_decimal}f}" for tick in y_ticks],
+    main_ax.set_yticks(y_ticks)
+    main_ax.set_yticklabels(
+        [f"{tick:.{yticks_decimal}f}" for tick in y_ticks],
         fontsize=ticks_fontsize,
     )
 
-    plt.xlabel(xlabel, fontsize=label_fontsizes)
-    plt.ylabel(ylabel, fontsize=label_fontsizes)
+    # Set labels
+    main_ax.set_xlabel(xlabel, fontsize=label_fontsizes)
+    main_ax.set_ylabel(ylabel, fontsize=label_fontsizes)
 
-    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    # Grid configuration
+    main_ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
+    # Add legend if showing min and max
     if show_min_max:
-        plt.legend()
+        main_ax.legend()
 
+    main_ax.spines["right"].set_visible(False)
+    main_ax.spines["top"].set_visible(False)
+
+    # Tight layout
+    if show_range:
+        plt.subplots_adjust(hspace=-0.1)
     plt.tight_layout()
     plt.show()
+
 
 
 def interaction_plot(
@@ -616,8 +685,8 @@ def interaction_plot(
 ) -> None:
     """
     Plots to visualize interactions between two features using model split points.
-    
-    This method takes as input the output DataFrame from the `analyze_interaction` 
+
+    This method takes as input the output DataFrame from the `analyze_interaction`
     method of the `treemind.Explainer` class (`analyze_interaction(self, main_col: int, sub_col: int) -> pd.DataFrame`).
 
     Parameters
@@ -646,7 +715,7 @@ def interaction_plot(
         Label for the y-axis. If None, it will default to the feature name.
     color_bar_label : str, optional, default None
         Colorbar label, If None, it will default to "Impact".
-        
+
     Returns
     -------
     None
@@ -836,7 +905,7 @@ def interaction_scatter_plot(
     if type(X) == pd.DataFrame:
         x_values = X.iloc[:, col_1_index].values
         y_values = X.iloc[:, col_2_index].values
-        
+
     # Extract values from X
     else:
         x_values = X[:, col_1_index]
@@ -880,7 +949,6 @@ def interaction_scatter_plot(
     scatter = ax.scatter(
         x_values, y_values, c=values, cmap=colormap, norm=norm, edgecolors="black"
     )
-
 
     # Set axis labels
     ax.set_xlabel(

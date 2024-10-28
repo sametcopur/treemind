@@ -332,12 +332,14 @@ def _validate_feature_plot_parameters(
     df: pd.DataFrame,
     figsize: Tuple[float, float],
     show_min_max: bool,
+    show_range: bool,
     xticks_n: int,
     yticks_n: int,
     ticks_fontsize: int | float,
     title_fontsize: int | float,
     label_fontsizes: int | float,
-    ticks_decimal: int,
+    xticks_decimal: int,
+    yticks_decimal: int,
     title: str | None,
     xlabel: str | None,
     ylabel: str | None,
@@ -376,7 +378,7 @@ def _validate_feature_plot_parameters(
         If any parameter is invalid.
     """
     # Validate DataFrame columns
-    required_columns = {"mean", "min", "max"}
+    required_columns = {"mean", "min", "max", "count"}
     if not required_columns.issubset(df.columns):
         raise ValueError(
             f"The DataFrame must contain the following columns: {required_columns}"
@@ -401,6 +403,9 @@ def _validate_feature_plot_parameters(
     # Validate show_min_max
     if not isinstance(show_min_max, bool):
         raise ValueError("show_min_max must be a boolean value.")
+    
+    if not isinstance(show_range, bool):
+        raise ValueError("show_range must be a boolean value.")
 
     # Validate xticks_n and yticks_n
     if not (isinstance(xticks_n, int) and xticks_n > 0):
@@ -419,8 +424,12 @@ def _validate_feature_plot_parameters(
         raise ValueError("label_fontsizes must be a positive float or integer.")
 
     # Validate ticks_decimal
-    if not (isinstance(ticks_decimal, int) and ticks_decimal >= 0):
-        raise ValueError("ticks_decimal must be a non-negative integer.")
+    if not (isinstance(xticks_decimal, int) and xticks_decimal >= 0):
+        raise ValueError("xticks_decimal must be a non-negative integer.")
+
+    if not (isinstance(yticks_decimal, int) and yticks_decimal >= 0):
+        raise ValueError("yticks_decimal must be a non-negative integer.")
+
 
     # Validate title
     if title is not None and not isinstance(title, str):

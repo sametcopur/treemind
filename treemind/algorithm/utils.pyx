@@ -69,7 +69,7 @@ cdef add_lower_bound(object data, int loc, str column):
 
 
 
-cdef tuple[vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees):
+cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, vector[vector[Rule]] trees):
         cdef:
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
             vector[double] split_points = get_split_point(filtered_trees, col)
@@ -80,12 +80,13 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
             vector[double] min_vals = pre_allocate_vector(estimated_size)
             vector[double] mean_values = pre_allocate_vector(estimated_size)
             vector[double] points = pre_allocate_vector(estimated_size)
+            vector[double] average_counts = pre_allocate_vector(estimated_size)
 
             Rule* rule_ptr
             vector[Rule]* tree_ptr
             size_t i, k, l
 
-            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val, n_count
+            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val, n_count, iter_count, ensembe_count, tree_count
     
         with nogil:
             for i in range(split_points.size()):
@@ -94,11 +95,14 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
                 ensemble_sum = 0.0
                 ensemble_max_val = 0.0
                 ensemble_min_val = 0.0
+                ensembe_count = 0.0
+                tree_count = 0.0
                 
                 for k in range(filtered_trees.size()):
                     tree_ptr = &filtered_trees[k]
                     tree_sum = 0.0
                     count = 0.0
+                    iter_count = 0.0
                     tree_max_val = -INFINITY
                     tree_min_val = INFINITY
                     
@@ -109,14 +113,16 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
                             n_count = rule_ptr.count
                             tree_sum += rule_val * n_count
                             count += n_count
-
+                            iter_count += 1
                             tree_max_val = cmax(tree_max_val, rule_val)
                             tree_min_val = cmin(tree_min_val, rule_val)                            
                     
                     if count > 0:
+                        tree_count += 1.0
                         ensemble_sum += (tree_sum / count)
                         ensemble_max_val += tree_max_val
                         ensemble_min_val += tree_min_val
+                        ensembe_count += (count / iter_count)
                 
                 
                 if ensemble_sum == 0.0:
@@ -126,8 +132,9 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double]] _anal
                 mean_values.push_back(ensemble_sum)
                 min_vals.push_back(ensemble_min_val)
                 max_vals.push_back(ensemble_max_val)
+                average_counts.push_back(ensembe_count / tree_count)
 
-        return points, mean_values, min_vals, max_vals
+        return points, mean_values, min_vals, max_vals, average_counts
         
 
 
