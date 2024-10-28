@@ -76,9 +76,6 @@ cdef class Explainer:
     @cdivision(True)
     @infer_types(True)
     cpdef object analyze_interaction(self, int main_col, int sub_col):
-        if not (isinstance(main_col, int) and isinstance(sub_col, int)):
-            raise ValueError("The 'main_col' and 'sub_col' parameter must be an integer.")
-
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -95,9 +92,9 @@ cdef class Explainer:
              double sub_point, main_point
              str main_column_name, sub_column_name
              object df
-             vector[double] mean_values, sub_points,main_points
+             vector[double] mean_values, sub_points,main_points, counts
                 
-        main_points, sub_points, mean_values = _analyze_interaction(self.trees, main_col, sub_col)
+        main_points, sub_points, mean_values, counts = _analyze_interaction(self.trees, main_col, sub_col)
                             
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
@@ -106,6 +103,7 @@ cdef class Explainer:
             f"{main_column_name}_ub": main_points,
             f"{sub_column_name}_ub": sub_points,
             'value': mean_values,
+            'count': counts
         })
 
         df = df.explode(["value"]).reset_index(drop=True)
@@ -126,44 +124,46 @@ cdef class Explainer:
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
-        if not isinstance(detailed, bool):
-            raise ValueError("The 'detailed' parameter must be set explicitly to either True or False.")
-
         if self.model_type == "xgboost":
             x = convert_d_matrix(x)
 
         cdef:
-            int[:, ::1] leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
-            double raw_score = np.mean(self.model.predict(x, raw_score=True) if self.model_type == "lightgbm"  else self.model.predict(x, output_margin=True).astype(np.float64)).item()
-        
-            int num_rows = leafs.shape[0]
-            int num_leafs = leafs.shape[1]
-
-            int row, col, size, i
-            size_t j, max_len = 0
+            int[:, ::1] leafs
+            double raw_score
+            int num_rows, num_leafs, row, col, size, i
+            size_t j, max_len
             double ub, lb, split_value
             int[:] leaf_loc
-            cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d, np_array
-            cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
+
             vector[vector[double]] split_points
             vector[double] col_split_points
-            Rule rule
+            Rule* rule
+
+            cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
+            cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
 
             list split_points_list
+
+        leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
+        raw_score = np.mean(
+            self.model.predict(x, raw_score=True) if self.model_type == "lightgbm" 
+            else self.model.predict(x, output_margin=True).astype(np.float64)
+        ).item()
+
+        num_rows = leafs.shape[0]
+        num_leafs = leafs.shape[1]
 
         if self.model_type == "xgboost":
             leafs = xgb_leaf_correction(self.trees, leafs)
 
         if detailed:
             split_points.resize(self.len_col)
+            max_len = 0
             
             for col in range(self.len_col):
                 col_split_points = get_split_point(self.trees, col)
-                
                 split_points[col] = col_split_points
-
-                if col_split_points.size() > max_len:
-                    max_len = col_split_points.size()
+                max_len = max(max_len, col_split_points.size())
             
             values_2d = np.zeros((self.len_col, max_len), dtype=np.float64)
         else:
@@ -174,10 +174,10 @@ cdef class Explainer:
                 leaf_loc = leafs[row, :]
                 
                 for i in range(num_leafs):
-                    rule = self.trees[i][leaf_loc[i]]
+                    rule_ptr = &self.trees[i][leaf_loc[i]]
                     
                     for col in range(self.len_col):
-                        ub, lb = rule.ubs[col], rule.lbs[col]
+                        ub, lb = rule_ptr.ubs[col], rule_ptr.lbs[col]
                         
                         if (ub == INFINITY) and (lb == -INFINITY):
                             continue
@@ -187,9 +187,9 @@ cdef class Explainer:
                             for j in range(col_split_points.size()):
                                 split_value = col_split_points[j]
                                 if lb < split_value <= ub:
-                                    values_2d[col, j] += rule.value
+                                    values_2d[col, j] += rule_ptr.value
                         else:
-                            values_1d[col] += rule.value
+                            values_1d[col] += rule_ptr.value
         
         if detailed:
             values_2d /= num_rows

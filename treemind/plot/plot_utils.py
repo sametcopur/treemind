@@ -180,11 +180,12 @@ def _validate_interaction_plot_parameters(
         or not all(
             col.endswith(end) for col, end in zip(df.columns[:4], expected_endings)
         )
-        or df.columns[-1] != "value"
+        or df.columns[-2] != "value"
+        or df.columns[-1] != "count"
     ):
         raise ValueError(
             "The first four columns of `df` must end with '_lb', '_ub', '_lb', '_ub' respectively, "
-            "and the last column must be 'value'."
+            "and the last columns must be 'value', 'count'."
         )
 
 

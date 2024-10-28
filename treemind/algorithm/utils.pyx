@@ -74,22 +74,29 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
             vector[double] split_points = get_split_point(filtered_trees, col)
             
-            size_t estimated_size = split_points.size()
+            size_t num_splits = split_points.size()
+            size_t num_trees = filtered_trees.size()
 
-            vector[double] max_vals = pre_allocate_vector(estimated_size)
-            vector[double] min_vals = pre_allocate_vector(estimated_size)
-            vector[double] mean_values = pre_allocate_vector(estimated_size)
-            vector[double] points = pre_allocate_vector(estimated_size)
-            vector[double] average_counts = pre_allocate_vector(estimated_size)
+            vector[double] max_vals, min_vals, mean_values, points, average_counts
 
             Rule* rule_ptr
             vector[Rule]* tree_ptr
-            size_t i, k, l
+            size_t i, k, l, tree_size
 
-            double point, ensemble_sum, ensemble_max_val, ensemble_min_val, tree_max_val, tree_min_val, count, rule_val, n_count, iter_count, ensembe_count, tree_count
-    
+            double point, ensemble_sum, ensemble_max_val, ensemble_min_val
+            double tree_max_val, tree_min_val, count, rule_val, n_count
+            double iter_count, ensemble_count, tree_count
+
+            bint is_valid_rule
+
+        max_vals.reserve(num_splits)
+        min_vals.reserve(num_splits)
+        mean_values.reserve(num_splits)
+        average_counts.reserve(num_splits)
+        points.reserve(num_splits)
+
         with nogil:
-            for i in range(split_points.size()):
+            for i in range(num_splits):
                 point = split_points[i]
 
                 ensemble_sum = 0.0
@@ -98,41 +105,45 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
                 ensembe_count = 0.0
                 tree_count = 0.0
                 
-                for k in range(filtered_trees.size()):
+                for k in range(num_trees):
                     tree_ptr = &filtered_trees[k]
+                    tree_size = tree_ptr.size()
+
                     tree_sum = 0.0
                     count = 0.0
                     iter_count = 0.0
                     tree_max_val = -INFINITY
                     tree_min_val = INFINITY
                     
-                    for l in range(tree_ptr.size()):
+                    for l in range(tree_size):
                         rule_ptr = &(tree_ptr[0][l])
-                        if check_value(rule_ptr, col, point):
+                        is_valid_rule = check_value(rule_ptr, col, point)
+                        
+                        if is_valid_rule:
                             rule_val = rule_ptr.value
                             n_count = rule_ptr.count
+
                             tree_sum += rule_val * n_count
                             count += n_count
                             iter_count += 1
+                            
                             tree_max_val = cmax(tree_max_val, rule_val)
                             tree_min_val = cmin(tree_min_val, rule_val)                            
                     
                     if count > 0:
                         tree_count += 1.0
+                        ensembe_count += (count / iter_count)
+
                         ensemble_sum += (tree_sum / count)
                         ensemble_max_val += tree_max_val
                         ensemble_min_val += tree_min_val
-                        ensembe_count += (count / iter_count)
                 
-                
-                if ensemble_sum == 0.0:
-                    continue
-                    
-                points.push_back(point)
-                mean_values.push_back(ensemble_sum)
-                min_vals.push_back(ensemble_min_val)
-                max_vals.push_back(ensemble_max_val)
-                average_counts.push_back(ensembe_count / tree_count)
+                if ensemble_sum != 0.0:
+                    points.push_back(point)
+                    mean_values.push_back(ensemble_sum)
+                    min_vals.push_back(ensemble_min_val)
+                    max_vals.push_back(ensemble_max_val)
+                    average_counts.push_back(ensembe_count / tree_count)
 
         return points, mean_values, min_vals, max_vals, average_counts
         
@@ -140,6 +151,7 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 
 cdef tuple[vector[double], 
             vector[double], 
+            vector[double],
             vector[double]] _analyze_interaction(vector[vector[Rule]] trees, 
                                                 int main_col, 
                                                 int sub_col):
@@ -148,50 +160,68 @@ cdef tuple[vector[double],
         vector[double] main_split_points = get_split_point(filtered_trees, main_col)
         vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
 
-        size_t estimated_size = main_split_points.size() * sub_split_points.size()
+        size_t main_points_size = main_split_points.size()
+        size_t sub_points_size = sub_split_points.size()
+        size_t max_size = main_points_size * sub_points_size
 
-        vector[double] mean_values = pre_allocate_vector(estimated_size)
-        vector[double] sub_points = pre_allocate_vector(estimated_size)
-        vector[double] main_points = pre_allocate_vector(estimated_size)
-
+        vector[double] mean_values, sub_points, main_points, average_counts
+                
         double sub_point, main_point
-        size_t i, j, k, l
+        size_t i, j, k, l, tree_size
         Rule* rule_ptr
         vector[Rule]* tree_ptr
 
-        double count, tree_sum, ensemble_sum, n_count
+        double count, tree_sum, ensemble_sum
+        double n_count, iter_count, ensemble_count, tree_count
+
+        size_t num_trees = filtered_trees.size()
+        bint rule_valid
+
+    mean_values.reserve(max_size)
+    sub_points.reserve(max_size)
+    main_points.reserve(max_size)
+    average_counts.reserve(max_size)
 
     with nogil:
-        for i in range(sub_split_points.size()):
+        for i in range(sub_points_size):
             sub_point = sub_split_points[i]
-            for j in range(main_split_points.size()):
+            for j in range(main_points_size):
                 main_point = main_split_points[j]
                 ensemble_sum = 0.0
+                ensembe_count = 0.0
+                tree_count = 0.0
                 
-                for k in range(filtered_trees.size()):
+                for k in range(num_trees):
                     tree_ptr = &filtered_trees[k]
+                    tree_size = tree_ptr.size()
+                    
                     tree_sum = 0.0
                     count = 0.0
                     tree_sum = 0.0
+                    iter_count = 0.0
                     
-                    for l in range(tree_ptr.size()):
+                    for l in range(tree_size):
                         rule_ptr = &(tree_ptr[0][l])
-                        if check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point):
+                        rule_valid = check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point)
+
+                        if rule_valid:
                             n_count = rule_ptr.count
                             tree_sum += rule_ptr.value * n_count
                             count += n_count
+                            iter_count += 1.0
                     
                     if count > 0:
                         ensemble_sum += (tree_sum / count)
+                        ensembe_count += (count / iter_count)
+                        tree_count += 1.0
                 
-                if ensemble_sum == 0.0:
-                    continue
-                    
-                mean_values.push_back(ensemble_sum)
-                sub_points.push_back(sub_point)
-                main_points.push_back(main_point)
+                if ensemble_sum != 0.0:
+                    mean_values.push_back(ensemble_sum)
+                    sub_points.push_back(sub_point)
+                    main_points.push_back(main_point)
+                    average_counts.push_back(ensembe_count / tree_count)
 
 
-    return main_points, sub_points, mean_values
+    return main_points, sub_points, mean_values, average_counts
 
 
