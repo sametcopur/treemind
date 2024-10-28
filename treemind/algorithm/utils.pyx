@@ -15,17 +15,6 @@ from pandas import Categorical
 @initializedcheck(False)
 @cdivision(True)
 @overflowcheck(False)
-cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil:
-    cdef vector[double] vec
-    vec.reserve(size)
-    return vec
-
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
 @infer_types(True)
 cdef inline double cmax(double a, double b) noexcept nogil:
     return a if a > b else b

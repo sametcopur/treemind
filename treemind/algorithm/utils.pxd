@@ -15,6 +15,4 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 
 cdef tuple[vector[double], vector[double], vector[double],vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, int main_col, int sub_col)
    
-cdef vector[double] pre_allocate_vector(size_t size) noexcept nogil
-
 cdef add_lower_bound(object data, int loc, str column)

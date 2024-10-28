@@ -26,8 +26,10 @@ cdef class Explainer:
         self.model = None
         self.len_col = -1
         self.columns = None
-        self.model_type = "None"
+        self.model_type = "none"
 
+    def __repr__(self) -> str:
+        return f"Explainer(model={self.model_type})"
 
     def __call__(self, model):
         if not hasattr(model, '__module__'):

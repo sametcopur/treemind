@@ -3,7 +3,6 @@ from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from .rule cimport Rule
-from .utils cimport pre_allocate_vector
 
 import numpy as np
 
