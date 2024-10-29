@@ -107,8 +107,8 @@ cdef class Explainer:
             'value': mean_values,
             'count': counts
         })
-
         df = df.explode(["value"]).reset_index(drop=True)
+        df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
 
         add_lower_bound(df, 0, main_column_name)
         add_lower_bound(df, 2, sub_column_name)
@@ -239,7 +239,7 @@ cdef class Explainer:
             'max': max_vals,
             "count": counts
         })
-
+        df.loc[:, "mean"] -= (df["mean"] * df["count"]).sum() / df["count"].sum()
         df.insert(0, f"{column_name}_lb", df[f'{column_name}_ub'].shift(1).fillna(-np.inf))
 
         return df
