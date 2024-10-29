@@ -14,5 +14,5 @@ cdef object replace_inf(object data, str column_name)
 cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, const vector[vector[Rule]] trees)
 
 cdef tuple[vector[double], vector[double], vector[double],vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, int main_col, int sub_col)
-   
+
 cdef add_lower_bound(object data, int loc, str column)

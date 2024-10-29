@@ -136,15 +136,15 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 
         return points, mean_values, min_vals, max_vals, average_counts
         
-
-
-cdef tuple[vector[double], 
-            vector[double], 
-            vector[double],
-            vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, 
-                                                int main_col, 
-                                                int sub_col):
+    
+cdef tuple[vector[double],
+           vector[double],
+           vector[double],
+           vector[double]] _analyze_interaction(const vector[vector[Rule]] trees,
+                                                         int main_col,
+                                                         int sub_col):
     cdef:
+        # Prepare filtered trees and split points
         vector[vector[Rule]] filtered_trees = filter_trees(trees, main_col, sub_col)
         vector[double] main_split_points = get_split_point(filtered_trees, main_col)
         vector[double] sub_split_points = get_split_point(filtered_trees, sub_col)
@@ -152,65 +152,101 @@ cdef tuple[vector[double],
         size_t main_points_size = main_split_points.size()
         size_t sub_points_size = sub_split_points.size()
         size_t max_size = main_points_size * sub_points_size
+        size_t num_trees = filtered_trees.size()
 
-        vector[double] mean_values, sub_points, main_points, average_counts
-                
-        double sub_point, main_point
-        size_t i, j, k, l, tree_size
+        cdef vector[double] average_counts = vector[double](max_size, 0.0)
+        cdef vector[double] mean_values = vector[double](max_size, 0.0)
+        cdef vector[double] total_tree_counts = vector[double](max_size, 0.0)
+
+        cdef vector[double] tree_count = vector[double](max_size, 0.0)
+        cdef vector[double] tree_sum = vector[double](max_size, 0.0)
+        cdef vector[double] tree_iter = vector[double](max_size, 0.0)
+
+        vector[double] main_points
+        vector[double] sub_points
+
+        cdef int index
+
+        # Variables for looping
+        size_t point_idx, rule_idx, tree_size, i, j
         const Rule* rule_ptr
         const vector[Rule]* tree_ptr
 
-        double count, tree_sum, ensemble_sum
-        double n_count, iter_count, ensemble_count, tree_count
+        double rule_value, rule_count
+        double main_point, sub_point
 
-        size_t num_trees = filtered_trees.size()
-        bint rule_valid
+        cdef vector[int] valid_main_points
+        cdef vector[int] valid_sub_points
 
-    mean_values.reserve(max_size)
-    sub_points.reserve(max_size)
+    valid_main_points.reserve(main_points_size)
+    valid_sub_points.reserve(sub_points_size)
     main_points.reserve(max_size)
-    average_counts.reserve(max_size)
+    sub_points.reserve(max_size)
 
     with nogil:
-        for i in range(sub_points_size):
-            sub_point = sub_split_points[i]
-            for j in range(main_points_size):
-                main_point = main_split_points[j]
-                ensemble_sum = 0.0
-                ensembe_count = 0.0
-                tree_count = 0.0
-                
-                for k in range(num_trees):
-                    tree_ptr = &filtered_trees[k]
-                    tree_size = tree_ptr.size()
-                    
-                    tree_sum = 0.0
-                    count = 0.0
-                    tree_sum = 0.0
-                    iter_count = 0.0
-                    
-                    for l in range(tree_size):
-                        rule_ptr = &(tree_ptr[0][l])
-                        rule_valid = check_value(rule_ptr, main_col, main_point) & check_value(rule_ptr, sub_col, sub_point)
+        # Loop over trees
+        for tree_idx in range(num_trees):
+            tree_ptr = &filtered_trees[tree_idx]
+            tree_size = tree_ptr.size()
 
-                        if rule_valid:
-                            n_count = rule_ptr.count
-                            tree_sum += rule_ptr.value * n_count
-                            count += n_count
-                            iter_count += 1.0
-                    
-                    if count > 0:
-                        ensemble_sum += (tree_sum / count)
-                        ensembe_count += (count / iter_count)
-                        tree_count += 1.0
-                
-                if ensemble_sum != 0.0:
-                    mean_values.push_back(ensemble_sum)
-                    sub_points.push_back(sub_point)
-                    main_points.push_back(main_point)
-                    average_counts.push_back(ensembe_count / tree_count)
+            tree_sum.assign(max_size, 0.0)
+            tree_count.assign(max_size, 0.0)
+            tree_iter.assign(max_size, 0.0)
 
+            # Loop over rules in the current tree
+            for rule_idx in range(tree_size):
+                rule_ptr = &(tree_ptr[0][rule_idx])
+                rule_value = rule_ptr.value
+                rule_count = rule_ptr.count
+
+                # Collect valid main points for this rule
+                valid_main_points.clear()
+                for i in range(main_points_size):
+                    main_point = main_split_points[i]
+                    if check_value(rule_ptr, main_col, main_point):
+                        valid_main_points.push_back(i)
+
+                # Skip if no valid main points
+                if valid_main_points.size() == 0:
+                    continue
+
+                # Collect valid sub points for this rule
+                valid_sub_points.clear()
+                for i in range(sub_points_size):
+                    sub_point = sub_split_points[i]
+                    if check_value(rule_ptr, sub_col, sub_point):
+                        valid_sub_points.push_back(i)
+
+                # Skip if no valid sub points
+                if valid_sub_points.size() == 0:
+                    continue
+
+                for i in valid_sub_points:
+                    for j in valid_main_points:
+                        index = main_points_size * i + j
+
+                        tree_sum[index] += rule_value * rule_count
+                        tree_count[index] += rule_count
+                        tree_iter[index] += 1.0
+
+                
+            for point_idx in range(max_size):
+                count = tree_count[point_idx]
+
+                if count > 0:
+                    mean_values[point_idx] += tree_sum[point_idx] / count
+                    average_counts[point_idx] += count / tree_iter[point_idx]
+                    total_tree_counts[point_idx] += 1.0
+
+        
+        for point_idx in range(max_size):
+            count = total_tree_counts[point_idx]
+            if count > 0:
+                average_counts[point_idx] /= count
+
+        for sub_point in sub_split_points:
+            for main_point in main_split_points:
+                main_points.push_back(main_point)
+                sub_points.push_back(sub_point)
 
     return main_points, sub_points, mean_values, average_counts
-
-

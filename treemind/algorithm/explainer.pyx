@@ -95,9 +95,10 @@ cdef class Explainer:
              str main_column_name, sub_column_name
              object df
              vector[double] mean_values, sub_points,main_points, counts
-                
+
+ 
         main_points, sub_points, mean_values, counts = _analyze_interaction(self.trees, main_col, sub_col)
-                            
+
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
 
