@@ -16,6 +16,7 @@ from .plot_utils import (
     _validate_range_plot_parameters,
     _validate_interaction_plot_parameters,
     _validate_bar_plot_parameters,
+    _find_tick_decimal,
 )
 
 from typing import List, Tuple
@@ -451,8 +452,6 @@ def feature_plot(
     show_range: bool = True,
     xticks_n: int = 10,
     yticks_n: int = 10,
-    xticks_decimal: int = 1,
-    yticks_decimal: int = 1,
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
@@ -486,10 +485,6 @@ def feature_plot(
         Number of tick marks to display on the x-axis.
     yticks_n : int, optional, default 10
         Number of tick marks to display on the y-axis.
-    xticks_decimal : int, optional, default 1
-        Number of decimal places for x-tick labels
-    yticks_decimal : int, optional, default 1
-        Number of decimal places for y-tick labels
     ticks_fontsize : float, optional, default 10.0
         Font size for axis tick labels,
     title_fontsize : float, optional, default 16.0
@@ -515,8 +510,6 @@ def feature_plot(
         xticks_n=xticks_n,
         yticks_n=yticks_n,
         ticks_fontsize=ticks_fontsize,
-        xticks_decimal=xticks_decimal,
-        yticks_decimal=yticks_decimal,
         title=title,
         title_fontsize=title_fontsize,
         label_fontsizes=label_fontsizes,
@@ -625,9 +618,10 @@ def feature_plot(
 
     # Set x-ticks
     x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=xticks_n)
+    x_decimal = _find_tick_decimal(x_ticks, xticks_n)
     main_ax.set_xticks(x_ticks)
     main_ax.set_xticklabels(
-        ["-∞"] + [f"{tick:.{xticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
+        ["-∞"] + [f"{tick:.{x_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
         fontsize=ticks_fontsize,
     )
 
@@ -641,9 +635,10 @@ def feature_plot(
 
     # Set y-ticks
     y_ticks = np.linspace(y_min, y_max, num=yticks_n)
+    y_decimal = _find_tick_decimal(y_ticks, yticks_n)
     main_ax.set_yticks(y_ticks)
     main_ax.set_yticklabels(
-        [f"{tick:.{yticks_decimal}f}" for tick in y_ticks],
+        [f"{tick:.{y_decimal}f}" for tick in y_ticks],
         fontsize=ticks_fontsize,
     )
 
@@ -668,13 +663,10 @@ def feature_plot(
     plt.show()
 
 
-
 def interaction_plot(
     df: pd.DataFrame,
     figsize: Tuple[float, float] = (10.0, 8.0),
     axis_ticks_n: int = 10,
-    cbar_ticks_n: int = 10,
-    ticks_decimal: int = 3,
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
@@ -699,8 +691,6 @@ def interaction_plot(
         Width and height of the plot in inches.
     axis_ticks_n : int, optional, default 10
         Number of ticks on both axis
-    cbar_ticks_n : int, optional, default 10
-        Number of ticks on the colorbar
     ticks_decimal : int, optional, default 3
         Number of decimal places for tick labels
     ticks_fontsize : float, optional, default 10.0
@@ -725,8 +715,6 @@ def interaction_plot(
         df=df,
         figsize=figsize,
         axis_ticks_n=axis_ticks_n,
-        cbar_ticks_n=cbar_ticks_n,
-        ticks_decimal=ticks_decimal,
         ticks_fontsize=ticks_fontsize,
         title_fontsize=title_fontsize,
         label_fontsizes=label_fontsizes,
@@ -755,8 +743,8 @@ def interaction_plot(
         )
     )
 
-    column1 = xlabel if xlabel is not None else df.columns[0]
-    column2 = ylabel if ylabel is not None else df.columns[1]
+    column1 = df.columns[0]
+    column2 = df.columns[1]
 
     df = _replace_infinity(df, column1, infinity_type="positive")
     df = _replace_infinity(df, column1, infinity_type="negative")
@@ -795,15 +783,19 @@ def interaction_plot(
     width = x - left
     height = y - bottom
 
-    if values.max() < 0:  # All values are negative
+    max_val = values.max()
+    min_val = values.min()
+
+    if max_val < 0:  # All values are negative
         colormap = plt.get_cmap("Blues")
-        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
-    elif values.min() > 0:  # All values are positive
+        norm = plt.Normalize(vmin=min_val, vmax=max_val)
+    elif min_val > 0:  # All values are positive
         colormap = plt.get_cmap("Reds")
-        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+        norm = plt.Normalize(vmin=min_val, vmax=max_val)
     else:  # Both negative and positive values
         colormap = plt.get_cmap("coolwarm")
-        norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
+        abs_max = max(abs(min_val), max_val)
+        norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
     colors = colormap(norm(values))
 
@@ -824,50 +816,41 @@ def interaction_plot(
 
     # Set x-axis ticks
     x_ticks = np.linspace(x_min, x_max, axis_ticks_n)
+    x_decimal = _find_tick_decimal(x_ticks, axis_ticks_n)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(
-        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
+        ["-∞"] + [f"{tick:.{x_decimal}f}" for tick in x_ticks[1:-1]] + ["+∞"],
         fontsize=ticks_fontsize,
     )
 
     # Set y-axis ticks
     y_ticks = np.linspace(y_min, y_max, axis_ticks_n)
+    y_decimal = _find_tick_decimal(y_ticks, axis_ticks_n)
     ax.set_yticks(y_ticks)
     ax.set_yticklabels(
-        ["-∞"] + [f"{tick:.{ticks_decimal}f}" for tick in y_ticks[1:-1]] + ["+∞"],
+        ["-∞"] + [f"{tick:.{y_decimal}f}" for tick in y_ticks[1:-1]] + ["+∞"],
         fontsize=ticks_fontsize,
     )
 
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=colormap, norm=norm)
     sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax)
+    cbar = fig.colorbar(sm, ax=ax, spacing="proportional")
 
-    # Get real minimum and maximum values
-    real_min = values.min()
-    real_max = values.max()
-
-    if real_min < 0 and real_max > 0:  # Both positive and negative values
-        pos_ticks = np.linspace(0, real_max, cbar_ticks_n // 2 + 1)
-        neg_ticks = np.linspace(real_min, 0, cbar_ticks_n // 2 + 1)[:-1]
-        ticks = np.concatenate([neg_ticks, pos_ticks])
-    else:  # Only negative or only positive values
-        ticks = np.linspace(real_min, real_max, cbar_ticks_n)
-
-    # Update colorbar
-    cbar.set_ticks(ticks)
-    cbar.set_ticklabels([f"{x:.{ticks_decimal}f}" for x in ticks])
+    cbar.ax.set_yscale("linear")
+    cbar.ax.set_ylim(min_val, max_val)
     cbar.ax.tick_params(labelsize=ticks_fontsize)
     cbar.set_label(
         "Impact" if color_bar_label is None else color_bar_label,
         fontsize=label_fontsizes,
     )
 
-    ax.set_xlabel(column1, fontsize=label_fontsizes)
-    ax.set_ylabel(column2, fontsize=label_fontsizes)
+    ax.set_xlabel(xlabel if xlabel is not None else column1, fontsize=label_fontsizes)
+    ax.set_ylabel(ylabel if ylabel is not None else column2, fontsize=label_fontsizes)
     ax.set_title(
         "Interaction Plot" if title is None else title, fontsize=title_fontsize
     )
+
     plt.tight_layout()
     plt.show()
 
@@ -902,7 +885,7 @@ def interaction_scatter_plot(
     """
 
     # Extract values from X
-    if type(X) == pd.DataFrame:
+    if isinstance(X, pd.DataFrame):
         x_values = X.iloc[:, col_1_index].values
         y_values = X.iloc[:, col_2_index].values
 
@@ -934,16 +917,19 @@ def interaction_scatter_plot(
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    # Determine colormap based on value range
-    if values.max() < 0:  # All values are negative
+    max_val = values.max()
+    min_val = values.min()
+
+    if max_val < 0:  # All values are negative
         colormap = plt.get_cmap("Blues")
-        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
-    elif values.min() > 0:  # All values are positive
+        norm = plt.Normalize(vmin=min_val, vmax=max_val)
+    elif min_val > 0:  # All values are positive
         colormap = plt.get_cmap("Reds")
-        norm = plt.Normalize(vmin=values.min(), vmax=values.max())
+        norm = plt.Normalize(vmin=min_val, vmax=max_val)
     else:  # Both negative and positive values
         colormap = plt.get_cmap("coolwarm")
-        norm = TwoSlopeNorm(vmin=values.min(), vcenter=0, vmax=values.max())
+        abs_max = max(abs(min_val), max_val)
+        norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
     # Create scatter plot
     scatter = ax.scatter(
@@ -952,19 +938,19 @@ def interaction_scatter_plot(
 
     # Set axis labels
     ax.set_xlabel(
-        xlabel if xlabel is not None else f"Feature {col_1_index}",
+        xlabel if xlabel is not None else df.columns[0][:-3],
         fontsize=label_fontsizes,
     )
     ax.set_ylabel(
-        ylabel if ylabel is not None else f"Feature {col_2_index}",
+        ylabel if ylabel is not None else df.columns[2][:-3],
         fontsize=label_fontsizes,
     )
 
     # Add colorbar with specified number of ticks
     cbar = plt.colorbar(scatter)
-
+    cbar.ax.set_yscale("linear")
+    cbar.ax.set_ylim(min_val, max_val)
     cbar.ax.tick_params(labelsize=ticks_fontsize)
-
     cbar.set_label(
         "Impact" if color_bar_label is None else color_bar_label,
         fontsize=label_fontsizes,

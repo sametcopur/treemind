@@ -1,9 +1,28 @@
-import pandas as pd
-import numpy as np
-
 from typing import List, Tuple, Optional, Union
 from numpy.typing import ArrayLike
 
+import pandas as pd
+import numpy as np
+
+def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
+    # İlk olarak min ve max değerleri bul ve aralığı hesapla
+    tick_min, tick_max = np.min(ticks), np.max(ticks)
+    tick_range = tick_max - tick_min
+    
+    # Eğer aralık n_ticks'ten küçükse, decimal kullanımını başlat
+    if tick_range < n_ticks:
+        # Uygun ondalık hane sayısını belirlemek için hassasiyeti ayarla
+        for decimals_count in range(1, 5):
+            # Belirlenen ondalık hane ile yuvarlama yap
+            rounded_ticks = np.round(ticks, decimals_count)
+            # Yuvarlanmış değerler orijinal değerlere yaklaşık olarak uyuyorsa uygun hane sayısını döndür
+            if np.allclose(ticks, rounded_ticks, atol=tick_range / (n_ticks * 10)):
+                return decimals_count
+        # Eğer 4 hane de yetmezse, maksimum 4 hane kullan
+        return 4
+    else:
+        # Eğer aralık genişse decimal kullanmaya gerek yok
+        return 0
 
 def _check_columns(columns):
     try:
@@ -20,6 +39,7 @@ def _check_columns(columns):
     # Check if all elements in columns are strings
     if not all(isinstance(col, str) for col in arr):
         raise ValueError("All elements in `columns` must be strings.")
+
 
 def _validate_bar_plot_parameters(
     values: np.ndarray,
@@ -95,7 +115,9 @@ def _validate_bar_plot_parameters(
 
     # Check figsize
     if not isinstance(figsize, tuple) or len(figsize) != 2:
-        raise TypeError("The 'figsize' parameter must be a tuple of two numeric values.")
+        raise TypeError(
+            "The 'figsize' parameter must be a tuple of two numeric values."
+        )
     if not all(isinstance(dim, (int, float)) for dim in figsize):
         raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
@@ -118,8 +140,6 @@ def _validate_interaction_plot_parameters(
     df: pd.DataFrame,
     figsize: Tuple[float, float],
     axis_ticks_n: int,
-    cbar_ticks_n: int,
-    ticks_decimal: int,
     ticks_fontsize: int | float,
     title_fontsize: int | float,
     label_fontsizes: int | float,
@@ -134,16 +154,14 @@ def _validate_interaction_plot_parameters(
     Parameters
     ----------
     df : pd.DataFrame
-        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`, `_lb`, `_ub`,
-        and `value` as the last column.
+        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`, 
+        `_lb`, `_ub`, and `value` as the last column.
     figsize : Tuple[int, int]
         Size of the figure, should be a tuple of two positive integers.
     xticks_n : int
         Number of ticks on x-axis, must be a positive integer.
     yticks_n : int
         Number of ticks on y-axis, must be a positive integer.
-    cbar_ticks_n : int
-        Number of ticks on colorbar, must be a positive integer.
     ticks_decimal : int
         Number of decimal places for tick labels, must be a non-negative integer.
     ticks_fontsize : int or float
@@ -169,7 +187,7 @@ def _validate_interaction_plot_parameters(
     # Validate `df` structure and column names
     if not isinstance(df, pd.DataFrame):
         raise TypeError("`df` must be a pandas DataFrame.")
-    
+
     if df.shape[0] <= 2:
         raise ValueError("There is no interaction between features to plot.")
 
@@ -188,21 +206,18 @@ def _validate_interaction_plot_parameters(
             "and the last columns must be 'value', 'count'."
         )
 
-
     # Check figsize
     if not isinstance(figsize, tuple) or len(figsize) != 2:
-        raise TypeError("The 'figsize' parameter must be a tuple of two numeric values.")
+        raise TypeError(
+            "The 'figsize' parameter must be a tuple of two numeric values."
+        )
     if not all(isinstance(dim, (int, float)) for dim in figsize):
         raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
     # Check `xticks_n`, `yticks_n`, `cbar_ticks_n` are positive integers
-    for param, name in [(axis_ticks_n, "axis_ticks_n"), (cbar_ticks_n, "cbar_ticks_n")]:
+    for param, name in [(axis_ticks_n, "axis_ticks_n")]:
         if not isinstance(param, int) or param <= 0:
             raise ValueError(f"`{name}` must be a positive integer.")
-
-    # Check `ticks_decimal` is a non-negative integer
-    if not isinstance(ticks_decimal, int) or ticks_decimal < 0:
-        raise ValueError("`ticks_decimal` must be a non-negative integer.")
 
     # Validate font sizes are positive numbers
     for font_size, name in [
@@ -339,8 +354,6 @@ def _validate_feature_plot_parameters(
     ticks_fontsize: int | float,
     title_fontsize: int | float,
     label_fontsizes: int | float,
-    xticks_decimal: int,
-    yticks_decimal: int,
     title: str | None,
     xlabel: str | None,
     ylabel: str | None,
@@ -394,17 +407,18 @@ def _validate_feature_plot_parameters(
             "The DataFrame must contain exactly one '_lb' column and one '_ub' column."
         )
 
-
     # Check figsize
     if not isinstance(figsize, tuple) or len(figsize) != 2:
-        raise TypeError("The 'figsize' parameter must be a tuple of two numeric values.")
+        raise TypeError(
+            "The 'figsize' parameter must be a tuple of two numeric values."
+        )
     if not all(isinstance(dim, (int, float)) for dim in figsize):
         raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
     # Validate show_min_max
     if not isinstance(show_min_max, bool):
         raise ValueError("show_min_max must be a boolean value.")
-    
+
     if not isinstance(show_range, bool):
         raise ValueError("show_range must be a boolean value.")
 
@@ -423,14 +437,6 @@ def _validate_feature_plot_parameters(
 
     if not (isinstance(label_fontsizes, (float, int)) and label_fontsizes > 0):
         raise ValueError("label_fontsizes must be a positive float or integer.")
-
-    # Validate ticks_decimal
-    if not (isinstance(xticks_decimal, int) and xticks_decimal >= 0):
-        raise ValueError("xticks_decimal must be a non-negative integer.")
-
-    if not (isinstance(yticks_decimal, int) and yticks_decimal >= 0):
-        raise ValueError("yticks_decimal must be a non-negative integer.")
-
 
     # Validate title
     if title is not None and not isinstance(title, str):
