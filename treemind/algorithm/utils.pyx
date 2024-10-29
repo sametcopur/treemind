@@ -250,3 +250,33 @@ cdef tuple[vector[double],
                 sub_points.push_back(sub_point)
 
     return main_points, sub_points, mean_values, average_counts
+
+
+
+cdef double _expected_value(int col, const vector[vector[Rule]] trees):
+        cdef:
+            vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
+            
+            size_t num_trees = filtered_trees.size()
+            const Rule* rule_ptr
+            const vector[Rule]* tree_ptr
+            size_t k, l, tree_size
+
+            double weighted_sum = 0.0
+            double total_count = 0.0
+            double rule_val, n_count
+
+        with nogil:
+            for k in range(num_trees):
+                tree_ptr = &filtered_trees[k]
+                tree_size = tree_ptr.size()
+                
+                for l in range(tree_size):
+                    rule_ptr = &(tree_ptr[0][l])
+                    rule_val = rule_ptr.value
+                    n_count = rule_ptr.count
+                    
+                    weighted_sum += rule_val * n_count
+                    total_count += n_count
+
+        return weighted_sum / total_count if total_count > 0 else 0.0

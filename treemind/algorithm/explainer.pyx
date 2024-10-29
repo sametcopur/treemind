@@ -11,7 +11,7 @@ from libcpp.pair cimport pair
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 from .rule cimport get_split_point
-from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound
+from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost, xgb_leaf_correction, convert_d_matrix
 
@@ -139,13 +139,18 @@ cdef class Explainer:
             int[:] leaf_loc
 
             vector[vector[double]] split_points
-            vector[double] col_split_points
-            Rule* rule
+            vector[double] col_split_points, expected_values
+            Rule* rule_ptr
 
             cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
             cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
 
             list split_points_list
+
+        # Calculate expected values for each feature
+        expected_values.resize(self.len_col)
+        for col in range(self.len_col):
+            expected_values[col] = _expected_value(col, self.trees)
 
         leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
         raw_score = np.mean(
@@ -194,13 +199,18 @@ cdef class Explainer:
                         else:
                             values_1d[col] += rule_ptr.value
         
+        # Subtract expected values
         if detailed:
             values_2d /= num_rows
+            for col in range(self.len_col):
+                values_2d[col, :] -= expected_values[col]
             split_points_list = [np.array(split_points[col]) for col in range(self.len_col)]
 
             return values_2d, split_points_list, raw_score
         else:
             values_1d /= num_rows
+            for col in range(self.len_col):
+                values_1d[col] -= expected_values[col]
             
             return values_1d, raw_score
 
