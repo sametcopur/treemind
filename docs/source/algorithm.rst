@@ -96,6 +96,30 @@ for both ``feature_1`` and ``feature_2`` by examining each in turn. When ``featu
 analyze the effect of ``feature_1`` within its own range, such as ``(-inf, 1.0)``. By repeating this approach for feature combinations, 
 we uncover potential interactions that contribute to a more nuanced and accurate prediction.
 
+
+**Expected Value Calculation**:
+
+After analyzing the intervals and interactions, we calculate expected values to understand feature contributions to predictions. 
+The calculation method is similar for both single feature and feature interaction analysis, with only a notation difference to 
+distinguish between them.
+
+
+For single feature analysis, we use :math:`E[x]`, while for feature interactions, we use :math:`E[x,y]`. Both are calculated using 
+the raw scores and counts from each leaf:
+
+.. math::
+
+   E[x] \text{ or } E[x,y] = \frac{\sum (\text{val} \times \text{count})}{\sum \text{count}}
+
+The adjusted score is then calculated by subtracting the appropriate expected value:
+
+.. math::
+
+   \text{adjusted_val} = \text{val} - E[x] \text{ or } \text{val} - E[x,y]
+
+This calculation helps capture both individual feature effects and their interactions, providing insight into how features contribute 
+to the model's predictions.
+
 Algorithm 2
 ^^^^^^^^^^^
 
