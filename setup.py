@@ -100,6 +100,15 @@ extensions = [
         extra_link_args=extra_link_args,
         define_macros=define_macros,
     ),
+    Extension(
+        name="treemind.algorithm.cb",
+        sources=["treemind/algorithm/cb.pyx"],
+        include_dirs=[np.get_include(), "treemind/algorithm"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros,
+    ),
 ]
 
 setup(
