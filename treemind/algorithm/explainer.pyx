@@ -141,37 +141,45 @@ cdef class Explainer:
         cdef:
             double tree_count, point_col_sum, point_iter_count, point_count, ensemble_sum 
             size_t i, j, num_trees, tree_size
-            double rule_val, n_count, point, expected_value
+            double rule_val, n_count, point, expected_value, true_value
 
-            int[:] leaf_loc
+            
+            cnp.ndarray[cnp.int32_t, ndim=2] back_data_cnp
+            cnp.ndarray[cnp.int32_t, ndim=1] back_data_cnp_loc 
+
+            int[:,:] leafs
             double[:,:] x_ = np.asarray(x, dtype=np.float64)
-            double[:,:] back_data_ 
 
-            int row, col, num_rows = x_.shape[0]
+            int index, row, col, num_rows = x_.shape[0]
 
             vector[vector[vector[Rule]]] filter_trees_all
-            vector[vector[Rule]] filtered_trees
+            vector[vector[Rule]] filtered_trees, selected_filtered_trees
             vector[double] col_split_points, expected_values
 
             const Rule* rule_ptr
+            const Rule* true_rule_ptr
             const vector[Rule]* tree_ptr
+
+            bint is_valid_rule
 
             double[:,:] values = np.empty((num_rows, self.len_col), dtype=np.float64)
 
+        leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
 
         if back_data is not None:
-            back_data_ = np.asarray(back_data, dtype=np.float64)
-        else:
-            back_data_ = np.empty((0,self.len_col), dtype=np.float64 )
-
-        # Calculate expected values for each feature
-        expected_values.resize(self.len_col)
-        for col in range(self.len_col):
-            expected_values[col] = _expected_value(col, self.trees, x_[:, col])
+            back_data_cnp = self.model.predict(back_data, pred_leaf=True).astype(np.int32)
 
         filter_trees_all.resize(self.len_col)
         for col in range(self.len_col):
-            filter_trees_all[col] = filter_trees(self.trees, col)
+            filtered_trees = filter_trees(self.trees, col)
+            if back_data is not None:
+                back_data_cnp_loc = np.sort(np.unique(back_data_cnp[:, col]))
+                selected_filtered_trees = vector[vector[Rule]]()
+                for index in range(back_data_cnp_loc.shape[0]):
+                    selected_filtered_trees.push_back(filtered_trees[index])
+            else:
+                selected_filtered_trees = filtered_trees
+            filter_trees_all[col] = selected_filtered_trees
         
         with nogil:
             for col in range(self.len_col):
@@ -183,14 +191,20 @@ cdef class Explainer:
                     point = x_[row, col]
 
                     ensemble_sum = 0.0
-                    tree_count = 0.0
+                    true_value = 0.0
 
                     for i in range(num_trees):
                         tree_ptr = &filtered_trees[i]
+                        true_rule_ptr = &self.trees[i][leafs[row,i]]
+
+                        if not ((true_rule_ptr.ubs[col] == INFINITY) and (true_rule_ptr.lbs[col] == -INFINITY)):
+                            continue
+                        
+                        true_value += true_rule_ptr.value
+
                         tree_size = tree_ptr.size()
 
                         point_col_sum = 0.0
-                        point_iter_count = 0.0
                         point_count = 0.0
 
                         for j in range(tree_size):
@@ -203,13 +217,11 @@ cdef class Explainer:
 
                                 point_col_sum += rule_val * n_count
                                 point_count += n_count
-                                point_iter_count += 1
 
                         if point_count > 0:
-                            tree_count += 1.0
                             ensemble_sum += (point_col_sum / point_count)
 
-                    values[row, col] = ensemble_sum - expected_value
+                    values[row, col] = true_value - ensemble_sum
 
         return np.asarray(values)
 
