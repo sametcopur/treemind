@@ -10,10 +10,11 @@ from libcpp.pair cimport pair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
-from .rule cimport get_split_point
+from .rule cimport filter_trees, check_value
 from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value
 from .lgb cimport analyze_lightgbm
-from .xgb cimport analyze_xgboost, xgb_leaf_correction, convert_d_matrix
+from .xgb cimport analyze_xgboost
+from .cb cimport analyze_catboost
 
 from collections import Counter
 from itertools import combinations
@@ -64,6 +65,12 @@ cdef class Explainer:
 
             self.model_type = "xgboost"
             self.trees = analyze_xgboost(self.model, self.len_col)
+
+        elif "catboost" in module_name:
+            self.model = model
+            self.len_col = self.model.n_features_in_
+            self.columns = model.feature_names_
+            self.trees = analyze_catboost(self.model, self.len_col)
 
         # Raise an error if the model is not LightGBM or XGBoost
         else:
@@ -127,96 +134,84 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef tuple analyze_data(self, object x, bint detailed = False):
+    cpdef cnp.ndarray[cnp.float64_t, ndim=2] analyze_data(self, object x, object back_data = None):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
-        if self.model_type == "xgboost":
-            x = convert_d_matrix(x)
-
         cdef:
-            int[:, ::1] leafs
-            double raw_score
-            int num_rows, num_leafs, row, col, size, i
-            size_t j, max_len
-            double ub, lb, split_value
+            double tree_count, point_col_sum, point_iter_count, point_count, ensemble_sum 
+            size_t i, j, num_trees, tree_size
+            double rule_val, n_count, point, expected_value
+
             int[:] leaf_loc
+            double[:,:] x_ = np.asarray(x, dtype=np.float64)
+            double[:,:] back_data_ 
 
-            vector[vector[double]] split_points
+            int row, col, num_rows = x_.shape[0]
+
+            vector[vector[vector[Rule]]] filter_trees_all
+            vector[vector[Rule]] filtered_trees
             vector[double] col_split_points, expected_values
-            Rule* rule_ptr
 
-            cnp.ndarray[cnp.float64_t, ndim=1, mode="c"] values_1d
-            cnp.ndarray[cnp.float64_t, ndim=2, mode="c"] values_2d
+            const Rule* rule_ptr
+            const vector[Rule]* tree_ptr
 
-            list split_points_list
+            double[:,:] values = np.empty((num_rows, self.len_col), dtype=np.float64)
+
+
+        if back_data is not None:
+            back_data_ = np.asarray(back_data, dtype=np.float64)
+        else:
+            back_data_ = np.empty((0,self.len_col), dtype=np.float64 )
 
         # Calculate expected values for each feature
         expected_values.resize(self.len_col)
         for col in range(self.len_col):
-            expected_values[col] = _expected_value(col, self.trees)
+            expected_values[col] = _expected_value(col, self.trees, x_[:, col])
 
-        leafs = self.model.predict(x, pred_leaf=True).astype(np.int32)
-        raw_score = np.mean(
-            self.model.predict(x, raw_score=True) if self.model_type == "lightgbm" 
-            else self.model.predict(x, output_margin=True).astype(np.float64)
-        ).item()
-
-        num_rows = leafs.shape[0]
-        num_leafs = leafs.shape[1]
-
-        if self.model_type == "xgboost":
-            leafs = xgb_leaf_correction(self.trees, leafs)
-
-        if detailed:
-            split_points.resize(self.len_col)
-            max_len = 0
-            
-            for col in range(self.len_col):
-                col_split_points = get_split_point(self.trees, col)
-                split_points[col] = col_split_points
-                max_len = max(max_len, col_split_points.size())
-            
-            values_2d = np.zeros((self.len_col, max_len), dtype=np.float64)
-        else:
-            values_1d = np.zeros(self.len_col, dtype=np.float64)
+        filter_trees_all.resize(self.len_col)
+        for col in range(self.len_col):
+            filter_trees_all[col] = filter_trees(self.trees, col)
         
         with nogil:
-            for row in range(num_rows):
-                leaf_loc = leafs[row, :]
-                
-                for i in range(num_leafs):
-                    rule_ptr = &self.trees[i][leaf_loc[i]]
-                    
-                    for col in range(self.len_col):
-                        ub, lb = rule_ptr.ubs[col], rule_ptr.lbs[col]
-                        
-                        if (ub == INFINITY) and (lb == -INFINITY):
-                            continue
-                        
-                        if detailed:
-                            col_split_points = split_points[col]
-                            for j in range(col_split_points.size()):
-                                split_value = col_split_points[j]
-                                if lb < split_value <= ub:
-                                    values_2d[col, j] += rule_ptr.value
-                        else:
-                            values_1d[col] += rule_ptr.value
-        
-        # Subtract expected values
-        if detailed:
-            values_2d /= num_rows
             for col in range(self.len_col):
-                values_2d[col, :] -= expected_values[col]
-            split_points_list = [np.array(split_points[col]) for col in range(self.len_col)]
+                filtered_trees = filter_trees_all[col]
+                expected_value = expected_values[col]
+                num_trees = filtered_trees.size()
 
-            return values_2d, split_points_list, raw_score
-        else:
-            values_1d /= num_rows
-            for col in range(self.len_col):
-                values_1d[col] -= expected_values[col]
-            
-            return values_1d, raw_score
+                for row in range(num_rows):
+                    point = x_[row, col]
+
+                    ensemble_sum = 0.0
+                    tree_count = 0.0
+
+                    for i in range(num_trees):
+                        tree_ptr = &filtered_trees[i]
+                        tree_size = tree_ptr.size()
+
+                        point_col_sum = 0.0
+                        point_iter_count = 0.0
+                        point_count = 0.0
+
+                        for j in range(tree_size):
+                            rule_ptr = &(tree_ptr[0][j])
+                            is_valid_rule = check_value(rule_ptr, col, point)
+
+                            if is_valid_rule:
+                                rule_val = rule_ptr.value
+                                n_count = rule_ptr.count
+
+                                point_col_sum += rule_val * n_count
+                                point_count += n_count
+                                point_iter_count += 1
+
+                        if point_count > 0:
+                            tree_count += 1.0
+                            ensemble_sum += (point_col_sum / point_count)
+
+                    values[row, col] = ensemble_sum - expected_value
+
+        return np.asarray(values)
 
     @boundscheck(False)
     @nonecheck(False)

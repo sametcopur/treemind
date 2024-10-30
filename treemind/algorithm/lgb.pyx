@@ -3,14 +3,12 @@ from .rule cimport create_rule, update_rule, compare_rules
 from libc.math cimport INFINITY
 from libcpp.algorithm cimport sort
 
-import pandas as pd
-cimport numpy as cnp
-
 from libcpp.pair cimport pair
 
 ctypedef pair[double, double] RangePair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
+
 @boundscheck(False)
 @nonecheck(False)
 @wraparound(False)
