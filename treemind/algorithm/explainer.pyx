@@ -108,6 +108,10 @@ cdef class Explainer:
             'value': mean_values,
             'count': counts
         })
+
+        if df.shape[0] == 0:
+            raise ValueError(f"No interaction found between feature {main_col} and {sub_col}.")
+
         df = df.explode(["value"]).reset_index(drop=True)
         df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
 
