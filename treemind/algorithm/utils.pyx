@@ -263,20 +263,28 @@ cdef double _expected_value(int col, const vector[vector[Rule]] trees):
             size_t k, l, tree_size
 
             double weighted_sum = 0.0
-            double total_count = 0.0
+            double tree_sum = 0.0
+            double total_iter = 0.0
+            double tree_count = 0.0
             double rule_val, n_count
 
         with nogil:
             for k in range(num_trees):
                 tree_ptr = &filtered_trees[k]
                 tree_size = tree_ptr.size()
+
+                tree_sum = 0.0
+                tree_count = 0.0
                 
                 for l in range(tree_size):
                     rule_ptr = &(tree_ptr[0][l])
                     rule_val = rule_ptr.value
                     n_count = rule_ptr.count
                     
-                    weighted_sum += rule_val * n_count
-                    total_count += n_count
+                    tree_sum += rule_val * n_count
+                    tree_count += n_count
+                    
+                weighted_sum += (tree_sum / tree_count)
 
-        return weighted_sum / total_count if total_count > 0 else 0.0
+
+        return weighted_sum
