@@ -31,7 +31,6 @@ def bar_plot(
     title: str | None = None,
     title_fontsize: float = 12.0,
     label_fontsize: float = 12.0,
-    show_raw_score: bool = True,
 ) -> None:
     """
     Creates a horizontal bar plot illustrating the contribution of each feature
@@ -81,7 +80,6 @@ def bar_plot(
         figsize=figsize,
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
-        show_raw_score=show_raw_score,
     )
 
     if values.shape[0] > 1:
@@ -185,18 +183,6 @@ def bar_plot(
 
     # Apply the new xlim
     ax.set_xlim([max_left, max_right])
-
-    # Position the raw score text inside the plot area
-    if show_raw_score:
-        ax.text(
-            1.00,
-            1.00,
-            f"Raw Score: {raw_score:.3f}",
-            fontsize=10,
-            ha="right",
-            va="bottom",
-            transform=ax.transAxes,
-        )
 
     plt.tight_layout()
 
@@ -420,6 +406,7 @@ def feature_plot(
     # Tight layout
     if show_range:
         plt.subplots_adjust(hspace=-0.1)
+        
     plt.tight_layout()
     plt.show()
 

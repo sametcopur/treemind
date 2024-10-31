@@ -50,7 +50,6 @@ def _validate_bar_plot_parameters(
     title: Union[str, None],
     title_fontsize: float,
     label_fontsize: float,
-    show_raw_score: bool,
 ) -> None:
     """
     Validates parameters for the bar_plot function.
@@ -73,8 +72,6 @@ def _validate_bar_plot_parameters(
         Font size for the title.
     label_fontsize : float
         Font size for the y-axis labels.
-    show_raw_score : bool, optional
-        Whether to show the raw score in the plot title.
 
     Returns
     -------
@@ -124,10 +121,6 @@ def _validate_bar_plot_parameters(
     # Check title
     if title is not None and not isinstance(title, str):
         raise TypeError("The 'title' parameter must be a string or None.")
-
-    # Check show_raw_score
-    if not isinstance(show_raw_score, bool):
-        raise TypeError("The 'show_raw_score' parameter must be a boolean.")
 
     # Check title_fontsize and label_fontsize
     if not isinstance(title_fontsize, (int, float)) or title_fontsize <= 0:
