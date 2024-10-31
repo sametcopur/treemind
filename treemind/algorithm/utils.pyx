@@ -82,7 +82,7 @@ cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees):
             size_t i, k, l, tree_size
 
             double point, ensemble_sum, ensemble_std
-            double tree_max_val, tree_min_val, count, rule_val, n_count, squared_val
+            double tree_max_val, tree_min_val, count, rule_val, n_count, squared_val, tree_exp
             double iter_count, ensemble_count, tree_count
 
             bint is_valid_rule
@@ -122,14 +122,18 @@ cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees):
                     
                     if count > 0:
                         tree_count += 1.0
+                        tree_exp = tree_sum / count
+
                         ensembe_count += (count / iter_count)
-                        ensemble_sum += (tree_sum / count)
+                        ensemble_sum += tree_exp
 
                     if iter_count > 1:
                         tree_std = tree_std / count  # E[X^2]
-                        tree_sum = tree_sum / count  # E[X]
-                        tree_std = sqrt(tree_std - tree_sum * tree_sum)
 
+                        variance = tree_std - tree_exp * tree_exp
+                        if variance < 0.0:
+                            variance = 0.0  # Numerical stability
+                        tree_std = sqrt(variance)
                         ensemble_std += tree_std
 
                 
@@ -151,6 +155,7 @@ cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees):
 cdef tuple[vector[double],
            vector[double],
            vector[double],
+           vector[double],
            vector[double]] _analyze_interaction(const vector[vector[Rule]] trees,
                                                          int main_col,
                                                          int sub_col):
@@ -168,9 +173,11 @@ cdef tuple[vector[double],
         cdef vector[double] average_counts = vector[double](max_size, 0.0)
         cdef vector[double] mean_values = vector[double](max_size, 0.0)
         cdef vector[double] total_tree_counts = vector[double](max_size, 0.0)
+        cdef vector[double] ensemble_std = vector[double](max_size, 0.0)
 
         cdef vector[double] tree_count = vector[double](max_size, 0.0)
         cdef vector[double] tree_sum = vector[double](max_size, 0.0)
+        cdef vector[double] tree_squared_sum = vector[double](max_size, 0.0)
         cdef vector[double] tree_iter = vector[double](max_size, 0.0)
 
         vector[double] main_points
@@ -183,8 +190,9 @@ cdef tuple[vector[double],
         const Rule* rule_ptr
         const vector[Rule]* tree_ptr
 
-        double rule_value, rule_count
+        double rule_value, rule_count, squared_value
         double main_point, sub_point
+        double e_x2, std, variance
 
         cdef vector[int] valid_main_points
         cdef vector[int] valid_sub_points
@@ -201,6 +209,7 @@ cdef tuple[vector[double],
             tree_size = tree_ptr.size()
 
             tree_sum.assign(max_size, 0.0)
+            tree_squared_sum.assign(max_size, 0.0)
             tree_count.assign(max_size, 0.0)
             tree_iter.assign(max_size, 0.0)
 
@@ -209,6 +218,7 @@ cdef tuple[vector[double],
                 rule_ptr = &(tree_ptr[0][rule_idx])
                 rule_value = rule_ptr.value
                 rule_count = rule_ptr.count
+                squared_value = rule_value * rule_value
 
                 # Collect valid main points for this rule
                 valid_main_points.clear()
@@ -237,30 +247,48 @@ cdef tuple[vector[double],
                         index = main_points_size * i + j
 
                         tree_sum[index] += rule_value * rule_count
+                        tree_squared_sum[index] += squared_value * rule_count
                         tree_count[index] += rule_count
                         tree_iter[index] += 1.0
 
-                
+            # Calculate per-tree mean and standard deviation
             for point_idx in range(max_size):
                 count = tree_count[point_idx]
+                iter_count = tree_iter[point_idx]
 
                 if count > 0:
-                    mean_values[point_idx] += tree_sum[point_idx] / count
-                    average_counts[point_idx] += count / tree_iter[point_idx]
                     total_tree_counts[point_idx] += 1.0
+                    average_counts[point_idx] += count / iter_count
+                    mean = tree_sum[point_idx] / count
 
-        
+                    if iter_count > 1:
+                        e_x2 = tree_squared_sum[point_idx] / count
+                        variance = e_x2 - mean * mean
+                        if variance < 0.0:
+                            variance = 0.0  # Numerical stability
+                        std = sqrt(variance)
+                        ensemble_std[point_idx] += std
+
+                    mean_values[point_idx] += mean
+
+        # Finalize calculations
         for point_idx in range(max_size):
             count = total_tree_counts[point_idx]
             if count > 0:
+                mean_values[point_idx] /= count
                 average_counts[point_idx] /= count
+                ensemble_std[point_idx] /= count
 
-        for sub_point in sub_split_points:
-            for main_point in main_split_points:
+        # Prepare points for output
+        for i in range(sub_points_size):
+            sub_point = sub_split_points[i]
+            for j in range(main_points_size):
+                main_point = main_split_points[j]
                 main_points.push_back(main_point)
                 sub_points.push_back(sub_point)
 
-    return main_points, sub_points, mean_values, average_counts
+    return main_points, sub_points, mean_values, ensemble_std, average_counts
+
 
 
 @boundscheck(False)

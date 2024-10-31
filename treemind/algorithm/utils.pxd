@@ -13,7 +13,7 @@ cdef object replace_inf(object data, str column_name)
 
 cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees)
 
-cdef tuple[vector[double], vector[double], vector[double],vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, int main_col, int sub_col)
+cdef tuple[vector[double], vector[double], vector[double],vector[double], vector[double]] _analyze_interaction(const vector[vector[Rule]] trees, int main_col, int sub_col)
 
 cdef double _expected_value(int col, const vector[vector[Rule]] trees, int[:,:] col_values)
 
