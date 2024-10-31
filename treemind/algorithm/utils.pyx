@@ -57,7 +57,13 @@ cdef add_lower_bound(object data, int loc, str column):
     data.insert(loc, f"{column}_lb", lower_bounds[categories.codes])
 
 
-
+@boundscheck(False)
+@nonecheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
 cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, const vector[vector[Rule]] trees):
         cdef:
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
@@ -136,7 +142,13 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
 
         return points, mean_values, min_vals, max_vals, average_counts
         
-    
+@boundscheck(False)
+@nonecheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
 cdef tuple[vector[double],
            vector[double],
            vector[double],
@@ -252,87 +264,49 @@ cdef tuple[vector[double],
     return main_points, sub_points, mean_values, average_counts
 
 
-
-cdef vector[double] filter_valid_ranges(const vector[double] split_points, double [:] unique_col_values):
-    cdef:
-        vector[double] valid_ranges
-        size_t i, j
-        double lower, upper
-        double unique_val
-        size_t n = unique_col_values.shape[0]
-
-    valid_ranges.reserve(split_points.size())
-    
-    for i in range(split_points.size()):
-        # Başlangıç aralığı: (-inf, split_points[0]]
-        if i == 0:
-            lower = -float('inf')
-            upper = split_points[i]
-        
-        # Orta aralıklar: (split_points[i], split_points[i + 1]]
-        elif i < split_points.size() - 1:
-            lower = split_points[i]
-            upper = split_points[i + 1]
-        
-        # Son aralık: (split_points[max], inf)
-        else:
-            lower = split_points[i]
-            upper = float('inf')
-        
-        # unique_col_values değerlerini bu aralık içinde kontrol et
-        for j in range(n):
-            unique_val = unique_col_values[j]
-            
-            # Aralığın geçerli olup olmadığını kontrol et
-            if lower < unique_val <= upper:
-                valid_ranges.push_back(upper)  # Geçerli olan üst limiti ekliyoruz
-                break  # Bir aralık geçerli ise diğer aralığa geç
-        
-    return valid_ranges
-
-
+@boundscheck(False)
+@nonecheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
 cdef double _expected_value(int col, const vector[vector[Rule]] trees, double [:] col_values):
         cdef:
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
-            vector[double] split_points, valid_ranges, mean_values, average_counts
             
             size_t num_trees = filtered_trees.size()
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
-            size_t k, l, tree_size, valid_range_size
+            size_t k, l, tree_size
 
-            double weighted_sum = 0.0
-            double weighted_count = 0.0
-            double tree_sum = 0.0
-            double total_iter = 0.0
-            double tree_count = 0.0
+            double weighted_sum
+            double weighted_count 
+            double tree_sum 
+            double tree_count
             double rule_val, n_count
+            double point
+            double mean_values = 0.0, average_counts = 0.0
 
-        if col_values.shape[0] > 0:
-            split_points = get_split_point(filtered_trees, col)
-            valid_ranges = filter_valid_ranges(split_points, col_values)
-            valid_range_size = valid_ranges.size()
+            int n_row = col_values.shape[0]
 
-            mean_values.reserve(valid_range_size)
-            average_counts.reserve(valid_range_size)
+            double [:] weighted_sum_rows = np.zeros_like(col_values, dtype=np.float64)
 
+        if n_row > 0:
             with nogil:
-
-                for i in range(valid_range_size):
-                    point = split_points[i]
+                for i in range(n_row):
+                    point = col_values[i]
 
                     ensemble_sum = 0.0
                     ensembe_count = 0.0
-                    tree_count = 0.0
                     
                     for k in range(num_trees):
                         tree_ptr = &filtered_trees[k]
                         tree_size = tree_ptr.size()
 
                         tree_sum = 0.0
-                        count = 0.0
-                        iter_count = 0.0
-
+                        tree_count = 0.0
+                        
                         for l in range(tree_size):
                             rule_ptr = &(tree_ptr[0][l])
                             is_valid_rule = check_value(rule_ptr, col, point)
@@ -342,24 +316,16 @@ cdef double _expected_value(int col, const vector[vector[Rule]] trees, double [:
                                 n_count = rule_ptr.count
 
                                 tree_sum += rule_val * n_count
-                                count += n_count
-                                iter_count += 1
+                                tree_count += n_count
                                                     
-                        
-                        if count > 0:
-                            tree_count += 1.0
-                            ensembe_count += (count / iter_count)
-                            ensemble_sum += (tree_sum / count)
+                        if tree_count > 0:
+                            ensemble_sum += (tree_sum / tree_count)
                     
                     if ensemble_sum != 0.0:
-                        mean_values.push_back(ensemble_sum)
-                        average_counts.push_back(ensembe_count / tree_count)
+                        weighted_sum_rows[i] = ensemble_sum
 
-                for k in range(mean_values.size()):
-                    weighted_sum += mean_values[k] * average_counts[k]
-                    weighted_count += average_counts[k]
-
-            return 0.0 if weighted_count == 0 else weighted_sum / weighted_count
+                
+            return np.mean(np.asarray(weighted_sum_rows))
 
         else:
             with nogil:
@@ -381,3 +347,6 @@ cdef double _expected_value(int col, const vector[vector[Rule]] trees, double [:
                     weighted_sum += (tree_sum / tree_count)
 
             return weighted_sum
+
+
+
