@@ -146,7 +146,7 @@ cdef class Explainer:
 
             int[:] leaf_loc
             double[:,:] x_ = np.asarray(x, dtype=np.float64)
-            double[:,:] back_data_ 
+            int[:,:] back_data_ 
 
             int row, col, num_rows = x_.shape[0]
 
@@ -161,14 +161,14 @@ cdef class Explainer:
 
 
         if back_data is not None:
-            back_data_ = np.asarray(back_data, dtype=np.float64)
+            back_data_ = self.model.predict(back_data, pred_leaf=True).astype(np.int32)
         else:
-            back_data_ = np.empty((0, self.len_col), dtype=np.float64)
+            back_data_ = np.empty((0, 0), dtype=np.int32)
 
 
         expected_values.resize(self.len_col)
         for col in range(self.len_col):
-            expected_values[col] = _expected_value(col, self.trees, back_data_[:, col])
+            expected_values[col] = _expected_value(col, self.trees, back_data_)
 
 
         filter_trees_all.resize(self.len_col)

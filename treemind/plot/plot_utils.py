@@ -85,8 +85,8 @@ def _validate_bar_plot_parameters(
     # Check values
     if not isinstance(values, np.ndarray):
         raise TypeError("The 'values' parameter must be a numpy.ndarray.")
-    if values.ndim != 1:
-        raise ValueError("The 'values' array must be one-dimensional.")
+    if values.ndim != 2:
+        raise ValueError("The 'values' array must be two-dimensional.")
     if not np.issubdtype(values.dtype, np.number):
         raise ValueError("All elements in 'values' must be numeric.")
 

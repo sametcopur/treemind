@@ -62,10 +62,11 @@ class Explainer:
         ...
 
     def analyze_data(
-        self, x: ArrayLike, detailed: bool = False
-    ) -> Union[Tuple[np.ndarray, List[np.ndarray], float], Tuple[np.ndarray, float]]:
+        self, x: ArrayLike, back_data: ArrayLike | None = None
+    ) -> np.ndarray:
         """
-        Analyzes input data to extract predicted values, feature contributions, split points, and overall raw score.
+        Analyzes input data to extract row and column-based impact values, with an option to use
+        baseline data for feature impact calculation.
 
         Parameters
         ----------
@@ -74,39 +75,24 @@ class Explainer:
             which can accept any type that matches its input requirements. Note that `x` must be
             two-dimensional; single-dimensional arrays are not accepted. If input is intended to
             be row-based, it must have the appropriate shape.
-
-        detailed : bool, optional
-            If True, the function returns detailed split points for each feature. If False, only
-            basic output is returned. Default is False.
+            
+        back_data : ArrayLike, optional
+            Baseline data used to calculate impact values. When provided, each feature's effect is
+            computed as the deviation from this baseline value, similar to SHAP analysis. If `None`, 
+            the function will use the model’s expected output as the reference for impact calculations.
 
         Returns
         -------
-        Union[Tuple[np.ndarray, List[np.ndarray], float], Tuple[np.ndarray, float]]
-            The output depends on the `detailed` parameter:
-
-            - If `detailed` is False:
-                The function returns a tuple containing:
-
-                - `values` : np.ndarray
-                    A single-dimensional array where each element represents the effect (positive or negative) of each feature in `x`. Each index corresponds to a feature column in `x`.
-
-                - `raw_score` : float
-                    The mean of the predictions obtained by inputting `x` into the model. This raw score reflects the average output based on `x`.
-
-            - If `detailed` is True:
-                The function returns a tuple containing:
-
-                - `values` : np.ndarray
-                    A two-dimensional array with shape (n_col, max_split_num_feature). Initially, all values are set to 0. For each feature, the array contains values up to the number of splits for that feature. For example, if a feature has 10 splits and the maximum split count is 30, the first 10 elements will have values, while the rest remain 0. To determine the number of splits for a feature, use `len(split_points[i])`.
-
-                - `split_points` : List[np.ndarray]
-                    A list where each element is an array representing the split points for each feature. Each array details the split points where the feature was divided. For example, if a feature splits at 10 different points, the array for that feature contains those 10 split values.
-
-                - `raw_score` : float
-                    Similar to the non-detailed case, this represents the mean score of `x` when evaluated by the model.
-
+        np.ndarray
+            A two-dimensional array where each element represents the impact of a feature in `x` on a
+            specific row, based on either the provided baseline (`back_data`) or the model's output 
+            as the reference if `back_data` is `None`. The array shape corresponds to (n_rows, n_features), 
+            where each row gives the per-feature impact for a specific instance in `x`, enabling row 
+            and column-based impact analysis.
+            
         """
         ...
+
 
     def analyze_feature(self, col: int) -> pd.DataFrame:
         """

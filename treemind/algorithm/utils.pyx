@@ -271,63 +271,61 @@ cdef tuple[vector[double],
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef double _expected_value(int col, const vector[vector[Rule]] trees, double [:] col_values):
+cdef double _expected_value(int col, const vector[vector[Rule]] trees, int [:,:] col_values):
         cdef:
-            vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
-            
-            size_t num_trees = filtered_trees.size()
+            vector[vector[Rule]] filtered_trees 
+            size_t num_trees 
+
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
             size_t k, l, tree_size
 
             double weighted_sum
-            double weighted_count 
             double tree_sum 
             double tree_count
             double rule_val, n_count
-            double point
-            double mean_values = 0.0, average_counts = 0.0
+            double ub, lb
+            int[:] row_leafs
 
-            int n_row = col_values.shape[0]
+            int n_rows = col_values.shape[0]
+            int n_leafs 
+            int i, m
 
-            double [:] weighted_sum_rows = np.zeros_like(col_values, dtype=np.float64)
+            bint ub_check, lb_check
 
-        if n_row > 0:
+            double [:] weighted_sum_rows
+
+        if n_rows > 0:
+            n_leafs = col_values.shape[1]
+            
+            weighted_sum_rows = np.zeros(n_rows, dtype=np.float64)
+
             with nogil:
-                for i in range(n_row):
-                    point = col_values[i]
+                for i in range(n_rows):
+                    row_leafs = col_values[i, :]
 
                     ensemble_sum = 0.0
-                    ensembe_count = 0.0
                     
-                    for k in range(num_trees):
-                        tree_ptr = &filtered_trees[k]
-                        tree_size = tree_ptr.size()
+                    for m in range(n_leafs):
+                        rule_ptr = &trees[m][row_leafs[m]]
+                        rule_val = rule_ptr.value
+                        ub, lb = rule_ptr.ubs[col], rule_ptr.lbs[col]
 
-                        tree_sum = 0.0
-                        tree_count = 0.0
-                        
-                        for l in range(tree_size):
-                            rule_ptr = &(tree_ptr[0][l])
-                            is_valid_rule = check_value(rule_ptr, col, point)
-                            
-                            if is_valid_rule:
-                                rule_val = rule_ptr.value
-                                n_count = rule_ptr.count
+                        ub_check = (ub == INFINITY)
+                        lb_check = (lb == -INFINITY)
 
-                                tree_sum += rule_val * n_count
-                                tree_count += n_count
-                                                    
-                        if tree_count > 0:
-                            ensemble_sum += (tree_sum / tree_count)
+                        if ub_check & lb_check:
+                            continue
+
+                        ensemble_sum += rule_val
                     
-                    if ensemble_sum != 0.0:
-                        weighted_sum_rows[i] = ensemble_sum
-
+                    weighted_sum_rows[i] = ensemble_sum
                 
             return np.mean(np.asarray(weighted_sum_rows))
 
         else:
+            filtered_trees = filter_trees(trees, col)
+            num_trees = filtered_trees.size()
             with nogil:
                 for k in range(num_trees):
                     tree_ptr = &filtered_trees[k]

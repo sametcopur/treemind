@@ -25,7 +25,6 @@ from numpy.typing import ArrayLike
 
 def bar_plot(
     values: np.ndarray,
-    raw_score: float,
     figsize: Tuple[int, int] = (8, 6),
     columns: ArrayLike = None,
     max_col: int | None = 20,
@@ -46,8 +45,6 @@ def bar_plot(
         An array containing the contribution values of each feature. Each value
         represents the magnitude and direction (positive or negative) of the
         feature's contribution to the overall outcome.
-    raw_score : float
-        The expected value of the model given the provided dataset.
     figsize : tuple of float, optional, default=(8.0, 6.0)
         Width and height of the plot in inches.
     columns : list or ArrayLike, optional
@@ -78,7 +75,6 @@ def bar_plot(
 
     _validate_bar_plot_parameters(
         values=values,
-        raw_score=raw_score,
         columns=columns,
         title=title,
         max_col=max_col,
@@ -87,6 +83,9 @@ def bar_plot(
         label_fontsize=label_fontsize,
         show_raw_score=show_raw_score,
     )
+    
+    if values.shape[0] > 1:
+        values = np.abs(values).sum(axis=0)
 
     # Identify non-zero contributions
     used_cols = np.where(values != 0)[0]
@@ -206,243 +205,6 @@ def bar_plot(
 
     plt.show()
 
-
-def range_plot(
-    values: np.ndarray,
-    raw_score: float,
-    split_points: List[List[float]],
-    scale: float = 2.0,
-    columns: List[str] = None,
-    max_col: int = 20,
-    title: str = None,
-    label_fontsize: float = 9.0,
-    title_fontsize: float = 12.0,
-    interval_fontsize: float = 4.5,
-    value_fontsize: float = 5.5,
-    show_raw_score: bool = True,
-) -> None:
-    """
-    Plots a combined grid of values and intervals with color intensity representing the magnitude of values.
-    Rows are sorted by a custom range calculation to emphasize the most variable rows:
-
-    This method requires the `detailed` parameter to be `True` in the output from
-    the `analyze_data` method of the `treemind.Explainer` class (`analyze_data(self, x: ArrayLike, detailed: bool = True)
-    -> Tuple[np.ndarray, List[np.ndarray], float`).
-
-    Parameters
-    ----------
-    values : np.ndarray
-        A 2D array where each row contains values to plot in the grid.
-    raw_score : float
-        The raw score associated with the values, displayed in the plot's upper right.
-    split_points : List[np.ndarray[float]]
-        A list of point intervals corresponding to the values in each row.
-    scale : float, optional, default 2.0
-        Scaling factor for figure size
-    columns : list or ArrayLike, optional
-        A list of names for the features, used as labels on the y-axis. If `None`,
-        feature indices are labeled as "Column X" for each feature.
-    max_col : int or None, optional, default=20
-        The maximum number of features to display in the plot, chosen based on
-        their absolute contribution values. If `None`, all features will be shown.
-    title : str or None, optional
-        The title displayed at the top of the plot. If `None`, no title is shown.
-    label_fontsize : float, optional, default is 9.0
-        Font size for the y-axis labels
-    title_fontsize : float, optional, default 12.0
-        Font size for the plot title
-    interval_fontsize : float, optional, default 4.5.
-        Font size for interval labels displayed on each bar,
-    value_fontsize : float, optional, default 5.5.
-        Font size for value labels displayed below each bar
-    show_raw_score : bool, optional, default True
-        If True, displays the raw score in the plot
-
-    Returns
-    -------
-    None
-        Displays the plot.
-
-    Notes
-    -----
-    - Rows with only zero values are automatically excluded.
-    """
-
-    _validate_range_plot_parameters(
-        values=values,
-        raw_score=raw_score,
-        split_points=split_points,
-        scale=scale,
-        columns=columns,
-        max_col=max_col,
-        title=title,
-        label_fontsize=label_fontsize,
-        title_fontsize=title_fontsize,
-        interval_fontsize=interval_fontsize,
-        value_fontsize=value_fontsize,
-        show_raw_score=show_raw_score,
-    )
-
-    # Filter out rows where all values are zero
-    used_cols = np.where(np.logical_not(np.all(values == 0, axis=1)))[0]
-    values = values[used_cols, :]
-    split_points = [x for i, x in enumerate(split_points) if i in used_cols]
-
-    if columns is not None:
-        columns = [columns[i] for i in used_cols]
-
-    # Calculate custom ranges for each row based on actual value lengths
-    value_ranges = []
-    for row, row_points in zip(values, split_points):
-        # Use only the length of values for this row
-        row_values = row[: len(row_points)]
-        max_val = np.max(row_values)
-        min_val = np.min(row_values)
-
-        if max_val > 0 and min_val < 0:
-            # If we have both positive and negative values, use algebraic sum
-            range_val = abs(max_val + min_val)
-        else:
-            # Otherwise use absolute difference
-            range_val = abs(max_val - min_val)
-
-        value_ranges.append(range_val)
-
-    # Convert to numpy array for sorting
-    value_ranges = np.array(value_ranges)
-
-    # Get sorting indices (ascending order - smaller differences first)
-    sort_indices = np.argsort(value_ranges)[::-1]
-
-    # Sort the values, points, and columns
-    values = values[sort_indices]
-    split_points = [split_points[i] for i in sort_indices]
-    if columns is not None:
-        columns = [columns[i] for i in sort_indices]
-
-    # Apply max_col filter from bottom up
-    if max_col is not None:
-        values = values[:max_col, :]
-        split_points = split_points[:max_col]
-        if columns is not None:
-            columns = columns[:max_col]
-
-    n_rows, n_cols = values.shape
-
-    fig, ax = plt.subplots(figsize=(n_cols * 0.7 * scale, n_rows * 0.6 * scale))
-
-    # Color maps for positive and negative values
-    cmap_pos = sns.light_palette("green", as_cmap=True)
-    cmap_neg = sns.light_palette("red", as_cmap=True)
-
-    # Calculate max and min values using only valid lengths per row
-    max_values = []
-    min_values = []
-    for row, row_points in zip(values, split_points):
-        row_values = row[: len(row_points)]
-        max_values.append(np.max(row_values))
-        min_values.append(np.min(row_values))
-
-    max_value = max(max_values) if max_values and max(max_values) > 0 else 1
-    min_value = min(min_values) if min_values and min(min_values) < 0 else -1
-
-    bar_width = 0.7  # Width of each bar
-    bar_height = 0.6  # Height of each bar
-
-    # Calculate base font sizes
-    base_interval_font_size = interval_fontsize * scale  # Reduced size
-    base_value_font_size = value_fontsize * scale  # Reduced size
-
-    # Plot each value and interval
-    for i, (row, row_points) in enumerate(zip(values, split_points)):
-        intervals = _create_intervals(row_points)
-        # Only plot up to the length of points for this row
-        for j, (val, interval) in enumerate(zip(row[: len(row_points)], intervals)):
-            if val != 0:
-                # Select color based on value
-                if val > 0:
-                    color = cmap_pos(val / max_value)
-                else:
-                    color = cmap_neg(abs(val) / abs(min_value))
-
-                # Draw the bar
-                ax.barh(
-                    i,
-                    bar_width,
-                    left=j * bar_width,
-                    color=color,
-                    height=bar_height,
-                    alpha=0.9,
-                )
-
-                # Compute brightness for text color
-                color_hsv = rgb_to_hsv(color[:3])
-                brightness = color_hsv[2]
-                text_color = "white" if brightness < 0.5 else "black"
-
-                # Place the range text at the top of the bar
-                ax.text(
-                    j * bar_width + bar_width / 2,
-                    i + 0.15,
-                    interval,
-                    ha="center",
-                    va="center",
-                    color=text_color,
-                    fontsize=base_interval_font_size,
-                )
-
-                # Place the value text at the bottom of the bar
-                ax.text(
-                    j * bar_width + bar_width / 2,
-                    i - 0.15,
-                    f"{val:.3f}",
-                    ha="center",
-                    va="center",
-                    color=text_color,
-                    fontsize=base_value_font_size,
-                )
-
-    # Set y-axis labels
-    ax.set_yticks(np.arange(n_rows))
-
-    ax.set_xticks([])
-    ax.set_xticklabels([])
-
-    if columns is not None:
-        ax.set_yticklabels(columns, fontsize=label_fontsize * scale)
-    else:
-        ax.set_yticklabels(
-            [f"Column {i}" for i in range(n_rows)], fontsize=label_fontsize * scale
-        )
-
-    # Set x-axis limits
-    ax.set_xlim(0, n_cols * bar_width)
-
-    # Remove axis spines
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-
-    # Add raw score text
-    if show_raw_score:
-        ax.text(
-            1,
-            1,
-            f"Raw Score: {raw_score:.3f}",
-            horizontalalignment="right",
-            verticalalignment="top",
-            transform=ax.transAxes,
-            fontsize=7 * scale,
-            fontweight="bold",
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.7),
-        )
-
-    if title is not None:
-        plt.title(title, fontsize=title_fontsize * scale)
-
-    plt.tight_layout()
-    plt.show()
 
 
 def feature_plot(
