@@ -347,7 +347,7 @@ def _validate_range_plot_parameters(
 def _validate_feature_plot_parameters(
     df: pd.DataFrame,
     figsize: Tuple[float, float],
-    show_min_max: bool,
+    show_std: bool,
     show_range: bool,
     xticks_n: int,
     yticks_n: int,
@@ -367,8 +367,8 @@ def _validate_feature_plot_parameters(
         The input DataFrame to validate.
     figsize : tuple of int
         The figure size as a tuple of two positive integers.
-    show_min_max : bool
-        Whether to show the min-max range.
+    show_std : bool
+        Whether to show the std range.
     xticks_n : int
         Number of ticks on the x-axis.
     yticks_n : int
@@ -392,7 +392,7 @@ def _validate_feature_plot_parameters(
         If any parameter is invalid.
     """
     # Validate DataFrame columns
-    required_columns = {"mean", "min", "max", "count"}
+    required_columns = {"mean", "std", "count"}
     if not required_columns.issubset(df.columns):
         raise ValueError(
             f"The DataFrame must contain the following columns: {required_columns}"
@@ -416,8 +416,8 @@ def _validate_feature_plot_parameters(
         raise ValueError("Both dimensions in 'figsize' must be numeric.")
 
     # Validate show_min_max
-    if not isinstance(show_min_max, bool):
-        raise ValueError("show_min_max must be a boolean value.")
+    if not isinstance(show_std, bool):
+        raise ValueError("show_std must be a boolean value.")
 
     if not isinstance(show_range, bool):
         raise ValueError("show_range must be a boolean value.")

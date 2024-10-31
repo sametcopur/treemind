@@ -83,7 +83,7 @@ def bar_plot(
         label_fontsize=label_fontsize,
         show_raw_score=show_raw_score,
     )
-    
+
     if values.shape[0] > 1:
         values = np.abs(values).sum(axis=0)
 
@@ -206,11 +206,10 @@ def bar_plot(
     plt.show()
 
 
-
 def feature_plot(
     df: pd.DataFrame,
     figsize: Tuple[int, int] = (12, 8),
-    show_min_max: bool = False,
+    show_std: bool = False,
     show_range: bool = True,
     xticks_n: int = 10,
     yticks_n: int = 10,
@@ -239,8 +238,8 @@ def feature_plot(
         - 'count' : Average leaf_count within this range.
     figsize : tuple of int, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
-    show_min_max : bool, optional, default False
-        If True, shaded areas representing the min and max values will be displayed.
+    show_std : bool, optional, default False
+        If True, shaded areas representing the standart deviation values will be displayed.
     show_range : bool, default True
         If True, show leaf distribution within range.
     xticks_n : int, optional, default 10
@@ -267,7 +266,7 @@ def feature_plot(
     _validate_feature_plot_parameters(
         df=df,
         figsize=figsize,
-        show_min_max=show_min_max,
+        show_std=show_std,
         show_range=show_range,
         xticks_n=xticks_n,
         yticks_n=yticks_n,
@@ -355,14 +354,14 @@ def feature_plot(
     )
 
     # Fill between the min and max if specified
-    if show_min_max:
+    if show_std:
         main_ax.fill_between(
             df[column_name],
-            df["min"],
-            df["max"],
+            df["mean"] - np.abs(df["std"]),
+            df["mean"] + np.abs(df["std"]),
             color="gray",
             alpha=0.3,
-            label="Min-Max Range",
+            label="Standart Deviation",
             step="pre",
         )
 
@@ -388,9 +387,9 @@ def feature_plot(
     )
 
     # Determine y-ticks range
-    if show_min_max:
-        y_min = df["min"].min()
-        y_max = df["max"].max()
+    if show_std:
+        y_min = (df["mean"] - np.abs(df["std"])).min()
+        y_max = (df["mean"] + np.abs(df["std"])).max()
     else:
         y_min = df["mean"].min()
         y_max = df["mean"].max()
@@ -412,7 +411,7 @@ def feature_plot(
     main_ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
 
     # Add legend if showing min and max
-    if show_min_max:
+    if show_std:
         main_ax.legend()
 
     main_ax.spines["right"].set_visible(False)

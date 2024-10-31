@@ -1,7 +1,7 @@
 from libcpp.vector cimport vector
 from .rule cimport filter_trees, get_split_point, check_value
 
-from libc.math cimport INFINITY
+from libc.math cimport INFINITY, sqrt
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
@@ -64,7 +64,7 @@ cdef add_lower_bound(object data, int loc, str column):
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef tuple[vector[double], vector[double], vector[double], vector[double], vector[double]] _analyze_feature(int col, const vector[vector[Rule]] trees):
+cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees):
         cdef:
             vector[vector[Rule]] filtered_trees = filter_trees(trees, col)
             vector[double] split_points = get_split_point(filtered_trees, col)
@@ -72,31 +72,27 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
             size_t num_splits = split_points.size()
             size_t num_trees = filtered_trees.size()
 
-            vector[double] max_vals, min_vals, mean_values, points, average_counts
+            double[:] stds = np.empty(num_splits, dtype=np.float64)
+            double[:] mean_values = np.empty(num_splits, dtype=np.float64)
+            double[:] average_counts = np.empty(num_splits, dtype=np.float64)
+            double[:] points = np.empty(num_splits, dtype=np.float64)
 
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
             size_t i, k, l, tree_size
 
-            double point, ensemble_sum, ensemble_max_val, ensemble_min_val
-            double tree_max_val, tree_min_val, count, rule_val, n_count
+            double point, ensemble_sum, ensemble_std
+            double tree_max_val, tree_min_val, count, rule_val, n_count, squared_val
             double iter_count, ensemble_count, tree_count
 
             bint is_valid_rule
-
-        max_vals.reserve(num_splits)
-        min_vals.reserve(num_splits)
-        mean_values.reserve(num_splits)
-        average_counts.reserve(num_splits)
-        points.reserve(num_splits)
 
         with nogil:
             for i in range(num_splits):
                 point = split_points[i]
 
                 ensemble_sum = 0.0
-                ensemble_max_val = 0.0
-                ensemble_min_val = 0.0
+                ensemble_std = 0.0
                 ensembe_count = 0.0
                 tree_count = 0.0
                 
@@ -105,10 +101,9 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
                     tree_size = tree_ptr.size()
 
                     tree_sum = 0.0
+                    tree_std = 0.0
                     count = 0.0
                     iter_count = 0.0
-                    tree_max_val = -INFINITY
-                    tree_min_val = INFINITY
                     
                     for l in range(tree_size):
                         rule_ptr = &(tree_ptr[0][l])
@@ -117,30 +112,34 @@ cdef tuple[vector[double], vector[double], vector[double], vector[double], vecto
                         if is_valid_rule:
                             rule_val = rule_ptr.value
                             n_count = rule_ptr.count
+                            squared_val = rule_val * rule_val
 
                             tree_sum += rule_val * n_count
+                            tree_std += squared_val * n_count  # E[X^2]
                             count += n_count
                             iter_count += 1
-                            
-                            tree_max_val = cmax(tree_max_val, rule_val)
-                            tree_min_val = cmin(tree_min_val, rule_val)                            
+                     
                     
                     if count > 0:
                         tree_count += 1.0
                         ensembe_count += (count / iter_count)
-
                         ensemble_sum += (tree_sum / count)
-                        ensemble_max_val += tree_max_val
-                        ensemble_min_val += tree_min_val
+
+                    if iter_count > 1:
+                        tree_std = tree_std / count  # E[X^2]
+                        tree_sum = tree_sum / count  # E[X]
+                        tree_std = sqrt(tree_std - tree_sum * tree_sum)
+
+                        ensemble_std += tree_std
+
                 
                 if ensemble_sum != 0.0:
-                    points.push_back(point)
-                    mean_values.push_back(ensemble_sum)
-                    min_vals.push_back(ensemble_min_val)
-                    max_vals.push_back(ensemble_max_val)
-                    average_counts.push_back(ensembe_count / tree_count)
+                    points[i] = point
+                    mean_values[i] = ensemble_sum
+                    stds[i] = ensemble_std
+                    average_counts[i] = (ensembe_count / tree_count)
 
-        return points, mean_values, min_vals, max_vals, average_counts
+        return points, mean_values, stds, average_counts
         
 @boundscheck(False)
 @nonecheck(False)
