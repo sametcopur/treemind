@@ -124,7 +124,7 @@ cdef tuple _analyze_feature(int col, const vector[vector[Rule]] trees):
                         tree_count += 1.0
                         tree_exp = tree_sum / count
 
-                        ensembe_count += (count / iter_count)
+                        ensembe_count += count 
                         ensemble_sum += tree_exp
 
                     if iter_count > 1:
@@ -258,7 +258,7 @@ cdef tuple[vector[double],
 
                 if count > 0:
                     total_tree_counts[point_idx] += 1.0
-                    average_counts[point_idx] += count / iter_count
+                    average_counts[point_idx] += count 
                     mean = tree_sum[point_idx] / count
 
                     if iter_count > 1:
@@ -275,9 +275,7 @@ cdef tuple[vector[double],
         for point_idx in range(max_size):
             count = total_tree_counts[point_idx]
             if count > 0:
-                mean_values[point_idx] /= count
                 average_counts[point_idx] /= count
-                ensemble_std[point_idx] /= count
 
         # Prepare points for output
         for i in range(sub_points_size):
