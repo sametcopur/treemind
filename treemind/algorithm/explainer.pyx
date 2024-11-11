@@ -263,16 +263,23 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object count_node(self, bint interaction=True):
-        if not isinstance(interaction, bool):
-            raise ValueError("The 'interaction' parameter must be set explicitly to either True or False.")
+    cpdef object count_node(self, int order=2):
+        if self.len_col == -1:
+            raise ValueError("Explainer(model) must be called before this operation.")
+
+        if order >= self.len_col:
+            raise ValueError("'order' cannot be greater than or equal to the total number of columns used to train the model.")
+
+        if order < 1:
+            raise ValueError("The 'order' parameter must be a positive integer.")
+
 
         cdef:
             vector[Rule] rule_set
             Rule rule
             object df, combination_counts = Counter()
             list finite_indices, data, columns
-            int i, n, comb_size = 2 if interaction else 1
+            int i, n
             tuple comb
 
         for rule_set in self.trees:
@@ -284,17 +291,16 @@ cdef class Explainer:
                 ]
                 n = len(finite_indices)
 
-                if n >= comb_size:
-                    for comb in combinations(finite_indices, comb_size):
+                if n >= order:
+                    for comb in combinations(finite_indices, order):
                         combination_counts[comb] += 1
 
-        if interaction:
-            data = [(comb[0], comb[1], count) for comb, count in combination_counts.items()]
-            columns = ["column1_index", "column2_index", "count"]
-        else:
-            data = [(comb[0], count) for comb, count in combination_counts.items()]
-            columns = ["column_index", "count"]
+        # Create column names dynamically based on order
+        columns = [f"column{i+1}_index" for i in range(order)]
+        columns.append("count")
+
+        # Prepare data for DataFrame
+        data = [(*(comb), count) for comb, count in combination_counts.items()]
 
         df = pd.DataFrame(data, columns=columns)
-
         return df.sort_values("count", ascending=False).reset_index(drop=True)
