@@ -4,7 +4,10 @@ from libc.math cimport INFINITY
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from .rule cimport Rule
 
+cimport numpy as cnp
 import numpy as np
+
+from collections import Counter
 
 @boundscheck(False)
 @nonecheck(False)
@@ -227,3 +230,63 @@ cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
         points.erase(points.begin())
         
     return points
+
+@boundscheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
+cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
+    cdef Py_ssize_t num_trees = array.shape[1]
+    cdef Py_ssize_t num_rows = array.shape[0]
+    cdef dict results = {}
+    cdef dict tree_results
+    cdef Py_ssize_t tree_idx, row_idx
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] column_values
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] valid_values
+    
+    for tree_idx in range(num_trees):
+        column_values = array[:, tree_idx]
+        valid_values = column_values[column_values != 0]
+        tree_results = dict(Counter(valid_values))
+        results[tree_idx] = tree_results
+    
+    return results
+
+
+@boundscheck(False)
+@wraparound(False)
+@initializedcheck(False)
+@cdivision(True)
+@overflowcheck(False)
+@infer_types(True)
+cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data):
+    cdef:
+        cnp.ndarray[cnp.int32_t, ndim=2] back_data_ = model.predict(back_data, pred_leaf=True).astype(np.int32)
+        dict dict_counts = count_tree_indices(back_data_)
+
+        # Variables for looping
+        size_t num_trees = trees.size()
+        size_t tree_size
+        Rule* rule_ptr
+        vector[Rule]* tree_ptr
+
+        size_t tree_index, leaf_index
+        double leaf_counts
+        dict node_counts
+
+    for tree_index in range(num_trees):
+        tree_ptr = &trees[tree_index]
+        tree_size = tree_ptr[0].size()
+        for leaf_index in range(tree_size):
+            rule_ptr = &(tree_ptr[0][leaf_index])
+            rule_ptr.count = 0.0
+
+    for tree_index, node_counts in dict_counts.items():
+        for leaf_index, leaf_counts in node_counts.items():
+            tree_ptr = &trees[tree_index]
+            rule_ptr = &(tree_ptr[0][leaf_index])
+            rule_ptr.count = leaf_counts
+
+    return trees

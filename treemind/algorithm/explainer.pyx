@@ -10,7 +10,7 @@ from libcpp.pair cimport pair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
-from .rule cimport filter_trees, check_value
+from .rule cimport filter_trees, check_value, update_leaf_counts
 from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost
@@ -84,7 +84,7 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object analyze_interaction(self, int main_col, int sub_col):
+    cpdef object analyze_interaction(self, int main_col, int sub_col, object back_data = None):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
@@ -102,9 +102,13 @@ cdef class Explainer:
              str main_column_name, sub_column_name
              object df
              vector[double] mean_values, sub_points,main_points, counts, stds
+             vector[vector[Rule]] trees = self.trees
 
+            
+        if back_data is not None:
+            trees = update_leaf_counts(trees, self.model, back_data)
  
-        main_points, sub_points, mean_values, stds, counts = _analyze_interaction(self.trees, main_col, sub_col)
+        main_points, sub_points, mean_values, stds, counts = _analyze_interaction(trees, main_col, sub_col)
 
         main_column_name = self.columns[main_col]
         sub_column_name = self.columns[sub_col]
@@ -223,7 +227,7 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object analyze_feature(self, int col):
+    cpdef object analyze_feature(self, int col, object back_data = None):
         if not isinstance(col, int):
             raise ValueError("The 'col' parameter must be an integer.")
 
@@ -238,10 +242,14 @@ cdef class Explainer:
 
         cdef:
             double[:] points, mean_values, stds, counts
+            vector[vector[Rule]] trees = self.trees
             str column_name
             object df
 
-        points, mean_values, stds, counts = _analyze_feature(col, self.trees)
+        if back_data is not None:
+            trees = update_leaf_counts(trees, self.model, back_data)
+
+        points, mean_values, stds, counts = _analyze_feature(col, trees)
                     
         column_name = self.columns[col]
 

@@ -1,4 +1,5 @@
 from libcpp.vector cimport vector
+cimport numpy as cnp
 
 cdef struct Rule:
     double value
@@ -24,3 +25,5 @@ cdef int compare_rules(const Rule& a, const Rule& b)
 cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col)
 
 cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col= ?)
+
+cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data)
