@@ -43,7 +43,6 @@ def _check_columns(columns):
 
 def _validate_bar_plot_parameters(
     values: np.ndarray,
-    raw_score: float,
     columns: ArrayLike,
     max_col: Union[int, None],
     figsize: Tuple[float, float],
@@ -86,12 +85,6 @@ def _validate_bar_plot_parameters(
         raise ValueError("The 'values' array must be two-dimensional.")
     if not np.issubdtype(values.dtype, np.number):
         raise ValueError("All elements in 'values' must be numeric.")
-
-    # Check raw_score
-    if not isinstance(raw_score, (int, float)):
-        raise TypeError(
-            "The 'raw_score' parameter must be a numeric type (int or float)."
-        )
 
     # Check columns
     if columns is not None:

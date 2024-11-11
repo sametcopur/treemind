@@ -83,8 +83,11 @@ def bar_plot(
     )
 
     if values.shape[0] > 1:
-        values = np.abs(values).sum(axis=0)
-
+        values = np.abs(values).mean(axis=0)
+        
+    else:
+        values =  values.ravel()
+        
     # Identify non-zero contributions
     used_cols = np.where(values != 0)[0]
     if len(used_cols) == 0:

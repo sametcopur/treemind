@@ -145,76 +145,48 @@ cdef class Explainer:
             raise ValueError("Explainer(model) must be called before this operation.")
 
         cdef:
-            double tree_count, point_col_sum, point_iter_count, point_count, ensemble_sum 
+            double  ensemble_sum 
             size_t i, j, num_trees, tree_size
             double rule_val, n_count, point, expected_value
+            vector[vector[Rule]] trees = self.trees
 
-            int[:] leaf_loc
-            double[:,:] x_ = np.asarray(x, dtype=np.float64)
-            int[:,:] back_data_ 
+            int[:,:] x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)
+            int[:] tree_loc 
 
             int row, col, num_rows = x_.shape[0]
 
-            vector[vector[vector[Rule]]] filter_trees_all
-            vector[vector[Rule]] filtered_trees
-            vector[double] col_split_points, expected_values
+            vector[double] expected_values
 
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
 
+        
             double[:,:] values = np.empty((num_rows, self.len_col), dtype=np.float64)
 
 
         if back_data is not None:
-            back_data_ = self.model.predict(back_data, pred_leaf=True).astype(np.int32)
-        else:
-            back_data_ = np.empty((0, 0), dtype=np.int32)
+            trees = update_leaf_counts(trees, self.model, back_data)
 
+        num_trees = trees.size()
 
         expected_values.resize(self.len_col)
         for col in range(self.len_col):
-            expected_values[col] = _expected_value(col, self.trees, back_data_)
+            expected_values[col] = _expected_value(col, trees)
 
-
-        filter_trees_all.resize(self.len_col)
-        for col in range(self.len_col):
-            filter_trees_all[col] = filter_trees(self.trees, col)
-        
         with nogil:
             for col in range(self.len_col):
-                filtered_trees = filter_trees_all[col]
                 expected_value = expected_values[col]
-                num_trees = filtered_trees.size()
-
+                
                 for row in range(num_rows):
-                    point = x_[row, col]
-
+                    tree_loc = x_[row, :]
                     ensemble_sum = 0.0
-                    tree_count = 0.0
 
                     for i in range(num_trees):
-                        tree_ptr = &filtered_trees[i]
-                        tree_size = tree_ptr.size()
+                        tree_ptr = &trees[i]
+                        rule_ptr = &(tree_ptr[0][tree_loc[i]])
 
-                        point_col_sum = 0.0
-                        point_iter_count = 0.0
-                        point_count = 0.0
-
-                        for j in range(tree_size):
-                            rule_ptr = &(tree_ptr[0][j])
-                            is_valid_rule = check_value(rule_ptr, col, point)
-
-                            if is_valid_rule:
-                                rule_val = rule_ptr.value
-                                n_count = rule_ptr.count
-
-                                point_col_sum += rule_val * n_count
-                                point_count += n_count
-                                point_iter_count += 1
-
-                        if point_count > 0:
-                            tree_count += 1.0
-                            ensemble_sum += (point_col_sum / point_count)
+                        if not ((rule_ptr.lbs[col] == -INFINITY )and (rule_ptr.ubs[col] == INFINITY)):
+                            ensemble_sum += rule_ptr.value
 
                     values[row, col] = ensemble_sum - expected_value
 
