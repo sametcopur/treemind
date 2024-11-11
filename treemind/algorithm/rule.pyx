@@ -143,7 +143,7 @@ cdef int compare_rules(const Rule& a, const Rule& b):
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col, int sub_col = -1):
+cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, vector[int] columns):
     """
     Filters rules across all trees based on the specified main and optional sub-column.
 
@@ -164,21 +164,12 @@ cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, int main_col,
     cdef vector[vector[Rule]] filtered_trees
     cdef vector[Rule] filtered_rules = vector[Rule]()
     cdef vector[Rule] tree
-    cdef vector[int] check_rules = vector[int]() 
 
     # Convert Python int to C++ int
-    cdef int c_main_col = <int>main_col
-    cdef int c_sub_col = <int>sub_col
-    
-    check_rules.push_back(c_main_col)
-
-    if c_sub_col != -1:
-        check_rules.push_back(c_sub_col)
-
     for tree in trees:
         filtered_rules.clear()
         for rule in tree:
-            if check_rule(&rule, check_rules):
+            if check_rule(&rule, columns):
                 filtered_rules.push_back(rule)
 
         if filtered_rules.size() >= 1:

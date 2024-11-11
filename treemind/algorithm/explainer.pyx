@@ -10,8 +10,8 @@ from libcpp.pair cimport pair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
-from .rule cimport filter_trees, check_value, update_leaf_counts
-from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value
+from .rule cimport update_leaf_counts
+from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value, _analyze_multi_interaction
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost
 from .cb cimport analyze_catboost
@@ -159,7 +159,6 @@ cdef class Explainer:
 
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
-
         
             double[:,:] values = np.empty((num_rows, self.len_col), dtype=np.float64)
 
@@ -284,3 +283,90 @@ cdef class Explainer:
 
         df = pd.DataFrame(data, columns=columns)
         return df.sort_values("count", ascending=False).reset_index(drop=True)
+            
+    @boundscheck(False)
+    @nonecheck(False)
+    @wraparound(False)
+    @initializedcheck(False)
+    @overflowcheck(False)
+    @cdivision(True)
+    @infer_types(True)
+    cpdef object analyze_multi_interaction(self, list columns, object back_data = None):
+        if self.len_col == -1:
+            raise ValueError("Explainer(model) must be called before this operation.")
+        
+        # Convert columns list to vector[int]
+        cdef:
+            vector[int] col_indices
+            int col
+            vector[vector[Rule]] trees = self.trees
+            vector[vector[double]] points
+            vector[double] mean_values, ensemble_std, counts
+            size_t i, col_idx
+            cdef size_t num_cols = col_indices.size()
+
+        col_indices.reserve(len(columns))
+        
+        for col in columns:
+            col_indices.push_back(col)
+
+        num_cols = col_indices.size()
+        
+        # Validate input columns
+        
+        if num_cols < 1:
+            raise ValueError("At least one columns must be provided for interaction analysis.")
+
+        elif num_cols > self.len_col:
+            raise ValueError("The length of columns must be smaller than the total number of columns used to train the model.")
+    
+        for col in col_indices:
+            if col >= self.len_col:
+                raise ValueError(f"Column index {col} cannot be greater than or equal to the total number of columns used to train the model.")
+            if col < 0:
+                raise ValueError("Column indices cannot be negative.")
+                
+        # Check for duplicate columns
+        seen = set()
+        for col in columns:
+            if col in seen:
+                raise ValueError("Duplicate column indices are not allowed.")
+            seen.add(col)
+
+            
+        if back_data is not None:
+            trees = update_leaf_counts(trees, self.model, back_data)
+        
+        # Analyze interactions
+        points, mean_values, ensemble_std, counts = _analyze_multi_interaction(trees, col_indices)
+        
+        # Get column names using regular Python list
+        column_names = [self.columns[idx] for idx in columns]
+        
+        # Create DataFrame
+        df_dict = {}
+        
+        # Add points columns
+        for i in range(num_cols):
+            df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
+        
+        # Add statistics columns
+        df_dict.update({
+            'value': mean_values,
+            'std': ensemble_std,
+            'count': counts
+        })
+        
+        df = pd.DataFrame(df_dict)
+        
+        if df.shape[0] == 0:
+            raise ValueError(f"No interaction found between the specified features: {column_names}")
+        
+        # Center the values
+        df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
+        
+        # Add lower bounds for all columns
+        for i, col_name in enumerate(column_names):
+            add_lower_bound(df, i * 2, col_name)
+        
+        return df

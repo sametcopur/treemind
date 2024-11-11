@@ -1,7 +1,7 @@
 import pandas as pd
 from numpy.typing import ArrayLike
 import numpy as np
-from typing import Union, Tuple, List, Any
+from typing import Union, Tuple, List, Any, Optional
 
 class Explainer:
     """
@@ -151,5 +151,34 @@ class Explainer:
                 - `column_index` (int): Index of the feature.
 
                 - `count` (int): Number of times the feature appears in splits.
+        """
+        ...
+
+
+    def analyze_multi_interaction(
+        self,
+        columns: List[int],
+        back_data: Optional[Any] = None
+    ) -> pd.DataFrame:
+        """
+        Analyzes interactions between multiple features based on the model's decision rules,
+        returning a DataFrame with interaction metrics.
+
+        Parameters
+        ----------
+        columns : list[int]
+            List of column indices representing features to analyze for interactions.
+            
+        back_data : Optional[object], default=None
+            Optional data used to update leaf counts in the decision trees. If provided, this
+            data is used to refine the interaction analysis.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing the interaction analysis metrics:
+            - Upper bound columns for each feature in `columns`
+            - Mean interaction values, standard deviations, and interaction counts for each
+            feature pair.
         """
         ...

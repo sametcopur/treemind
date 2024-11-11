@@ -14,3 +14,4 @@ cdef class Explainer:
     cpdef cnp.ndarray[cnp.float64_t, ndim=2] analyze_data(self, object x, object back_data = ?)
     cpdef object analyze_feature(self, int col, object back_data = ?)
     cpdef object count_node(self, int order=?)
+    cpdef object analyze_multi_interaction(self, list columns, object back_data = ?)

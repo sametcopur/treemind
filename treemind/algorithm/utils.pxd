@@ -18,3 +18,8 @@ cdef tuple[vector[double], vector[double], vector[double],vector[double], vector
 cdef double _expected_value(int col, const vector[vector[Rule]] trees)
 
 cdef add_lower_bound(object data, int loc, str column)
+
+cdef tuple[vector[vector[double]],
+           vector[double],
+           vector[double],
+           vector[double]] _analyze_multi_interaction(const vector[vector[Rule]]& trees, const vector[int]& columns)
