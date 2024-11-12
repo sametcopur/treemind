@@ -3,6 +3,7 @@ from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from .rule cimport Rule
+from .xgb cimport convert_d_matrix, xgb_leaf_correction
 
 cimport numpy as cnp
 import numpy as np
@@ -252,13 +253,14 @@ cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
 @cdivision(True)
 @overflowcheck(False)
 @infer_types(True)
-cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data):
+cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data, str model_type):
     cdef:
-        cnp.ndarray[cnp.int32_t, ndim=2] back_data_ = model.predict(back_data, pred_leaf=True).astype(np.int32)
-        dict dict_counts = count_tree_indices(back_data_)
+        cnp.ndarray[cnp.int32_t, ndim=2] back_data_
+        dict dict_counts 
+        object back_data_d_matrix 
 
         # Variables for looping
-        size_t num_trees = trees.size()
+        size_t num_trees
         size_t tree_size
         Rule* rule_ptr
         vector[Rule]* tree_ptr
@@ -266,6 +268,18 @@ cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object 
         size_t tree_index, leaf_index
         double leaf_counts
         dict node_counts
+
+    if model_type == "xgboost":
+        back_data_d_matrix = convert_d_matrix(back_data)
+        back_data_ = model.predict(back_data_d_matrix, pred_leaf=True).astype(np.int32)
+        back_data_ = xgb_leaf_correction(trees, back_data_)
+
+    elif model_type == "lightgbm":
+        back_data_ = model.predict(back_data, pred_leaf=True).astype(np.int32)
+
+    dict_counts = count_tree_indices(back_data_)
+    num_trees = trees.size()
+
 
     for tree_index in range(num_trees):
         tree_ptr = &trees[tree_index]

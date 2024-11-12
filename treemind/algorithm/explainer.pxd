@@ -6,7 +6,7 @@ cimport numpy as cnp
 cdef class Explainer:
     cdef vector[vector[Rule]] trees
     cdef public object model
-    cdef int len_col
+    cdef Py_ssize_t len_col
     cdef list columns
     cdef str model_type
 

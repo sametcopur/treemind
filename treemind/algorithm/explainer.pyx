@@ -106,7 +106,7 @@ cdef class Explainer:
 
             
         if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data)
+            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
  
         main_points, sub_points, mean_values, stds, counts = _analyze_interaction(trees, main_col, sub_col)
 
@@ -164,7 +164,7 @@ cdef class Explainer:
 
 
         if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data)
+            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         num_trees = trees.size()
 
@@ -218,7 +218,7 @@ cdef class Explainer:
             object df
 
         if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data)
+            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         points, mean_values, stds, counts = _analyze_feature(col, trees)
                     
@@ -335,7 +335,7 @@ cdef class Explainer:
 
             
         if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data)
+            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
         
         # Analyze interactions
         points, mean_values, ensemble_std, counts = _analyze_multi_interaction(trees, col_indices)
