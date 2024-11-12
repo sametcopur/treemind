@@ -13,7 +13,7 @@ from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivis
 from .rule cimport update_leaf_counts
 from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value, _analyze_multi_interaction
 from .lgb cimport analyze_lightgbm
-from .xgb cimport analyze_xgboost
+from .xgb cimport analyze_xgboost, convert_d_matrix, xgb_leaf_correction
 from .cb cimport analyze_catboost
 
 from collections import Counter
@@ -150,23 +150,36 @@ cdef class Explainer:
             double rule_val, n_count, point, expected_value
             vector[vector[Rule]] trees = self.trees
 
-            int[:,:] x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)
+            int[:,:] x_ 
             int[:] tree_loc 
 
-            int row, col, num_rows = x_.shape[0]
+            int row, col, num_rows 
 
             vector[double] expected_values
 
             const Rule* rule_ptr
             const vector[Rule]* tree_ptr
         
-            double[:,:] values = np.empty((num_rows, self.len_col), dtype=np.float64)
+            double[:,:] values 
+            object x_dmatrix 
 
+        if self.model_type == "xgboost":
+            x_dmatrix = convert_d_matrix(x)
+            x_ = self.model.predict(x_dmatrix, pred_leaf=True).astype(np.int32)
+            x_ = xgb_leaf_correction(trees, x_)
+
+        else:
+            x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)
+
+        num_rows = x_.shape[0]
+        values = np.empty((num_rows, self.len_col), dtype=np.float64)
 
         if back_data is not None:
             trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         num_trees = trees.size()
+
+
 
         expected_values.resize(self.len_col)
         for col in range(self.len_col):

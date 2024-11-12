@@ -143,7 +143,7 @@ cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, doubl
     # Restore previous range
     feature_ranges[feature_index] = prev_range
 
-cdef cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] xgb_leaf_correction(vector[vector[Rule]] trees, int[:,::1] leafs):
+cdef cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] xgb_leaf_correction(vector[vector[Rule]] trees, int[:,:] leafs):
     cdef:
         list leaf_indices, mappings = [], max_indices = []
         vector[Rule] tree
