@@ -37,9 +37,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
     cdef double leaf_value
     cdef int leaf_count
     cdef dict leaf_info
-
     cdef list all_trees_info = []
-
     cdef int tree_index
     cdef dict tree
 
@@ -58,9 +56,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
         class_params = model_dict['model_info'].get('class_params')
 
         # Determine the number of classes
-        if class_params is None:
-            num_classes = 1  # No class_params means it's a regression model
-        else:
+        if class_params is not None:
             num_classes = len(class_params.get('class_names', []))
 
             # If class_params exist and indicate multi-class, raise an error
