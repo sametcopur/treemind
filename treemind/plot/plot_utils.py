@@ -4,11 +4,12 @@ from numpy.typing import ArrayLike
 import pandas as pd
 import numpy as np
 
+
 def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
     # İlk olarak min ve max değerleri bul ve aralığı hesapla
     tick_min, tick_max = np.min(ticks), np.max(ticks)
     tick_range = tick_max - tick_min
-    
+
     # Eğer aralık n_ticks'ten küçükse, decimal kullanımını başlat
     if tick_range < n_ticks:
         # Uygun ondalık hane sayısını belirlemek için hassasiyeti ayarla
@@ -23,6 +24,7 @@ def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
     else:
         # Eğer aralık genişse decimal kullanmaya gerek yok
         return 0
+
 
 def _check_columns(columns):
     try:
@@ -140,7 +142,7 @@ def _validate_interaction_plot_parameters(
     Parameters
     ----------
     df : pd.DataFrame
-        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`, 
+        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`,
         `_lb`, `_ub`, and `value` as the last column.
     figsize : Tuple[int, int]
         Size of the figure, should be a tuple of two positive integers.
@@ -223,111 +225,6 @@ def _validate_interaction_plot_parameters(
     ]:
         if label is not None and not isinstance(label, str):
             raise TypeError(f"`{name}` must be a string if provided.")
-
-
-def _validate_range_plot_parameters(
-    values: np.ndarray,
-    raw_score: float,
-    split_points: List[List[float]],
-    scale: float = 1,
-    columns: Optional[List[str]] = None,
-    max_col: Optional[int] = None,
-    title: Optional[str] = None,
-    label_fontsize: float = 9,
-    title_fontsize: float = 12,
-    interval_fontsize: float = 4.5,
-    value_fontsize: float = 5.5,
-    show_raw_score: bool = True,
-) -> None:
-    """
-    Validates inputs for `range_plot` to ensure proper types, dimensions, and values.
-
-    Parameters
-    ----------
-    values : np.ndarray
-        2D numeric array where each row holds values to be plotted.
-    raw_score : float
-        A numeric score for display, typically representing an overall metric.
-    points : List[List[float]]
-        List of lists where each inner list has interval points matching each row in `values`.
-    scale : float
-        Scaling factor for the plot, must be a positive float.
-    columns : List[str], optional
-        Labels for each row, should match the number of rows in `values` if provided.
-    max_col : int, optional
-        Maximum rows to display, must be a positive integer if specified.
-    title : str, optional
-        Title text for the plot.
-    label_fontsize : float
-        Font size for y-axis labels, must be a positive float.
-    title_fontsize : float
-        Font size for the title, must be a positive float.
-    interval_fontsize : float
-        Font size for interval labels on bars, must be a positive float.
-    value_fontsize : float
-        Font size for value labels on bars, must be a positive float.
-    show_raw_score : bool
-        Flag to display raw_score, must be a boolean.
-
-    Raises
-    ------
-    TypeError, ValueError
-        If any input has an invalid type, dimension, or value.
-    """
-
-    # Check `values` is a 2D numpy array
-    if not isinstance(values, np.ndarray):
-        raise TypeError("`values` must be a numpy ndarray.")
-    if values.ndim != 2:
-        raise ValueError("`values` must be a 2D array.")
-
-    # Check `raw_score` is a float
-    if not isinstance(raw_score, (int, float)):
-        raise TypeError("`raw_score` must be a numeric (int or float).")
-
-    # Check `points` is a list of lists and matches the row count in `values`
-    if not isinstance(split_points, list) or not all(
-        isinstance(p, np.ndarray) for p in split_points
-    ):
-        raise TypeError("`points` must be a list of numpy arrays.")
-    if len(split_points) != values.shape[0]:
-        raise ValueError("`points` must have the same number of rows as `values`.")
-
-    # Check `scale` is a positive float
-    if not isinstance(scale, (int, float)) or scale <= 0:
-        raise ValueError("`scale` must be a positive number.")
-
-    # Check `columns` if provided, is a list of strings and matches the row count in `values`
-    if columns is not None:
-        _check_columns(columns)
-
-        if len(columns) != values.shape[0]:
-            raise ValueError(
-                "`columns` length must match the number of rows in `values`."
-            )
-
-    # Check `max_col` if provided, is a positive integer
-    if max_col is not None:
-        if not isinstance(max_col, int) or max_col <= 0:
-            raise ValueError("`max_col` must be a positive integer if specified.")
-
-    # Check font sizes are positive floats
-    for font_size, name in [
-        (label_fontsize, "label_fontsize"),
-        (title_fontsize, "title_fontsize"),
-        (interval_fontsize, "interval_fontsize"),
-        (value_fontsize, "value_fontsize"),
-    ]:
-        if not isinstance(font_size, (int, float)) or font_size <= 0:
-            raise ValueError(f"`{name}` must be a positive number.")
-
-    # Check `title` is either None or a string
-    if title is not None and not isinstance(title, str):
-        raise TypeError("`title` must be a string if provided.")
-
-    # Check `show_raw_score` is a boolean
-    if not isinstance(show_raw_score, bool):
-        raise TypeError("`show_raw_score` must be a boolean.")
 
 
 def _validate_feature_plot_parameters(
@@ -433,37 +330,6 @@ def _validate_feature_plot_parameters(
         raise ValueError("xlabel must be a string or None.")
     if ylabel is not None and not isinstance(ylabel, str):
         raise ValueError("ylabel must be a string or None.")
-
-
-def _create_intervals(point_row: List[float]) -> List[str]:
-    """
-    Creates intervals from a list of points.
-
-    Parameters
-    ----------
-    point_row : list of float
-        A list of points to create intervals from.
-
-    Returns
-    -------
-    intervals : list of str
-        A list of interval strings in the format '(a, b]'.
-
-    Examples
-    --------
-    >>> create_intervals([1.0, 2.0, 3.0])
-    ['(-inf, 1.000]', '(1.000, 2.000]', '(2.000, inf)']
-    """
-
-    intervals = []
-    point_row = np.array(point_row)
-    intervals.append(f"(-inf, {point_row[0]:.3f}]")
-
-    for i in range(1, len(point_row) - 1):
-        intervals.append(f"({point_row[i-1]:.3f}, {point_row[i]:.3f}]")
-
-    intervals.append(f"({point_row[-2]:.3f}, inf)")
-    return intervals
 
 
 def _replace_infinity(

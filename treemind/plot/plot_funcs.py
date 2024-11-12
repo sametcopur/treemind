@@ -10,10 +10,8 @@ from matplotlib.collections import PatchCollection
 from scipy.stats import gaussian_kde
 
 from .plot_utils import (
-    _create_intervals,
     _replace_infinity,
     _validate_feature_plot_parameters,
-    _validate_range_plot_parameters,
     _validate_interaction_plot_parameters,
     _validate_bar_plot_parameters,
     _find_tick_decimal,
@@ -21,6 +19,10 @@ from .plot_utils import (
 
 from typing import List, Tuple
 from numpy.typing import ArrayLike
+
+import plotly.graph_objects as go
+from ipywidgets import FloatSlider, VBox, HBox, Dropdown, Layout
+from IPython.display import display
 
 
 def bar_plot(
@@ -84,10 +86,10 @@ def bar_plot(
 
     if values.shape[0] > 1:
         values = np.abs(values).mean(axis=0)
-        
+
     else:
-        values =  values.ravel()
-        
+        values = values.ravel()
+
     # Identify non-zero contributions
     used_cols = np.where(values != 0)[0]
     if len(used_cols) == 0:
@@ -409,7 +411,7 @@ def feature_plot(
     # Tight layout
     if show_range:
         plt.subplots_adjust(hspace=-0.1)
-        
+
     plt.tight_layout()
     plt.show()
 
@@ -715,4 +717,206 @@ def interaction_scatter_plot(
     plt.tight_layout()
     plt.show()
 
-    print()
+
+def scatter_3d_plot(
+    df,
+    width=1000,
+    height=800,
+    opacity=0.8,
+    point_size=5
+):
+    """
+    Enhanced 3D scatter plot with smooth color transitions.
+    Red indicates positive values, blue indicates negative values, yellow for zero.
+
+    Parameters:
+    - df (pd.DataFrame): Input dataframe with '_lb' and '_ub' columns for three variables and a 'value' column
+    - width (int): Width of the plot. Default is 1000
+    - height (int): Height of the plot. Default is 800
+    - opacity (float): Opacity of the scatter points. Default is 0.8
+    - point_size (int): Size of scatter points. Default is 5
+    """
+    # Column detection and infinity handling
+    lb_columns = [col for col in df.columns if "_lb" in col]
+    ub_columns = [col for col in df.columns if "_ub" in col]
+    value_column = "value" if "value" in df.columns else df.columns[-1]
+
+    # Handle infinity values
+    for col in ub_columns:
+        max_val = df[col][df[col] != float("inf")].max()
+        df[col] = df[col].replace([float("inf")], max_val * 1.1)
+    
+    for col in lb_columns:
+        min_val = df[col][df[col] != -float("inf")].min()
+        df[col] = df[col].replace([-float("inf")], min_val * 1.1)
+
+    # Calculate midpoints
+    mid_columns = []
+    ranges = {}
+    for lb, ub in zip(lb_columns, ub_columns):
+        mid_col = lb.replace("_lb", "_mid")
+        df[mid_col] = (df[lb] + df[ub]) / 2
+        mid_columns.append(mid_col)
+        ranges[mid_col] = {
+            'min': df[mid_col].min(),
+            'max': df[mid_col].max()
+        }
+
+    # Updated color scale with blue-yellow-red transition
+    colorscale = [
+        [0.0, 'rgb(0,0,255)'],
+        [0.5, 'rgb(255,255,0)'],
+        [1.0, 'rgb(255,0,0)']
+    ]
+    
+    # Get value range for consistent color scaling
+    value_min = df[value_column].min()
+    value_max = df[value_column].max()
+    abs_max = max(abs(value_min), abs(value_max))
+    cmin, cmax = -abs_max, abs_max
+
+    # Create figure
+    fig = go.FigureWidget()
+
+    # Add scatter plot
+    fig.add_trace(
+        go.Scatter3d(
+            x=df[mid_columns[0]],
+            y=df[mid_columns[1]],
+            z=df[mid_columns[2]],
+            mode="markers",
+            marker=dict(
+                size=point_size,
+                color=df[value_column],
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                colorbar=dict(
+                    title="Intensity",
+                    tickformat=".2f",
+                    len=0.8,
+                ),
+                opacity=opacity,
+            ),
+            hovertemplate=(
+                f"<b>{mid_columns[0]}</b>: %{{x:.2f}}<br>"
+                f"<b>{mid_columns[1]}</b>: %{{y:.2f}}<br>"
+                f"<b>{mid_columns[2]}</b>: %{{z:.2f}}<br>"
+                f"<b>Value</b>: %{{marker.color:.2f}}<br>"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    # Update layout
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(
+                title=mid_columns[0],
+                titlefont=dict(size=15),
+                range=[ranges[mid_columns[0]]['min'], ranges[mid_columns[0]]['max']],
+            ),
+            yaxis=dict(
+                title=mid_columns[1],
+                titlefont=dict(size=15),
+                range=[ranges[mid_columns[1]]['min'], ranges[mid_columns[1]]['max']],
+            ),
+            zaxis=dict(
+                title=mid_columns[2],
+                titlefont=dict(size=15),
+                range=[ranges[mid_columns[2]]['min'], ranges[mid_columns[2]]['max']],
+            ),
+            camera=dict(
+                up=dict(x=0, y=0, z=1),
+                center=dict(x=0, y=0, z=0),
+                eye=dict(x=1.5, y=1.5, z=1.5),
+            ),
+        ),
+        width=width,
+        height=height,
+        title=dict(
+            text="Interactive 3D Scatter Plot",
+            font=dict(size=20),
+            x=0.5,
+            y=0.95,
+        ),
+        margin=dict(l=0, r=0, t=50, b=0),
+    )
+
+    # Interactive controls
+    min_slider = FloatSlider(
+        value=df[value_column].min(),
+        min=df[value_column].min(),
+        max=df[value_column].max(),
+        step=(df[value_column].max() - df[value_column].min()) / 100,
+        description="Min Intensity",
+        style={'description_width': '100px'},
+        layout=Layout(width='400px'),
+    )
+    
+    max_slider = FloatSlider(
+        value=df[value_column].max(),
+        min=df[value_column].min(),
+        max=df[value_column].max(),
+        step=(df[value_column].max() - df[value_column].min()) / 100,
+        description="Max Intensity",
+        style={'description_width': '100px'},
+        layout=Layout(width='400px'),
+    )
+
+    size_slider = FloatSlider(
+        value=point_size,
+        min=1,
+        max=20,
+        step=1,
+        description="Point Size",
+        style={'description_width': '100px'},
+        layout=Layout(width='400px'),
+    )
+
+    view_presets = {
+        'Default': dict(x=1.5, y=1.5, z=1.5),
+        'Top': dict(x=0, y=0, z=2.5),
+        'Front': dict(x=0, y=2.5, z=0),
+        'Side': dict(x=2.5, y=0, z=0),
+    }
+    
+    view_dropdown = Dropdown(
+        options=list(view_presets.keys()),
+        value='Default',
+        description='View Preset:',
+        style={'description_width': '100px'},
+        layout=Layout(width='400px'),
+    )
+
+    def update_plot(*args):
+        min_intensity = min_slider.value
+        max_intensity = max_slider.value
+        point_size = size_slider.value
+        view_preset = view_dropdown.value
+
+        mask = (df[value_column] >= min_intensity) & (df[value_column] <= max_intensity)
+        filtered_df = df[mask]
+
+        with fig.batch_update():
+            fig.data[0].x = filtered_df[mid_columns[0]]
+            fig.data[0].y = filtered_df[mid_columns[1]]
+            fig.data[0].z = filtered_df[mid_columns[2]]
+            fig.data[0].marker.color = filtered_df[value_column]
+            fig.data[0].marker.size = point_size
+            fig.layout.scene.camera.eye = view_presets[view_preset]
+
+    # Set up observers
+    min_slider.observe(update_plot, names='value')
+    max_slider.observe(update_plot, names='value')
+    size_slider.observe(update_plot, names='value')
+    view_dropdown.observe(update_plot, names='value')
+
+    # Create and display interactive controls
+    controls = VBox([
+        HBox([min_slider, max_slider]),
+        HBox([size_slider, view_dropdown])
+    ])
+    
+    display(controls)
+    display(fig)
