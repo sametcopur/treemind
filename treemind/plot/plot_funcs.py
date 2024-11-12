@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import rgb_to_hsv, TwoSlopeNorm
+from matplotlib.colors import TwoSlopeNorm
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 

@@ -54,9 +54,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
         num_leaves = int(2 ** depth)
         leaf_values = tree['leaf_values']
         leaf_counts = tree.get('leaf_weights', [1] * num_leaves) 
-        feature_index
-        border
-        
+
         class_params = model_dict['model_info'].get('class_params')
 
         # Determine the number of classes
@@ -66,7 +64,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
             num_classes = len(class_params.get('class_names', []))
 
             # If class_params exist and indicate multi-class, raise an error
-            if num_classes > 1:
+            if num_classes > 2:
                 raise ValueError("Multi-class is not supported yet.")
 
         # At this point, we are assured that it's a regression model
@@ -92,7 +90,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
                 path.append(decision)
 
             # Collect the leaf value(s) and count for each leaf
-            leaf_value = leaf_values_per_leaf[leaf_index][0]
+            leaf_value = leaf_values_per_leaf[leaf_index]
             leaf_count = leaf_counts[leaf_index] if leaf_index < len(leaf_counts) else 1
 
             leaf_info = {
@@ -105,6 +103,8 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
         all_trees_info.append(tree_info)
     
     return all_trees_info
+
+
 @boundscheck(False)
 @nonecheck(False)
 @wraparound(False)
