@@ -11,7 +11,7 @@ from libcpp.pair cimport pair
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 from .rule cimport update_leaf_counts
-from .utils cimport _analyze_feature, _analyze_interaction, add_lower_bound, _expected_value, _analyze_multi_interaction
+from .utils cimport add_lower_bound, _expected_value, _analyze_feature
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost, convert_d_matrix, xgb_leaf_correction
 from .cb cimport analyze_catboost
@@ -76,7 +76,6 @@ cdef class Explainer:
         else:
             raise ValueError("The provided model is neither a LightGBM nor an XGBoost model. Please provide a supported model type.")
 
-
     @boundscheck(False)
     @nonecheck(False)
     @wraparound(False)
@@ -84,53 +83,89 @@ cdef class Explainer:
     @overflowcheck(False)
     @cdivision(True)
     @infer_types(True)
-    cpdef object analyze_interaction(self, int main_col, int sub_col, object back_data = None):
+    cpdef object analyze_feature(self, object columns, object back_data = None):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
-
-        if main_col >= self.len_col or sub_col >= self.len_col:
-            raise ValueError("'main_col' and 'sub_col' cannot be greater than or equal to the total number of columns used to train the model.")
-
-        if main_col < 0 or sub_col < 0:
-            raise ValueError("'main_col' and 'sub_col' cannot be negative.")
-
-        if main_col == sub_col:
-            raise ValueError("'main_col' and 'sub_col' cannot be the same.")
-
+        
+        # Convert columns list to vector[int]
         cdef:
-             double sub_point, main_point
-             str main_column_name, sub_column_name
-             object df
-             vector[double] mean_values, sub_points,main_points, counts, stds
-             vector[vector[Rule]] trees = self.trees
+            vector[int] col_indices
+            int col
+            vector[vector[Rule]] trees = self.trees
+            vector[vector[double]] points
+            vector[double] mean_values, ensemble_std, counts
+            int num_cols, i, col_idx
 
-            
+        
+        if isinstance(columns, int):
+            col_indices.push_back(columns)
+
+        elif isinstance(columns, list):
+            for col in columns:
+                col_indices.push_back(col)
+        else:
+            raise ValueError("Invalid type for 'columns'. Expected an int or a list.")
+
+        num_cols = <int>col_indices.size()
+        
+        # Validate input columns
+        if num_cols < 1:
+            raise ValueError("At least one columns must be provided for feature analysis.")
+
+        elif num_cols > self.len_col:
+            raise ValueError("The length of columns must be smaller than the total number of columns used to train the model.")
+    
+        for col in col_indices:
+            if col >= self.len_col:
+                raise ValueError(f"Column index {col} cannot be greater than or equal to the total number of columns used to train the model.")
+            if col < 0:
+                raise ValueError("Column indices cannot be negative.")
+                
+        # Check for duplicate columns
+
+        if isinstance(columns, list):
+            seen = set()
+            for col in columns:
+                if col in seen:
+                    raise ValueError("Duplicate column indices are not allowed.")
+                seen.add(col)
+
         if back_data is not None:
             trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
- 
-        main_points, sub_points, mean_values, stds, counts = _analyze_interaction(trees, main_col, sub_col)
-
-        main_column_name = self.columns[main_col]
-        sub_column_name = self.columns[sub_col]
-
-        df = pd.DataFrame({
-            f"{main_column_name}_ub": main_points,
-            f"{sub_column_name}_ub": sub_points,
+        
+        # Analyze interactions
+        points, mean_values, ensemble_std, counts = _analyze_feature(trees, col_indices)
+        
+        # Get column names using regular Python list
+        column_names = [self.columns[idx] for idx in col_indices]
+        
+        # Create DataFrame
+        df_dict = {}
+        
+        # Add points columns
+        for i in range(num_cols):
+            df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
+        
+        # Add statistics columns
+        df_dict.update({
             'value': mean_values,
-            'std': stds,
+            'std': ensemble_std,
             'count': counts
         })
-
+        
+        df = pd.DataFrame(df_dict)
+        
         if df.shape[0] == 0:
-            raise ValueError(f"No interaction found between feature {main_col} and {sub_col}.")
-
-        df = df.explode(["value"]).reset_index(drop=True)
+            raise ValueError(f"No interaction found between the specified features: {column_names}")
+        
+        # Center the values
         df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
-
-        add_lower_bound(df, 0, main_column_name)
-        add_lower_bound(df, 2, sub_column_name)
-       
-        return df    
+        
+        # Add lower bounds for all columns
+        for i, col_name in enumerate(column_names):
+            add_lower_bound(df, i * 2, col_name)
+        
+        return df
 
 
     @boundscheck(False)
@@ -179,8 +214,6 @@ cdef class Explainer:
 
         num_trees = trees.size()
 
-
-
         expected_values.resize(self.len_col)
         for col in range(self.len_col):
             expected_values[col] = _expected_value(col, trees)
@@ -204,49 +237,7 @@ cdef class Explainer:
 
         return np.asarray(values)
 
-    @boundscheck(False)
-    @nonecheck(False)
-    @wraparound(False)
-    @initializedcheck(False)
-    @overflowcheck(False)
-    @cdivision(True)
-    @infer_types(True)
-    cpdef object analyze_feature(self, int col, object back_data = None):
-        if not isinstance(col, int):
-            raise ValueError("The 'col' parameter must be an integer.")
 
-        if self.len_col == -1:
-            raise ValueError("Explainer(model) must be called before this operation.")
-
-        if col >= self.len_col:
-            raise ValueError("'col' cannot be greater than or equal to the total number of columns used to train the model.")
-
-        if col < 0:
-            raise ValueError("'col' cannot be negative.")
-
-        cdef:
-            double[:] points, mean_values, stds, counts
-            vector[vector[Rule]] trees = self.trees
-            str column_name
-            object df
-
-        if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
-
-        points, mean_values, stds, counts = _analyze_feature(col, trees)
-                    
-        column_name = self.columns[col]
-
-        df = pd.DataFrame({
-            f'{column_name}_ub': np.asarray(points),
-            'mean': np.asarray(mean_values),
-            'std': np.asarray(stds),
-            "count": np.asarray(counts)
-        })
-        df.loc[:, "mean"] -= (df["mean"] * df["count"]).sum() / df["count"].sum()
-        df.insert(0, f"{column_name}_lb", df[f'{column_name}_ub'].shift(1).fillna(-np.inf))
-
-        return df
 
     @boundscheck(False)
     @nonecheck(False)
@@ -297,89 +288,3 @@ cdef class Explainer:
         df = pd.DataFrame(data, columns=columns)
         return df.sort_values("count", ascending=False).reset_index(drop=True)
             
-    @boundscheck(False)
-    @nonecheck(False)
-    @wraparound(False)
-    @initializedcheck(False)
-    @overflowcheck(False)
-    @cdivision(True)
-    @infer_types(True)
-    cpdef object analyze_multi_interaction(self, list columns, object back_data = None):
-        if self.len_col == -1:
-            raise ValueError("Explainer(model) must be called before this operation.")
-        
-        # Convert columns list to vector[int]
-        cdef:
-            vector[int] col_indices
-            int col
-            vector[vector[Rule]] trees = self.trees
-            vector[vector[double]] points
-            vector[double] mean_values, ensemble_std, counts
-            size_t i, col_idx
-            cdef size_t num_cols = col_indices.size()
-
-        col_indices.reserve(len(columns))
-        
-        for col in columns:
-            col_indices.push_back(col)
-
-        num_cols = col_indices.size()
-        
-        # Validate input columns
-        
-        if num_cols < 1:
-            raise ValueError("At least one columns must be provided for interaction analysis.")
-
-        elif num_cols > self.len_col:
-            raise ValueError("The length of columns must be smaller than the total number of columns used to train the model.")
-    
-        for col in col_indices:
-            if col >= self.len_col:
-                raise ValueError(f"Column index {col} cannot be greater than or equal to the total number of columns used to train the model.")
-            if col < 0:
-                raise ValueError("Column indices cannot be negative.")
-                
-        # Check for duplicate columns
-        seen = set()
-        for col in columns:
-            if col in seen:
-                raise ValueError("Duplicate column indices are not allowed.")
-            seen.add(col)
-
-            
-        if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
-        
-        # Analyze interactions
-        points, mean_values, ensemble_std, counts = _analyze_multi_interaction(trees, col_indices)
-        
-        # Get column names using regular Python list
-        column_names = [self.columns[idx] for idx in columns]
-        
-        # Create DataFrame
-        df_dict = {}
-        
-        # Add points columns
-        for i in range(num_cols):
-            df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
-        
-        # Add statistics columns
-        df_dict.update({
-            'value': mean_values,
-            'std': ensemble_std,
-            'count': counts
-        })
-        
-        df = pd.DataFrame(df_dict)
-        
-        if df.shape[0] == 0:
-            raise ValueError(f"No interaction found between the specified features: {column_names}")
-        
-        # Center the values
-        df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
-        
-        # Add lower bounds for all columns
-        for i, col_name in enumerate(column_names):
-            add_lower_bound(df, i * 2, col_name)
-        
-        return df

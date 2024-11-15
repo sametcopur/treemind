@@ -83,8 +83,7 @@ def _validate_bar_plot_parameters(
     # Check values
     if not isinstance(values, np.ndarray):
         raise TypeError("The 'values' parameter must be a numpy.ndarray.")
-    if values.ndim != 2:
-        raise ValueError("The 'values' array must be two-dimensional.")
+
     if not np.issubdtype(values.dtype, np.number):
         raise ValueError("All elements in 'values' must be numeric.")
 
@@ -186,7 +185,8 @@ def _validate_interaction_plot_parameters(
         or not all(
             col.endswith(end) for col, end in zip(df.columns[:4], expected_endings)
         )
-        or df.columns[-2] != "value"
+        or df.columns[-3] != "value"
+        or df.columns[-2] != "std"
         or df.columns[-1] != "count"
     ):
         raise ValueError(
@@ -275,7 +275,7 @@ def _validate_feature_plot_parameters(
         If any parameter is invalid.
     """
     # Validate DataFrame columns
-    required_columns = {"mean", "std", "count"}
+    required_columns = {"value", "std", "count"}
     if not required_columns.issubset(df.columns):
         raise ValueError(
             f"The DataFrame must contain the following columns: {required_columns}"
@@ -330,6 +330,121 @@ def _validate_feature_plot_parameters(
         raise ValueError("xlabel must be a string or None.")
     if ylabel is not None and not isinstance(ylabel, str):
         raise ValueError("ylabel must be a string or None.")
+
+def _validate_interaction_scatter_plot_parameters(
+    X: np.ndarray,
+    df: pd.DataFrame,
+    col_1: int,
+    col_2: int,
+    figsize: Tuple[float, float],
+    ticks_fontsize: int | float,
+    title_fontsize: int | float,
+    label_fontsizes: int | float,
+    title: Optional[str],
+    xlabel: Optional[str],
+    ylabel: Optional[str],
+    color_bar_label: Optional[str],
+) -> None:
+    """
+    Validates inputs for `interaction_plot` to ensure proper types, dimensions, and values.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        A two-dimensional numeric array containing the feature data.
+    df : pd.DataFrame
+        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`,
+        `_lb`, `_ub`, and `value` as the last column.
+    col1 : int
+        Index of the first feature to use in the interaction plot.
+    col2 : int
+        Index of the second feature to use in the interaction plot.
+    figsize : Tuple[float, float]
+        Size of the figure, should be a tuple of two positive numbers.
+    axis_ticks_n : int
+        Number of ticks on both axes, must be a positive integer.
+    ticks_fontsize : int or float
+        Font size for axis tick labels, must be a positive number.
+    title_fontsize : int or float
+        Font size for plot title, must be a positive number.
+    label_fontsizes : int or float
+        Font size for axis labels, must be a positive number.
+    title : str, optional
+        Plot title, if provided must be a string.
+    xlabel : str, optional
+        X-axis label, if provided must be a string.
+    ylabel : str, optional
+        Y-axis label, if provided must be a string.
+    color_bar_label : str, optional
+        Colorbar label, if provided must be a string.
+
+    Raises
+    ------
+    TypeError, ValueError
+        If any input has an invalid type, dimension, or value.
+    """
+    # Validate `X` is a two-dimensional numeric array
+    if X.ndim != 2:
+        raise TypeError("`X` must be a two-dimensional NumPy array.")
+    if not np.issubdtype(X.dtype, np.number):
+        raise ValueError("`X` must contain only numeric values.")
+
+    # Validate `col1` and `col2` are valid column indices
+    if not isinstance(col_1, int) or not isinstance(col_2, int):
+        raise TypeError("`col1` and `col2` must be integers.")
+    if col_1 < 0 or col_2 < 0 or col_1 >= X.shape[1] or col_2 >= X.shape[1]:
+        raise ValueError("`col1` and `col2` must be valid column indices within the range of `X`.")
+
+    # Validate `df` structure and column names
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("`df` must be a pandas DataFrame.")
+
+    if df.shape[0] <= 2:
+        raise ValueError("There is no interaction between features to plot.")
+
+    # Ensure column names end as required
+    expected_endings = ["_lb", "_ub", "_lb", "_ub"]
+    if (
+        len(df.columns) < 5
+        or not all(
+            col.endswith(end) for col, end in zip(df.columns[:4], expected_endings)
+        )
+        or df.columns[-3] != "value"
+        or df.columns[-2] != "std"
+        or df.columns[-1] != "count"
+    ):
+        raise ValueError(
+            "The first four columns of `df` must end with '_lb', '_ub', '_lb', '_ub' respectively, "
+            "and the last columns must be 'value', 'std', 'count'."
+        )
+
+    # Check figsize
+    if not isinstance(figsize, tuple) or len(figsize) != 2:
+        raise TypeError(
+            "The 'figsize' parameter must be a tuple of two numeric values."
+        )
+    if not all(isinstance(dim, (int, float)) for dim in figsize):
+        raise ValueError("Both dimensions in 'figsize' must be numeric.")
+
+    # Validate font sizes are positive numbers
+    for font_size, name in [
+        (ticks_fontsize, "ticks_fontsize"),
+        (title_fontsize, "title_fontsize"),
+        (label_fontsizes, "label_fontsizes"),
+    ]:
+        if not isinstance(font_size, (int, float)) or font_size <= 0:
+            raise ValueError(f"`{name}` must be a positive number.")
+
+    # Check `title`, `xlabel`, `ylabel`, `color_bar_label` if provided, are strings
+    for label, name in [
+        (title, "title"),
+        (xlabel, "xlabel"),
+        (ylabel, "ylabel"),
+        (color_bar_label, "color_bar_label"),
+    ]:
+        if label is not None and not isinstance(label, str):
+            raise TypeError(f"`{name}` must be a string if provided.")
+
 
 
 def _replace_infinity(

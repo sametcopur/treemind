@@ -9,14 +9,14 @@ Below is an example of how to use the `interaction_plot` function:
     from treemind import Explainer
     from treemind.plot import interaction_plot
 
-    # Assume 'model' is a trained LightGBM or XGBoost model object
+    # Assume 'model' is a trained LightGBM or XGBoost or CatBoost model object
 
     # Create an instance of the Explainer
     explainer = Explainer()
     explainer(model)
 
     # Analyze the specified feature by its index
-    df = tree.analyze_feature(22)
+    df = tree.analyze_feature([22,21])
 
     # Plot the feature using a line plot
     interaction_plot(df)

@@ -20,9 +20,9 @@ Setup Code
     from treemind import Explainer
     from treemind.plot import (
         bar_plot,
-        range_plot,
         feature_plot,
         interaction_plot,
+        interaction_scatter_plot,
     )
 
     # Load the dataset
@@ -53,7 +53,7 @@ To count individual feature appearances in splits:
 
 .. code-block:: python
 
-    explainer.count_node(interaction=False)
+    explainer.count_node(order=1)
 
 .. code-block:: none
 
@@ -68,7 +68,7 @@ To count feature-pair interactions in splits:
 
 .. code-block:: python
 
-    explainer.count_node(interaction=True)
+    explainer.count_node(order=2)
 
 .. code-block:: none
 
@@ -124,7 +124,7 @@ To analyze an interaction between two features (e.g., feature indices 21 and 22)
 
 .. code-block:: python
 
-    df = explainer.analyze_interaction(21, 22)
+    df = explainer.analyze_feature([21, 22])
 
 Example output:
 
@@ -149,7 +149,21 @@ To visualize interactions between two features calculated by ``analyze_interacti
     :align: center
     :width: 80%
 
-The ``interaction_plot`` function visualizes feature interactions by creating a filled rectangle plot. The plot uses model split points to display intervals, with color intensity representing the interaction values.
+The ``interaction_plot`` function visualizes feature interactions by creating a filled rectangle plot. The plot uses model split points to 
+display intervals, with color intensity representing the interaction values.
+
+To visualize interactions between two features calculated on given data by ``analyze_interaction`` using ``interaction_scatter_plot``:
+
+.. code-block:: python
+
+    interaction_scatter_plot(X, df, 21, 22)
+
+.. image:: _static/example/interaction_scatter_plot.png
+    :alt: Interaction plot visualizing dependencies between two features
+    :align: center
+    :width: 80%
+
+The ``interaction_scatter_plot`` function visualizes feature interactions reflected on given data.
 
 
 Analyzing Feature Contributions on Data
@@ -158,32 +172,25 @@ The ``analyze_data`` function in the ``Explainer`` takes input data and computes
 allows you to analyze feature contributions for a single data point (row) or across the entire dataset, providing insights into the effect 
 of each feature on the model's predictions in both classification and regression tasks.
 
-Usage Examples with ``detailed=False``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The function returns a simplified analysis, showing only the overall contribution of each feature (values) without detailing specific split points. 
-This gives a broader view of each feature's positive or negative impact on the prediction without focusing on the individual splits.
-
-
-To inspect feature contributions for a specific row, e.g., ``X.iloc[[5], :]``, use the following code:
+To inspect feature contributions for a specific row, e.g., ``X.iloc[5, :]``, use the following code:
 
 .. code-block:: python
 
-    values, raw_score = explainer.analyze_data(X.iloc[[5], :], detailed=False)
+    values = explainer.analyze_data(X.iloc[[5], :])
 
 
 For analyzing contributions across the entire dataset ``X``, use:
 
 .. code-block:: python
 
-    values, raw_score = explainer.analyze_data(X, detailed=False)
+    values = explainer.analyze_data(X)
 
 
 To visualize the feature contributions using ``bar_plot``:
 
 .. code-block:: python
 
-    bar_plot(values, raw_score, columns=X.columns)
+    bar_plot(values, columns=X.columns)
 
 .. image:: _static/example/bar_plot.png
     :alt: Bar plot visualizing feature contributions
@@ -193,31 +200,3 @@ To visualize the feature contributions using ``bar_plot``:
 This bar plot presents each feature's contribution, showing the positive or negative impact 
 on the prediction. If column names (``columns``) are not specified, ``bar_plot`` will generate 
 default names based on feature indices.
-
-
-Usage Examples with ``detailed=True``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The function returns a detailed analysis, providing feature contributions (values) and specific split points (split_points) 
-where each feature affects the prediction. This helps understand the exact conditions (rules) the model uses for each feature at each split.
-
-.. code-block:: python
-
-    values, split_points, raw_score = explainer.analyze_data(X, detailed=True)
-
-To visualize the feature contributions using ``range_plot``:
-
-.. code-block:: python
-
-    range_plot(values, split_points, raw_score, columns=X.columns)
-
-.. image:: _static/example/range_plot.png
-    :alt: Range plot visualizing feature contributions
-    :align: center
-    :width: 80%
-
-
-The ``range_plot`` function plots a combined grid of feature values and their contribution 
-intervals. The color intensity represents the magnitude of contributions:
-
-If column names (``columns``) are not specified, ``range_plot`` will use default names based on feature indices.

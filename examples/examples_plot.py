@@ -88,7 +88,7 @@ def feature_plot(
     sns.lineplot(
         data=df,
         x=column_name,
-        y="mean",
+        y="value",
         color="blue",
         linewidth=2,
         drawstyle="steps-pre",
@@ -167,7 +167,7 @@ def plot_scatter_chart(
         colormap = plt.get_cmap("Reds")
         norm = plt.Normalize(vmin=min_val, vmax=max_val)
     else:  # Both negative and positive values
-        colormap = plt.get_cmap("PRGn")
+        colormap = plt.get_cmap("coolwarm")
         abs_max = max(abs(min_val), max_val)
         norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
@@ -262,7 +262,7 @@ def interaction_scatter_plot(
         colormap = plt.get_cmap("Reds")
         norm = plt.Normalize(vmin=min_val, vmax=max_val)
     else:  # Both negative and positive values
-        colormap = plt.get_cmap("PRGn")
+        colormap = plt.get_cmap("coolwarm")
         abs_max = max(abs(min_val), max_val)
         norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
