@@ -83,7 +83,8 @@ To count feature-pair interactions in splits:
 Analyzing Specific Feature
 ----------------------------
 
-The ``analyze_feature`` function calculates statistical metrics for a specific feature based on its split points across the model's trees. This analysis helps in understanding the distribution and impact of a single feature across different split points.
+The ``analyze_feature`` function calculates statistical metrics for a specific feature based on its split points across the model's trees. 
+This analysis helps in understanding the distribution and impact of a single feature across different split points.
 
 
 To analyze a specific feature by its index (e.g., 21), use:
@@ -118,7 +119,8 @@ The ``feature_plot`` function plots the mean, min, and max values of a specific 
 Analyzing Feature Interactions
 ------------------------------
 
-The ``analyze_interaction`` function calculates the dependency between two features by examining their split points across the model’s trees. This analysis helps in understanding how one feature's contribution may depend on the split intervals of another feature.
+The ``analyze_feature`` function given multiple indices calculates the dependency between two or more features by examining their split points across the model’s trees. 
+This analysis helps in understanding how one feature's contribution may depend on the split intervals of one or more another feature.
 
 To analyze an interaction between two features (e.g., feature indices 21 and 22), use:
 
@@ -152,7 +154,7 @@ To visualize interactions between two features calculated by ``analyze_interacti
 The ``interaction_plot`` function visualizes feature interactions by creating a filled rectangle plot. The plot uses model split points to 
 display intervals, with color intensity representing the interaction values.
 
-To visualize interactions between two features calculated on given data by ``analyze_interaction`` using ``interaction_scatter_plot``:
+To visualize interactions between two features on given data by ``analyze_interaction`` using ``interaction_scatter_plot``:
 
 .. code-block:: python
 

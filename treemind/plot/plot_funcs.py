@@ -636,8 +636,6 @@ def interaction_scatter_plot(
         Index of second feature in X
     figsize : tuple of float, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
-    axis_ticks_n : int, optional, default 10
-        Number of ticks on both axis
     ticks_decimal : int, optional, default 3
         Number of decimal places for tick labels
     ticks_fontsize : float, optional, default 10.0

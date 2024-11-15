@@ -19,10 +19,10 @@ Below is an example of how to use the `bar_plot` function:
     values = explainer.analyze_data(X)
 
     # Alternatively, analyze a single row
-    # values, raw_score = explainer.analyze_data(X.iloc[10, :])
+    # values = explainer.analyze_data(X.iloc[10, :])
 
     # Plot the feature importance using a bar plot
-    bar_plot(values, raw_score, columns=X_train.columns)
+    bar_plot(values, columns=X_train.columns)
 
 **Output**
 
