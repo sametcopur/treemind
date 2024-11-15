@@ -143,9 +143,10 @@ def _set_common_style(ax, title):
 
 def plot_line_chart(x, y, title, x_label, y_label, figsize: Tuple[int, int] = (10, 6)):
     fig, ax = plt.subplots(figsize=figsize)
-    sns.lineplot(x=x, y=y, ax=ax, color="blue", linewidth=2)
+    # lineplot yerine scatterplot kullanıyoruz
+    sns.scatterplot(x=x, y=y, ax=ax, color="blue")
     ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_ylabel(y_label) 
     _set_common_style(ax, title)
     plt.tight_layout()
     plt.show()
