@@ -1,10 +1,9 @@
 Setup and Usage
 ===============
 
-This example demonstrates how to set up and use the ``Explainer`` with a basic ``LGBMClassifier`` model trained on the Breast Cancer dataset. 
-Note that similar configurations can be applied to other models, such as using ``lgb.train`` and ``lgb.LGBMRegressor`` in LightGBM or ``XGBClassifier``, 
-``XGBRegressor`` and ``xgb.train`` in XGBoost. Both classifiers and regressors are supported in the same way, allowing flexibility across different 
-tree-based algorithms.
+This example demonstrates how to set up and use the ``Explainer`` with a basic ``lightgbm`` model trained on the Breast Cancer dataset. 
+Note that similar configurations can be applied to other models,  ``Explainer`` is also  compatible with ``XGBoost``  and ``CatBoost``.
+
 
 For detailed information, please refer to the `API Reference <api_reference.html#api_reference>`_.
 
@@ -114,13 +113,12 @@ To visualize feature statistics calculated by ``analyze_feature`` using ``featur
     :align: center
     :width: 80%
 
-The ``feature_plot`` function plots the mean, min, and max values of a specific feature based on split points across trees.
+The ``feature_plot`` function plots the values of a specific feature based on split points across trees.
 
 Analyzing Feature Interactions
 ------------------------------
 
 The ``analyze_feature`` function given multiple indices calculates the dependency between two or more features by examining their split points across the model’s trees. 
-This analysis helps in understanding how one feature's contribution may depend on the split intervals of one or more another feature.
 
 To analyze an interaction between two features (e.g., feature indices 21 and 22), use:
 

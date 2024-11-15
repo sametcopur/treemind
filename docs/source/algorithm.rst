@@ -434,9 +434,6 @@ By calculating both the expected values and average data counts, we gain a compr
 
 The inclusion of leaf counts and average data counts ensures that our calculations reflect the true impact of each feature, weighted by the number of data points in each leaf. This approach minimizes noise and provides a clear picture of feature contributions within specific intervals.
 
-I'll help add that final note in RST format:
-
-
 Additional Notes
 -----------------
 
