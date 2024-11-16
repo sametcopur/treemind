@@ -44,11 +44,11 @@ To analyze the effect of feature :math:`x`, we focus on the subset of trees wher
 
   - :math:`L_{t,i}`: Leaf count—the number of data points falling into leaf :math:`i` of tree :math:`t`.
   - :math:`V_{t,i}`: Leaf value—the prediction output of leaf :math:`i` in tree :math:`t`.
-  - :math:`D_t`: Set of leaves in tree :math:`t` where feature :math:`x` is used in the decision path **and the leaf's interval matches the analysis interval**.
+  - :math:`D_t`: Set of leaves in tree :math:`t` where feature :math:`x` is used as split node in the decision path **and the** :math:`x` **node matches the analysis interval**.
 
 **Matching Intervals:**
 
-When determining :math:`D_t`, we must ensure that the intervals of feature :math:`x` represented by the leaves align with the interval we are analyzing. For instance, if the split points in the tree for feature :math:`x` are at 15, 18, and 20, this creates intervals:
+When determining :math:`D_t`, we must ensure that the intervals of feature :math:`x` represented by the nodes align with the interval we are analyzing. For instance, if the split points in the tree for feature :math:`x` are at 15, 18, and 20, this creates intervals:
 
 - :math:`(-\infty, 15]`
 - :math:`(15, 18]`
@@ -68,7 +68,7 @@ For a specific interval of feature :math:`x` (e.g., :math:`x \in \text{interval}
 
    E[f_t(x) \mid x \in \text{interval}] = \frac{\sum\limits_{i \in D_t} L_{t,i} \cdot V_{t,i}}{\sum\limits_{i \in D_t} L_{t,i}}
 
-This formula computes the weighted average of leaf values, where weights are the leaf counts. **Only leaves where the interval of feature** :math:`x` **matches the analysis interval are included in the calculation.**
+This formula computes the weighted average of leaf values, where weights are the leaf counts.
 
 **Average Data Count Across Trees:**
 
@@ -84,7 +84,7 @@ The average expected value across all trees using feature :math:`x` is:
 
    E[F(x) \mid x \in \text{interval}] = \frac{\sum_{t \in S_x} E[f_t(x) \mid x \in \text{interval}] \cdot \left( \sum_{i \in D_t} L_{t,i} \right)}{\sum_{t \in S_x} \left( \sum_{i \in D_t} L_{t,i} \right)}
 
-This represents the aggregated contribution of feature :math:`x` over all relevant trees, considering only the leaves that correspond to the specified interval.
+This represents the aggregated contribution of feature :math:`x \in \text{interval}` over all relevant trees.
 
 5. Difference from Mean
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,35 +109,32 @@ This formula ensures that the model's behavior is correctly aggregated across al
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 1. **Tree Selection**
+
    - Filter decision trees to identify those that utilize both `feature_1` and `feature_2` as split nodes.
    - Within the selected trees, include only branches where both features are part of the decision path.
 
 2. **Interval Determination**
+
    For each selected tree:
    
-   a. Identify split points for `feature_1` to determine its intervals.  
-   b. Identify split points for `feature_2` to determine its intervals.  
+   - Identify split points for `feature_1` to determine its intervals.  
+   - Identify split points for `feature_2` to determine its intervals.  
 
 3. **Combined Interval Analysis**
+
    For each combination of intervals from `feature_1` and `feature_2`, calculate the expected model output:
 
    .. math::
       E[F(x) \mid x_1 \in \text{interval}_1, x_2 \in \text{interval}_2]
 
-   This step quantifies how specific ranges of `feature_1` and `feature_2` interact to influence predictions.
+The forward steps remain consistent as described, and this approach can be extended to accommodate additional features.
 
-4. **Leaf Selection**
-   Narrow down to leaves that satisfy the following conditions:
-   
-   - The interval for `feature_1` corresponds to the target interval (`interval_1`).
-   - The interval for `feature_2` corresponds to the target interval (`interval_2`).
-
-By combining the above steps, this approach facilitates an in-depth understanding of feature interactions and their contributions to the model's predictions.
 
 7. Instance-based Feature Explanations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The algorithm calculates feature contributions for specific instances by analyzing the trees where the feature appears as a split node, regardless of whether it's in the instance's prediction path.
+The algorithm calculates feature contributions for specific instances by analyzing the trees where the feature appears as a split 
+node in the instance's prediction path.
 
 1. **Expected Value Calculation Per Tree**
 
@@ -167,7 +164,7 @@ The algorithm calculates feature contributions for specific instances by analyzi
    
    - For each tree :math:`t`, let :math:`P_{t,i}` be the leaf reached during prediction
    - Let :math:`V_{t,i}` be the prediction value of the reached leaf
-   - Let :math:`S_{t,x}` be the set of trees where feature :math:`x` is used as a split node
+   - Let :math:`S_{t,x}` be the set of trees where feature :math:`x` is used as a split node in the decision path leading to the leaf.
 
    The contribution for instance :math:`i` and feature :math:`x` is:
 
