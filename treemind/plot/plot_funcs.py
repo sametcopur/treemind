@@ -18,16 +18,16 @@ from .plot_utils import (
     _find_tick_decimal,
 )
 
-from typing import Tuple
+from typing import Tuple, Union, Optional
 from numpy.typing import ArrayLike
 
 
 def bar_plot(
     values: np.ndarray,
     figsize: Tuple[int, int] = (8, 6),
-    columns: ArrayLike = None,
-    max_col: int | None = 20,
-    title: str | None = None,
+    columns: Optional[ArrayLike] = None,
+    max_col: Optional[int] = 20,
+    title: Optional[str] = None,
     title_fontsize: float = 12.0,
     label_fontsize: float = 12.0,
 ) -> None:
@@ -45,21 +45,18 @@ def bar_plot(
         feature's contribution to the overall outcome.
     figsize : tuple of float, optional, default=(8.0, 6.0)
         Width and height of the plot in inches.
-    columns : list or ArrayLike, optional
+    columns : ArrayLike, optional, default None
         A list of names for the features, used as labels on the y-axis. If `None`,
         feature indices are labeled as "Column X" for each feature.
-    max_col : int or None, optional, default=20
+    max_col : int, optional, default=20
         The maximum number of features to display in the plot, chosen based on
         their absolute contribution values. If `None`, all features will be shown.
-    title : str or None, optional
+    title : str, optional, default None
         The title displayed at the top of the plot. If `None`, no title is shown.
-    title_fontsize : float, optional, default=12.0
+    title_fontsize : float,  default=12.0
         Font size for the plot title.
-    label_fontsize : float, optional, default=12.0
+    label_fontsize : float, default=12.0
         Font size for the y-axis labels (feature names).
-    show_raw_score : bool, optional, default=True
-        Whether to display the `raw_score` value on the plot. If `True`, the raw
-        score is displayed at the top-right corner of the plot area.
 
     Returns
     -------
@@ -196,7 +193,7 @@ def bar_plot(
 
 def feature_plot(
     df: pd.DataFrame,
-    figsize: Tuple[int, int] = (12, 8),
+    figsize: Tuple[float, float] = (12.0, 8.0),
     show_std: bool = False,
     show_range: bool = True,
     xticks_n: int = 10,
@@ -204,9 +201,9 @@ def feature_plot(
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
-    title: str | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
 ) -> None:
     """
     Plots the mean, min, and max values of a feature based on tree split points.
@@ -224,19 +221,19 @@ def feature_plot(
         - 'min': Minimum value of the feature within this range.
         - 'max': Maximum value of the feature within this range.
         - 'count' : Average leaf_count within this range.
-    figsize : tuple of int, optional, default (10.0, 6.0)
+    figsize : tuple of float, default (12.0, 8.0)
         Width and height of the plot in inches.
-    show_std : bool, optional, default False
-        If True, shaded areas representing the standart deviation values will be displayed.
+    show_std : bool, default False
+        If True, shaded areas representing the standard deviation values will be displayed.
     show_range : bool, default True
         If True, show leaf distribution within range.
-    xticks_n : int, optional, default 10
+    xticks_n : int, default 10
         Number of tick marks to display on the x-axis.
-    yticks_n : int, optional, default 10
+    yticks_n : int, default 10
         Number of tick marks to display on the y-axis.
-    ticks_fontsize : float, optional, default 10.0
+    ticks_fontsize : float, default 10.0
         Font size for axis tick labels,
-    title_fontsize : float, optional, default 16.0
+    title_fontsize : float, default 16.0
         Font size for the plot title.
     title : str, optional, default None
         The title displayed at the top of the plot. If `None`, no title is shown.
@@ -420,10 +417,10 @@ def interaction_plot(
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
-    title: str | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
-    color_bar_label: str | None = None,
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    color_bar_label: Optional[str] = None,
 ) -> None:
     """
     Plots to visualize interactions between two features using model split points.
@@ -439,15 +436,13 @@ def interaction_plot(
         the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
     figsize : tuple of float, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
-    axis_ticks_n : int, optional, default 10
+    axis_ticks_n : int, default 10
         Number of ticks on both axis
-    ticks_decimal : int, optional, default 3
-        Number of decimal places for tick labels
-    ticks_fontsize : float, optional, default 10.0
+    ticks_fontsize : float, default 10.0
         Font size for axis tick labels,
-    title_fontsize : int or float, optional, default 16.
+    title_fontsize : float, default 16.
         Font size for plot title, by
-    title : str or None, optional
+    title : str, optional, default None
         The title displayed at the top of the plot. If `None`, no title is shown.
     xlabel : str, optional, default None
         Label for the x-axis. If None, it will default to the feature name.
@@ -536,16 +531,9 @@ def interaction_plot(
     max_val = values.max()
     min_val = values.min()
 
-    if max_val < 0:  # All values are negative
-        colormap = plt.get_cmap("Blues")
-        norm = plt.Normalize(vmin=min_val, vmax=max_val)
-    elif min_val > 0:  # All values are positive
-        colormap = plt.get_cmap("Reds")
-        norm = plt.Normalize(vmin=min_val, vmax=max_val)
-    else:  # Both negative and positive values
-        colormap = plt.get_cmap("coolwarm")
-        abs_max = max(abs(min_val), max_val)
-        norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+    colormap = plt.get_cmap("coolwarm")
+    abs_max = max(abs(min_val), max_val)
+    norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
     colors = colormap(norm(values))
 
@@ -614,10 +602,10 @@ def interaction_scatter_plot(
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
-    title: str | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
-    color_bar_label: str | None = None,
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    color_bar_label: Optional[str] = None,
 ) -> None:
     """
     Creates a scatter plot based on interaction data and feature values.
@@ -636,13 +624,11 @@ def interaction_scatter_plot(
         Index of second feature in X
     figsize : tuple of float, optional, default (10.0, 6.0)
         Width and height of the plot in inches.
-    ticks_decimal : int, optional, default 3
-        Number of decimal places for tick labels
-    ticks_fontsize : float, optional, default 10.0
+    ticks_fontsize : float, default 10.0
         Font size for axis tick labels,
-    title_fontsize : int or float, optional, default 16.
+    title_fontsize : float, default 16.
         Font size for plot title, by
-    title : str or None, optional
+    title : str, optional, default None
         The title displayed at the top of the plot. If `None`, no title is shown.
     xlabel : str, optional, default None
         Label for the x-axis. If None, it will default to the feature name.
@@ -703,16 +689,9 @@ def interaction_scatter_plot(
     max_val = values.max()
     min_val = values.min()
 
-    if max_val < 0:  # All values are negative
-        colormap = plt.get_cmap("Blues")
-        norm = plt.Normalize(vmin=min_val, vmax=max_val)
-    elif min_val > 0:  # All values are positive
-        colormap = plt.get_cmap("Reds")
-        norm = plt.Normalize(vmin=min_val, vmax=max_val)
-    else:  # Both negative and positive values
-        colormap = plt.get_cmap("coolwarm")
-        abs_max = max(abs(min_val), max_val)
-        norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+    colormap = plt.get_cmap("coolwarm")
+    abs_max = max(abs(min_val), max_val)
+    norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
     # Create scatter plot
     scatter = ax.scatter(

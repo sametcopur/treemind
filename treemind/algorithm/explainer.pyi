@@ -1,7 +1,7 @@
 import pandas as pd
 from numpy.typing import ArrayLike
 import numpy as np
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Union
 
 class Explainer:
     """
@@ -10,8 +10,6 @@ class Explainer:
     enables detailed inspection of how individual features and their interactions impact model
     predictions, allowing for a clearer understanding of the model's decision-making process.
     """
-
-
     def __call__(self, model: Any) -> None:
         """
         Invokes the Explainer instance with a model to perform analysis.
@@ -29,8 +27,8 @@ class Explainer:
         
     def analyze_feature(
         self,
-        columns: int | List[int],
-        back_data: Optional[Any] = None
+        columns: Union[int, List[int]],
+        back_data: Optional[ArrayLike] = None
     ) -> pd.DataFrame:
         """
         Analyzes interactions between multiple features based on the model's decision rules,
@@ -56,7 +54,7 @@ class Explainer:
         ...
 
     def analyze_data(
-        self, x: ArrayLike, back_data: ArrayLike | None = None
+        self, x: ArrayLike, back_data: Optional[ArrayLike] = None
     ) -> np.ndarray:
         """
         Analyzes input data to extract row and column-based impact values, with an option to use

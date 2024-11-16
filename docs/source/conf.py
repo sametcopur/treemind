@@ -47,6 +47,7 @@ def process_explainer_files(directory: str):
         print(f"{pyi_file} does not exist, no .py file created.")
 
 
+# COMMENT LOCALLY
 DIRECTORY = "../../treemind/algorithm"
 process_explainer_files(DIRECTORY)
 print("File processing completed.")
@@ -58,6 +59,7 @@ copyright = "2024, Samet Çopur"
 author = "Samet Çopur"
 version = "0.0.1"
 release = "0.0.1"
+
 autodoc_member_order = "bysource"
 extensions = [
     "sphinx.ext.autodoc",

@@ -6,23 +6,16 @@ import numpy as np
 
 
 def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
-    # İlk olarak min ve max değerleri bul ve aralığı hesapla
     tick_min, tick_max = np.min(ticks), np.max(ticks)
     tick_range = tick_max - tick_min
 
-    # Eğer aralık n_ticks'ten küçükse, decimal kullanımını başlat
     if tick_range < n_ticks:
-        # Uygun ondalık hane sayısını belirlemek için hassasiyeti ayarla
         for decimals_count in range(1, 5):
-            # Belirlenen ondalık hane ile yuvarlama yap
             rounded_ticks = np.round(ticks, decimals_count)
-            # Yuvarlanmış değerler orijinal değerlere yaklaşık olarak uyuyorsa uygun hane sayısını döndür
             if np.allclose(ticks, rounded_ticks, atol=tick_range / (n_ticks * 10)):
                 return decimals_count
-        # Eğer 4 hane de yetmezse, maksimum 4 hane kullan
         return 4
     else:
-        # Eğer aralık genişse decimal kullanmaya gerek yok
         return 0
 
 
@@ -46,9 +39,9 @@ def _check_columns(columns):
 def _validate_bar_plot_parameters(
     values: np.ndarray,
     columns: ArrayLike,
-    max_col: Union[int, None],
+    max_col: Optional[int],
     figsize: Tuple[float, float],
-    title: Union[str, None],
+    title: Optional[str],
     title_fontsize: float,
     label_fontsize: float,
 ) -> None:
@@ -127,9 +120,9 @@ def _validate_interaction_plot_parameters(
     df: pd.DataFrame,
     figsize: Tuple[float, float],
     axis_ticks_n: int,
-    ticks_fontsize: int | float,
-    title_fontsize: int | float,
-    label_fontsizes: int | float,
+    ticks_fontsize: Union[int, float],
+    title_fontsize: Union[int, float],
+    label_fontsizes: Union[int, float],
     title: Optional[str],
     xlabel: Optional[str],
     ylabel: Optional[str],
@@ -234,12 +227,12 @@ def _validate_feature_plot_parameters(
     show_range: bool,
     xticks_n: int,
     yticks_n: int,
-    ticks_fontsize: int | float,
-    title_fontsize: int | float,
-    label_fontsizes: int | float,
-    title: str | None,
-    xlabel: str | None,
-    ylabel: str | None,
+    ticks_fontsize: Union[int, float],
+    title_fontsize: Union[int, float],
+    label_fontsizes: Union[int, float],
+    title: Optional[str],
+    xlabel: Optional[str],
+    ylabel: Optional[str],
 ) -> None:
     """
     Validates the input parameters for the feature_plot function.
@@ -331,15 +324,16 @@ def _validate_feature_plot_parameters(
     if ylabel is not None and not isinstance(ylabel, str):
         raise ValueError("ylabel must be a string or None.")
 
+
 def _validate_interaction_scatter_plot_parameters(
     X: np.ndarray,
     df: pd.DataFrame,
     col_1: int,
     col_2: int,
     figsize: Tuple[float, float],
-    ticks_fontsize: int | float,
-    title_fontsize: int | float,
-    label_fontsizes: int | float,
+    ticks_fontsize: Tuple[int, float],
+    title_fontsize: Tuple[int, float],
+    label_fontsizes: Tuple[int, float],
     title: Optional[str],
     xlabel: Optional[str],
     ylabel: Optional[str],
@@ -393,7 +387,9 @@ def _validate_interaction_scatter_plot_parameters(
     if not isinstance(col_1, int) or not isinstance(col_2, int):
         raise TypeError("`col1` and `col2` must be integers.")
     if col_1 < 0 or col_2 < 0 or col_1 >= X.shape[1] or col_2 >= X.shape[1]:
-        raise ValueError("`col1` and `col2` must be valid column indices within the range of `X`.")
+        raise ValueError(
+            "`col1` and `col2` must be valid column indices within the range of `X`."
+        )
 
     # Validate `df` structure and column names
     if not isinstance(df, pd.DataFrame):
@@ -444,7 +440,6 @@ def _validate_interaction_scatter_plot_parameters(
     ]:
         if label is not None and not isinstance(label, str):
             raise TypeError(f"`{name}` must be a string if provided.")
-
 
 
 def _replace_infinity(

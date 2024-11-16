@@ -9,10 +9,7 @@ dependencies = [
     "seaborn>=0.13.2"
 ]
 authors = [
-    { name = "Ilker Birbil", email = 'sibirbil@gmail.com' },
     { name = "Samet Copur", email = "sametcopur@yahoo.com" },
-    { name = "Ozgür Martin", email = "ozgurmartin@gmail.com" },
-
 ]
 description = "Ensemble treemind"
 readme = "README.md"
@@ -34,7 +31,7 @@ keywords = [
 requires-python = ">=3.9"
 
 [project.urls]
-Documentation = "https://github.com/sametcopur/treemind"
+Documentation = "https://treemind.readthedocs.io/en/latest/"
 Repository = "https://github.com/sametcopur/treemind"
 Tracker = "https://github.com/sametcopur/treemind/issues"
 
