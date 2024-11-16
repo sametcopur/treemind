@@ -89,7 +89,7 @@ class Explainer:
 
 
 
-    def count_node(self, order: int = 1) -> pd.DataFrame:
+    def count_node(self, order: int = 2) -> pd.DataFrame:
         """
         Counts how often combinations of features appear in decision splits across the model's trees.
 

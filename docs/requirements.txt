@@ -2,6 +2,7 @@ numpy>=1.26.4
 pandas>=2.2.2
 matplotlib>=3.9.2
 seaborn>=0.13.2
+scipy
 sphinx_rtd_theme
 sphinx_autodoc_typehints
 
