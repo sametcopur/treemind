@@ -75,6 +75,7 @@ cdef class Explainer:
             self.len_col = self.model.n_features_in_
             self.columns = model.feature_names_
             self.trees = analyze_catboost(self.model, self.len_col)
+            self.model_type = "catboost"
 
         # Raise an error if the model is not LightGBM or XGBoost
         else:
@@ -206,6 +207,9 @@ cdef class Explainer:
             x_dmatrix = convert_d_matrix(x)
             x_ = self.model.predict(x_dmatrix, pred_leaf=True).astype(np.int32)
             x_ = xgb_leaf_correction(trees, x_)
+
+        elif self.model_type == "catboost":
+            x_ = self.model.calc_leaf_indexes(x).astype(np.int32)
 
         else:
             x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)

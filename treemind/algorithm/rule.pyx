@@ -260,7 +260,7 @@ cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object 
         object back_data_d_matrix 
 
         # Variables for looping
-        size_t num_trees
+        size_t num_trees = trees.size()
         size_t tree_size
         Rule* rule_ptr
         vector[Rule]* tree_ptr
@@ -274,12 +274,13 @@ cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object 
         back_data_ = model.predict(back_data_d_matrix, pred_leaf=True).astype(np.int32)
         back_data_ = xgb_leaf_correction(trees, back_data_)
 
+    elif model_type == "catboost":
+        back_data_ = model.calc_leaf_indexes(back_data).astype(np.int32)
+
     elif model_type == "lightgbm":
         back_data_ = model.predict(back_data, pred_leaf=True).astype(np.int32)
 
     dict_counts = count_tree_indices(back_data_)
-    num_trees = trees.size()
-
 
     for tree_index in range(num_trees):
         tree_ptr = &trees[tree_index]
