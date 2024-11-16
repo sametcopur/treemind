@@ -2,8 +2,14 @@ import os
 import sys
 from sphinx.ext import autodoc
 
-project_path = os.path.abspath("../..")
+# Proje yolunu kontrol etmek için çıktılar ekleyelim
+print(f"Current working directory (cwd): {os.getcwd()}")  # Çalışma dizini
+print(f"sys.path: {sys.path}")  # Python'un yükleme yolları
 
+# Projenizin kök dizinini ekleyin
+project_path = os.path.abspath("../..")
+sys.path.insert(0, project_path)
+print(f"Project path added to sys.path: {project_path}")
 sys.path.insert(0, project_path)
 
 project = "treemind"
