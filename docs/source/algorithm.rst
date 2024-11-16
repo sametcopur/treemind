@@ -447,7 +447,7 @@ Additional Notes
    **Mathematical Limitations and Practical Considerations**
 
    1. **Theoretical Foundation:**
-      Although the algorithm produces desired results in practice, it currently lacks formal mathematical proof.
+      Although the algorithm produces desired results in practice, it lacks formal mathematical proof.
 
    2. **Interpretation of Results:**
       - The differences obtained by subtracting the final expected value are for interpretative purposes only

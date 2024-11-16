@@ -1,5 +1,22 @@
-## treemind 
+# treemind 
 The treemind library is designed to interpret ensemble tree models by breaking down individual trees and analyzing the model's predictions. It explains the model's decision-making process by calculating the expected value of the predictions at each decision point. The treemind library is fully integrated with `LightGBM` and `XGBoost`.
+
+---
+## Algorithm
+
+The `treemind` algorithm analyzes feature contributions and interactions in tree-based models, focusing on specific feature intervals to evaluate their impact on predictions.
+
+**Although the algorithm produces desired results in practice, it lacks formal mathematical proof.**
+
+[Algorithm Overview](https://treemind.readthedocs.io/en/latest/algorithm.html)
+
+### Performance
+- Fast and effective for exploratory analysis.
+- Highly efficient, even for large datasets.
+
+[Performance Experiments](https://treemind.readthedocs.io/en/latest/experiments/experiment_main.html)
+
+---
 
 ## Installation
 To install `treemind`, use the following pip command:
@@ -7,78 +24,188 @@ To install `treemind`, use the following pip command:
 ```bash
 pip install treemind
 ```
+---
+## Key Features
 
-### Key Features
+1. **Feature Analysis:** Provides statistical analysis on how features behave across different decision splits.
 
-1. **Interaction Analysis:** Identifies complex relationships between features by analyzing how they work together to influence predictions.
+2. **Interaction Analysis:**  Identifies complex relationships between features by analyzing how they work together to influence predictions. The algorithm can analyze interactions up to n features, depending on memory constraints and time limitations.
 
-2. **Feature Importance and Split Counting:** Determines how often individual features or feature pairs are used in the decision-making process, highlighting the most influential factors.
+3. **High Performance:** Optimized with Cython for fast execution, even on large models and datasets.
 
-3. **Detailed Prediction Breakdown:** Analyzes individual predictions to show how features contribute step-by-step to the final output.
+4. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions. 
 
-4. **Feature-specific Insights:** Provides statistical analysis on how features behave across different decision splits, including their typical ranges.
+5. **Compatibility with Popular Frameworks:** Fully compatible with `XGBoost`, `LightGBM` and `CatBoost`, supporting regression and binary classification tasks.
+---
 
-5. **High Performance:** Optimized with Cython for fast execution, even on large models and datasets.
+## Usage
 
-6. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions. 
+This example demonstrates how to set up and use the `Explainer` with a basic `lightgbm` model trained on the Breast Cancer dataset. 
 
-These features help users interpret ensemble models comprehensively, providing both quantitative insights and visual explanations.
+For detailed information, please refer to the [API Reference](api_reference.html#api_reference).
 
-`treemind` operates with two distinct algorithmic approaches. For detailed information, please visit [here](https://treemind.readthedocs.io/en/latest/algorithm.html).
-
-### Usage
-
-To use `treemind`, you need to initialize the `treemind` class and fit it to your model. Here's a basic example:
-
+### Setup Code
 
 ```python
-# Import necessary libraries for data handling, model training, and explanation
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer
 from lightgbm import LGBMClassifier
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
 
-# Import the Explainer class and plotting utility from the TreeMind library
 from treemind import Explainer
-from treemind.plot import feature_plot
-
-# Set a random state for reproducibility
-random_state = 42
-
-# Load the Iris dataset (alternatively, you can load a different dataset like breast cancer)
-# The data is split into features (X) and target variable (y)
-X, y = load_breast_cancer(return_X_y=True)
-
-# Split the dataset into training and testing sets
-# The test size is set to 20%, meaning 80% of the data will be used for training
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=random_state
+from treemind.plot import (
+    bar_plot,
+    feature_plot,
+    interaction_plot,
+    interaction_scatter_plot,
 )
 
-# Initialize the LightGBM classifier
-clf = LGBMClassifier()
+# Load the dataset
+X, y = load_breast_cancer(return_X_y=True, as_frame=True)
 
-# Train the classifier using the training data
-clf.fit(X_train, y_train)
+# Train the model
+model = LGBMClassifier(verbose=-1)
+model.fit(X, y)
+```
 
-# Create an instance of the Explainer class from TreeMind
+Once the model is trained, it is ready to be analyzed with the `Explainer`.
+
+### Initializing the `Explainer`
+
+After training the model, initialize the `Explainer` by calling it with the model object:
+
+```python
 explainer = Explainer()
+explainer(model)
+```
 
-# Fit the explainer to the trained classifier
-explainer(clf)
+### Counting Feature Appearances
 
-# Analyze a specific feature by its index (e.g., feature index 2)
-# This step generates a detailed report on how this feature contributes to the model's predictions
-feature_df = explainer.analyze_feature(2)
+The `count_node` function analyzes how often individual features or pairs of features appear in decision splits across the model's trees. This analysis can help identify the most influential features or feature interactions in the model's decision-making process.
 
-# Plot the analysis results for the selected feature
-# This visualization helps understand the impact of the feature across different splits
+To count individual feature appearances in splits:
+
+```python
+explainer.count_node(order=1)
+```
+
+```none
+column_index  count
+21            1739
+27            1469
+22            1422
+23            1323
+1             1129
+```
+
+To count feature-pair interactions in splits:
+
+```python
+explainer.count_node(order=2)
+```
+
+```none
+column1_index  column2_index  count
+21             22             927
+21             23             876
+21             27             852
+1              27             792
+23             27             734
+```
+
+### Analyzing Specific Feature
+
+The `analyze_feature` function calculates statistical metrics for a specific feature based on its split points across the model's trees. This analysis helps in understanding the distribution and impact of a single feature across different split points.
+
+To analyze a specific feature by its index (e.g., 21), use:
+
+```python
+feature_df = explainer.analyze_feature(21)
+```
+
+```none
+worst_texture_lb  worst_texture_ub   mean        min       max
+-inf              15.470             8.535704   -3.632846   10.822743
+15.470            17.710             8.536465   -3.632846   10.822743
+17.710            17.825             8.557027   -3.632846   10.822743
+17.825            18.460             8.553872   -3.632846   10.822743
+18.460            19.415             8.429304   -3.849259   10.822743
+```
+
+To visualize feature statistics calculated by `analyze_feature` using `feature_plot`:
+
+```python
 feature_plot(feature_df)
 ```
-### Documentation
-For more detailed information about the API and advanced usage, please refer to the full  [documentation](https://treemind.readthedocs.io/en/latest/).
 
-### Contributing
+![Feature plot visualizing statistical metrics for a feature](/docs/source/_static/example/feature_plot.png)
+
+### Analyzing Feature Interactions
+
+The `analyze_feature` function given multiple indices calculates the dependency between two or more features by examining their split points across the model’s trees.
+
+To analyze an interaction between two features (e.g., feature indices 21 and 22), use:
+
+```python
+df = explainer.analyze_feature([21, 22])
+```
+
+Example output:
+
+```none
+worst_texture_lb  worst_texture_ub  worst_perimeter_lb  worst_perimeter_ub   value
+-inf              17.710            -inf                71.06                6.111742
+17.710            17.825            -inf                71.06                6.126359
+17.825            18.460            -inf                71.06                6.125672
+18.460            19.415            -inf                71.06                6.125672
+19.415            20.225            -inf                71.06                6.125672
+```
+
+To visualize interactions between two features calculated by `analyze_interaction` using `interaction_plot`:
+
+```python
+interaction_plot(df)
+```
+
+![Interaction plot visualizing dependencies between two features](/docs/source/_static/example/interaction_plot.png)
+
+To visualize interactions between two features on given data by `analyze_interaction` using `interaction_scatter_plot`:
+
+```python
+interaction_scatter_plot(X, df, 21, 22)
+```
+
+![Interaction plot visualizing dependencies between two features](/docs/source/_static/example/interaction_scatter_plot.png)
+
+### Analyzing Feature Contributions on Data
+
+The `analyze_data` function in the `Explainer` takes input data and computes feature contributions toward a target prediction. This function allows you to analyze feature contributions for a single data point (row) or across the entire dataset, providing insights into the effect of each feature on the model's predictions in both classification and regression tasks.
+
+For analyzing contributions across the entire dataset `X`, use:
+
+```python
+values = explainer.analyze_data(X)
+```
+
+To inspect feature contributions for a specific row, e.g., `X.iloc[5, :]`, use the following code:
+
+```python
+values = explainer.analyze_data(X.iloc[[5], :])
+```
+
+To visualize the feature contributions using `bar_plot`:
+
+```python
+bar_plot(values, columns=X.columns)
+```
+
+![Bar plot visualizing feature contributions](/docs/source/_static/example/bar_plot.png)
+
+This bar plot presents each feature's contribution, showing the positive or negative impact on the prediction. If column names (`columns`) are not specified, `bar_plot` will generate default names based on feature indices. If values contains more than a single row, then results will be mean of their absolute values.
+
+---
+
+## Contributing
 Contributions are welcome! If you'd like to improve `treemind` or suggest new features, feel free to fork the repository and submit a pull request.
 
-### License
+## License
 `treemind` is released under the BSD 3-Clause License. See the LICENSE file for more details.

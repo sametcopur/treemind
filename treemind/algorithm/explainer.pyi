@@ -10,6 +10,7 @@ class Explainer:
     enables detailed inspection of how individual features and their interactions impact model
     predictions, allowing for a clearer understanding of the model's decision-making process.
     """
+
     def __call__(self, model: Any) -> None:
         """
         Invokes the Explainer instance with a model to perform analysis.
@@ -24,11 +25,9 @@ class Explainer:
         None
         """
         ...
-        
+
     def analyze_feature(
-        self,
-        columns: Union[int, List[int]],
-        back_data: Optional[ArrayLike] = None
+        self, columns: Union[int, List[int]], back_data: Optional[ArrayLike] = None
     ) -> pd.DataFrame:
         """
         Analyzes interactions between multiple features based on the model's decision rules,
@@ -38,7 +37,7 @@ class Explainer:
         ----------
         columns : int or list[int]
             Column indice or list of column indices representing features to analyze for interactions.
-            
+
         back_data : Optional[object], default=None
             Optional data used to update leaf counts in the decision trees. If provided, this
             data is used to refine the interaction analysis.
@@ -47,8 +46,8 @@ class Explainer:
         -------
         pd.DataFrame
             A DataFrame containing the interaction analysis metrics:
-            - Upper bound columns for each feature in `columns`
-            - Mean interaction values, standard deviations, and interaction counts for each
+            - Lover and upper bound columns for each feature in `columns`
+            - Interaction values, standard deviations, and average leaf counts for each
             feature pair.
         """
         ...
@@ -67,25 +66,23 @@ class Explainer:
             which can accept any type that matches its input requirements. Note that `x` must be
             two-dimensional; single-dimensional arrays are not accepted. If input is intended to
             be row-based, it must have the appropriate shape.
-            
+
         back_data : ArrayLike, optional
             Baseline data used to calculate impact values. When provided, each feature's effect is
-            computed as the deviation from this baseline value, similar to SHAP analysis. If `None`, 
-            the function will use the model’s expected output as the reference for impact calculations.
+            computed as the deviation from this baseline value.. If `None`, the function will use 
+            the model's expected output as the reference for impact calculations.
 
         Returns
         -------
         np.ndarray
             A two-dimensional array where each element represents the impact of a feature in `x` on a
-            specific row, based on either the provided baseline (`back_data`) or the model's output 
-            as the reference if `back_data` is `None`. The array shape corresponds to (n_rows, n_features), 
-            where each row gives the per-feature impact for a specific instance in `x`, enabling row 
+            specific row, based on either the provided baseline (`back_data`) or the model's output
+            as the reference if `back_data` is `None`. The array shape corresponds to (n_rows, n_features),
+            where each row gives the per-feature impact for a specific instance in `x`, enabling row
             and column-based impact analysis.
-            
+
         """
         ...
-
-
 
     def count_node(self, order: int = 2) -> pd.DataFrame:
         """
@@ -112,5 +109,3 @@ class Explainer:
 
         """
         ...
-
-

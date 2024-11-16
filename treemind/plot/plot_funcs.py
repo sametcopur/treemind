@@ -18,7 +18,7 @@ from .plot_utils import (
     _find_tick_decimal,
 )
 
-from typing import Tuple, Union, Optional
+from typing import Tuple, Optional
 from numpy.typing import ArrayLike
 
 
@@ -43,7 +43,7 @@ def bar_plot(
         An array containing the contribution values of each feature. Each value
         represents the magnitude and direction (positive or negative) of the
         feature's contribution to the overall outcome.
-    figsize : tuple of float, optional, default=(8.0, 6.0)
+    figsize : tuple of float, default=(8.0, 6.0)
         Width and height of the plot in inches.
     columns : ArrayLike, optional, default None
         A list of names for the features, used as labels on the y-axis. If `None`,
@@ -66,6 +66,8 @@ def bar_plot(
     Notes
     -----
     - Rows with only zero values are automatically excluded.
+    - If values contains more than single row, then results will be 
+        mean of their absolute values.
     """
 
     _validate_bar_plot_parameters(
@@ -215,12 +217,12 @@ def feature_plot(
     ----------
     df : pd.DataFrame
         DataFrame containing the feature data with the following columns:
-        - 'feature_lb': Lower bound of the feature range (tree split point).
-        - 'feature_ub': Upper bound of the feature range (tree split point).
-        - 'mean': Mean value of the feature within this range.
-        - 'min': Minimum value of the feature within this range.
-        - 'max': Maximum value of the feature within this range.
-        - 'count' : Average leaf_count within this range.
+            - 'feature_lb': Lower bound of the feature range (tree split point).
+            - 'feature_ub': Upper bound of the feature range (tree split point).
+            - 'mean': Mean value of the feature within this range.
+            - 'min': Minimum value of the feature within this range.
+            - 'max': Maximum value of the feature within this range.
+            - 'count' : Average leaf_count within this range.
     figsize : tuple of float, default (12.0, 8.0)
         Width and height of the plot in inches.
     show_std : bool, default False
@@ -434,7 +436,7 @@ def interaction_plot(
         A DataFrame containing interaction data with columns `_lb`, `_ub`, `_lb`, `_ub`, and `value`.
         The first four columns represent intervals for two features, where each pair (_lb, _ub) defines
         the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
-    figsize : tuple of float, optional, default (10.0, 6.0)
+    figsize : tuple of float, default (10.0, 6.0)
         Width and height of the plot in inches.
     axis_ticks_n : int, default 10
         Number of ticks on both axis
@@ -622,7 +624,7 @@ def interaction_scatter_plot(
         Index of first feature in X
     col_2 : int
         Index of second feature in X
-    figsize : tuple of float, optional, default (10.0, 6.0)
+    figsize : tuple of float, default (10.0, 6.0)
         Width and height of the plot in inches.
     ticks_fontsize : float, default 10.0
         Font size for axis tick labels,

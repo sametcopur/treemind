@@ -172,12 +172,6 @@ The ``analyze_data`` function in the ``Explainer`` takes input data and computes
 allows you to analyze feature contributions for a single data point (row) or across the entire dataset, providing insights into the effect 
 of each feature on the model's predictions in both classification and regression tasks.
 
-To inspect feature contributions for a specific row, e.g., ``X.iloc[5, :]``, use the following code:
-
-.. code-block:: python
-
-    values = explainer.analyze_data(X.iloc[[5], :])
-
 
 For analyzing contributions across the entire dataset ``X``, use:
 
@@ -185,6 +179,11 @@ For analyzing contributions across the entire dataset ``X``, use:
 
     values = explainer.analyze_data(X)
 
+To inspect feature contributions for a specific row, e.g., ``X.iloc[5, :]``, use the following code:
+
+.. code-block:: python
+
+    values = explainer.analyze_data(X.iloc[[5], :])
 
 To visualize the feature contributions using ``bar_plot``:
 
@@ -199,4 +198,5 @@ To visualize the feature contributions using ``bar_plot``:
 
 This bar plot presents each feature's contribution, showing the positive or negative impact 
 on the prediction. If column names (``columns``) are not specified, ``bar_plot`` will generate 
-default names based on feature indices.
+default names based on feature indices. If values contains more than single row, then results will
+be mean of their absolute values.
