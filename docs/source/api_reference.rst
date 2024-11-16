@@ -11,4 +11,4 @@ or lists, making it simple and free from complexity.
    :maxdepth: 2
 
    explainer
-   plots/plot
+   plot
