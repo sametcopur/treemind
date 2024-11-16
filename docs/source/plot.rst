@@ -1,8 +1,6 @@
 ``treemind.plot``
 =================
 
-.. automodule:: treemind.plot
-
 .. autofunction:: treemind.plot.feature_plot
 
 **Example Usage**
