@@ -1,14 +1,8 @@
 import os
 import sys
 from sphinx.ext import autodoc
-import shutil
 
 project_path = os.path.abspath("../..")
-
-build_dir = os.path.abspath("../../build")  # Adjust path if needed
-if os.path.exists(build_dir):
-    print(f"Cleaning build directory: {build_dir}")
-    shutil.rmtree(build_dir)
 
 sys.path.insert(0, project_path)
 
@@ -37,10 +31,6 @@ templates_path = ["_templates"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-
-html_css_files = [
-    'custom.css',
-]
 
 autodoc_mock_imports = ['treemind']
 
