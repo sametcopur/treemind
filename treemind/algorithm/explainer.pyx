@@ -207,7 +207,7 @@ cdef class Explainer:
             x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)
 
         num_rows = x_.shape[0]
-        values = np.empty((num_rows, self.len_col), dtype=np.float64)
+        values = np.zeros((num_rows, self.len_col), dtype=np.float64)
 
         if back_data is not None:
             trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
@@ -233,7 +233,9 @@ cdef class Explainer:
                         if not ((rule_ptr.lbs[col] == -INFINITY )and (rule_ptr.ubs[col] == INFINITY)):
                             ensemble_sum += rule_ptr.value
 
-                    values[row, col] = ensemble_sum - expected_value
+                    
+                    if ensemble_sum != 0.0:
+                        values[row, col] = ensemble_sum - expected_value
 
         return np.asarray(values)
 

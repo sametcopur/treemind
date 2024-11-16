@@ -86,8 +86,8 @@ The average expected value across all trees using feature :math:`x` is:
 
 This represents the aggregated contribution of feature :math:`x` over all relevant trees, considering only the leaves that correspond to the specified interval.
 
-Difference from Mean
-~~~~~~~~~~~~~~~~~~~~
+5. Difference from Mean
+~~~~~~~~~~~~~~~~~~~~~~~
 
 To evaluate the contribution of a feature within a specific interval, the difference is computed between the expected model output conditioned on that interval (:math:`E[F(x) \mid x \in \text{interval}]`) and the overall expected model output (:math:`E[F(x)]`).
 
@@ -134,13 +134,81 @@ This formula ensures that the model's behavior is correctly aggregated across al
 
 By combining the above steps, this approach facilitates an in-depth understanding of feature interactions and their contributions to the model's predictions.
 
+7. Instance-based Feature Explanations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The algorithm calculates feature contributions for specific instances by analyzing the trees where the feature appears as a split node, regardless of whether it's in the instance's prediction path.
+
+1. **Expected Value Calculation Per Tree**
+
+   For a given feature :math:`x` and tree :math:`t`:
+
+   - Let :math:`L_{t,i}` be the leaf count for leaf :math:`i` in tree :math:`t`
+   - Let :math:`V_{t,i}` be the prediction value for leaf :math:`i` in tree :math:`t`
+   - Let :math:`D_{x,t}` be the set of all leaves in tree :math:`t` where feature :math:`x` is used as a split node (regardless of ranges)
+
+   The expected value for feature :math:`x` in tree :math:`t` is:
+
+   .. math::
+
+      E[f_t(x)] = \frac{\sum_{i \in D_{x,t}} L_{t,i} \cdot V_{t,i}}{\sum_{i \in D_{x,t}} L_{t,i}}
+
+2. **Total Expected Value**
+
+   The total expected value for feature :math:`x` across all trees is simply the sum of individual tree expectations:
+
+   .. math::
+
+      E[F(x)] = \sum_{t=1}^T E[f_t(x)]
+
+3. **Instance-Specific Feature Contribution**
+
+   For a specific instance :math:`i` and feature :math:`x`:
+   
+   - For each tree :math:`t`, let :math:`P_{t,i}` be the leaf reached during prediction
+   - Let :math:`V_{t,i}` be the prediction value of the reached leaf
+   - Let :math:`S_{t,x}` be the set of trees where feature :math:`x` is used as a split node
+
+   The contribution for instance :math:`i` and feature :math:`x` is:
+
+   .. math::
+
+      \text{Contribution}_{i,x} = \sum_{t \in S_{t,x}} V_{t,i}
+
+   If feature :math:`x` is not used as a split node in tree :math:`t`:
+
+   .. math::
+
+      \text{Contribution}_{i,x} = 0
+
+8. Back Data Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The treemind algorithm allows for the integration of back data, which dynamically updates the leaf counts to reflect the new data while 
+keeping the tree structure (splits and leaf values) unchanged.
+
+
+When new data **back data** is provided, the leaf counts are recalculated as:
+
+.. math::
+
+   L'_{t,i} = \sum_{d \in B} I(d \text{ falls into leaf } i)
+
+where:
+
+- :math:`L'_{t,i}`: Updated leaf count for leaf :math:`i` in tree :math:`t`
+- :math:`B`: Set of back data instances
+- :math:`I(d \text{ falls into leaf } i)`: Indicator function (1 if instance :math:`d` falls into leaf :math:`i`, 0 otherwise)
+
+This formula completely replaces the original leaf counts with counts derived from the back data.
 
 Example Application
 -------------------
 
+To illustrate the treemind algorithm, we will analyze two decision trees with counts for each leaf node to calculate average data counts as specified in the algorithm.
 
-To illustrate the treemind algorithm, we will expand the previous example by including counts for each leaf node. This will allow us to calculate average data counts as specified in the algorithm.
+1. Tree Structures
+~~~~~~~~~~~~~~~~~~
 
 **Tree 1:**
 
@@ -172,31 +240,31 @@ To illustrate the treemind algorithm, we will expand the previous example by inc
    |   |--- raw_score: 0.50
    |   |--- leaf_count: 25
 
-Calculations for Intervals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Interval Analysis
+~~~~~~~~~~~~~~~~~~~~
 
-We will calculate the expected values and average data counts for the following intervals of **feature_2**:
+The split points for feature_2 across both trees are:
 
-The split points for **feature_2** across both trees are identified as:
+- Tree 1: 1.5
+- Tree 2: 3.0
 
-- Tree 1: **1.5**
-- Tree 2: **3.0**
-
-Based on these split points, the intervals for **feature_2** are created as:
+This creates the following intervals for analysis:
 
 -  :math:`(-\infty, 1.5]`
 -  :math:`(1.5, 3.0]`
 -  :math:`(3.0, \infty)`
 
-**Note:** The counts provided represent the number of data points (samples) falling into each leaf.
+Note: Both trees use feature_2 as a split feature, so :math:`|S_x| = 2`.
 
 Interval :math:`(-\infty, 1.5]`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 **Tree 1 Calculation**
 
-- **Leaf Included:**
-  - **Leaf 1:** raw_score: 1.25, leaf_count: 50
-- **Leaves where feature_2 <= 1.5**, so :math:`D_1` includes Leaf 1.
+- **Matching Leaves:**
+
+  - Leaf 1: raw_score: 1.25, leaf_count: 50
+  - This leaf exactly matches our interval
 
 **Expected Value for Tree 1:**
 
@@ -206,31 +274,17 @@ Interval :math:`(-\infty, 1.5]`
 
 **Tree 2 Calculation**
 
-- **Leaves Included:**
-  - **Leaf 1:** raw_score: 0.12, leaf_count: 40
-  - **Leaf 2:** raw_score: 0.30, leaf_count: 35
+- **Matching Leaves:**
 
-Since **Tree 2** splits on **feature_2 <= 3.0**, and our interval is :math:`(-\infty, 1.5]`, both Leaf 1 and Leaf 2 are considered. However, we need to adjust the counts to reflect only the data where **feature_2 <= 1.5**.
-
-Assuming a uniform distribution between :math:`(-\infty, 3.0]`, the proportion of data where **feature_2 <= 1.5** is 50%. Therefore, we adjust the leaf counts:
-
-- **Adjusted Leaf Counts:**
-  - **Leaf 1:** 40 × 0.5 = 20
-  - **Leaf 2:** 35 × 0.5 = 17.5
-
-**Total Adjusted Count for Tree 2:** 20 + 17.5 = 37.5
-
-**Weighted Sum of Leaf Values:**
-
-.. math::
-
-   \text{Weighted Sum} = (0.12 \times 20) + (0.30 \times 17.5) = 2.4 + 5.25 = 7.65
+  - Both leaves in feature_2 ≤ 3.0 branch are included as (-∞, 1.5] ⊂ (-∞, 3.0]
+  - Leaf 1: raw_score: 0.12, leaf_count: 40
+  - Leaf 2: raw_score: 0.30, leaf_count: 35
 
 **Expected Value for Tree 2:**
 
 .. math::
 
-   E[f_2(x) \mid x \in (-\infty, 1.5)] = \frac{7.65}{37.5} = 0.204
+   E[f_2(x) \mid x \in (-\infty, 1.5)] = \frac{(0.12 \times 40) + (0.30 \times 35)}{75} = 0.204
 
 **Total Expected Value for Interval** :math:`(-\infty, 1.5]`:
 
@@ -238,77 +292,42 @@ Assuming a uniform distribution between :math:`(-\infty, 3.0]`, the proportion o
 
    E[F(x) \mid x \in (-\infty, 1.5)] = 1.25 + 0.204 = 1.454
 
-**Average Data Count Across Trees:**
-
-According to the algorithm:
+**Average Data Count:**
 
 .. math::
 
-   AC[x \in \text{interval}] = \frac{1}{|S_x|} \sum_{t \in S_x} \left( \sum_{i \in D_t} L_{t,i} \right)
-
-- **Set of Trees Using Feature 2:** Both Tree 1 and Tree 2, so :math:`|S_x| = 2`
-- **Total Counts in Interval:**
-  - **Tree 1:** 50 (Leaf 1)
-  - **Tree 2:** 37.5 (Adjusted counts of Leaf 1 and Leaf 2)
-
-.. math::
-
-   AC[x \in (-\infty, 1.5)] = \frac{1}{2} (50 + 37.5) = \frac{87.5}{2} = 43.75
+   AC[x \in (-\infty, 1.5)] = \frac{1}{2} (50 + 75) = 62.5
 
 Interval :math:`(1.5, 3.0]`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Tree 1 Calculation**
 
-- **Leaves Included:**
-  - **Leaf 2:** raw_score: 1.57, leaf_count: 30
-  - **Leaf 3:** raw_score: 2.10, leaf_count: 20
+- **Matching Leaves:**
 
-We need to adjust the counts to reflect only the data where **feature_2 ∈ (1.5, 3.0]**. Assuming a uniform distribution between **feature_2 > 1.5**, we can split the counts equally between the intervals **(1.5, 3.0]** and **(3.0, ∞)**.
-
-- **Adjusted Counts:**
-  - **Leaf 2:** 30 × 0.5 = 15
-  - **Leaf 3:** 20 × 0.5 = 10
-
-**Total Adjusted Count for Tree 1:** 15 + 10 = 25
-
-**Weighted Sum of Leaf Values:**
-
-.. math::
-
-   \text{Weighted Sum} = (1.57 \times 15) + (2.10 \times 10) = 23.55 + 21.0 = 44.55
+  - Leaf 2: raw_score: 1.57, leaf_count: 30
+  - Leaf 3: raw_score: 2.10, leaf_count: 20
+  - These leaves represent feature_2 > 1.5
 
 **Expected Value for Tree 1:**
 
 .. math::
 
-   E[f_1(x) \mid x \in (1.5, 3.0)] = \frac{44.55}{25} = 1.782
+   E[f_1(x) \mid x \in (1.5, 3.0)] = \frac{(1.57 \times 30) + (2.10 \times 20)}{50} = 1.782
 
 **Tree 2 Calculation**
 
-- **Leaves Included:**
-  - **Leaf 1:** raw_score: 0.12, leaf_count: 40
-  - **Leaf 2:** raw_score: 0.30, leaf_count: 35
+- **Matching Leaves:**
 
-Adjusted counts (since **feature_2 ≤ 3.0**):
-
-- **Adjusted Leaf Counts:**
-  - **Leaf 1:** 40 × 0.5 = 20
-  - **Leaf 2:** 35 × 0.5 = 17.5
-
-**Total Adjusted Count for Tree 2:** 20 + 17.5 = 37.5
-
-**Weighted Sum of Leaf Values:**
-
-.. math::
-
-   \text{Weighted Sum} = (0.12 \times 20) + (0.30 \times 17.5) = 2.4 + 5.25 = 7.65
+  - Same leaves as (-∞, 1.5] interval since (1.5, 3.0] ⊂ (-∞, 3.0]
+  - Leaf 1: raw_score: 0.12, leaf_count: 40
+  - Leaf 2: raw_score: 0.30, leaf_count: 35
 
 **Expected Value for Tree 2:**
 
 .. math::
 
-   E[f_2(x) \mid x \in (1.5, 3.0)] = \frac{7.65}{37.5} = 0.204
+   E[f_2(x) \mid x \in (1.5, 3.0)] = \frac{(0.12 \times 40) + (0.30 \times 35)}{75} = 0.204
 
 **Total Expected Value for Interval** :math:`(1.5, 3.0]`:
 
@@ -316,47 +335,35 @@ Adjusted counts (since **feature_2 ≤ 3.0**):
 
    E[F(x) \mid x \in (1.5, 3.0)] = 1.782 + 0.204 = 1.986
 
-**Average Data Count Across Trees:**
-
-- **Total Counts in Interval:**
-  - **Tree 1:** 25 (Adjusted counts)
-  - **Tree 2:** 37.5 (Adjusted counts)
+**Average Data Count:**
 
 .. math::
 
-   AC[x \in (1.5, 3.0)] = \frac{1}{2} (25 + 37.5) = \frac{62.5}{2} = 31.25
+   AC[x \in (1.5, 3.0)] = \frac{1}{2} (50 + 75) = 62.5
 
 Interval :math:`(3.0, \infty)`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Tree 1 Calculation**
 
-- **Leaves Included:**
-  - **Leaf 2:** adjusted count = 30 × 0.5 = 15
-  - **Leaf 3:** adjusted count = 20 × 0.5 = 10
+- **Matching Leaves:**
 
-(Counts are the same as in the previous interval due to equal splitting.)
-
-**Total Adjusted Count for Tree 1:** 15 + 10 = 25
-
-**Weighted Sum of Leaf Values:**
-
-Same as before:
-
-.. math::
-
-   \text{Weighted Sum} = (1.57 \times 15) + (2.10 \times 10) = 44.55
+  - Same leaves as (1.5, 3.0] since they represent feature_2 > 1.5
+  - Leaf 2: raw_score: 1.57, leaf_count: 30
+  - Leaf 3: raw_score: 2.10, leaf_count: 20
 
 **Expected Value for Tree 1:**
 
 .. math::
 
-   E[f_1(x) \mid x \in (3.0, \infty)] = \frac{44.55}{25} = 1.782
+   E[f_1(x) \mid x \in (3.0, \infty)] = \frac{(1.57 \times 30) + (2.10 \times 20)}{50} = 1.782
 
 **Tree 2 Calculation**
 
-- **Leaf Included:**
-  - **Leaf 3:** raw_score: 0.50, leaf_count: 25
+- **Matching Leaves:**
+
+  - Leaf 3: raw_score: 0.50, leaf_count: 25
+  - This leaf exactly matches our interval
 
 **Expected Value for Tree 2:**
 
@@ -370,69 +377,70 @@ Same as before:
 
    E[F(x) \mid x \in (3.0, \infty)] = 1.782 + 0.50 = 2.282
 
-**Average Data Count Across Trees:**
-
-- **Total Counts in Interval:**
-  - **Tree 1:** 25 (Adjusted counts)
-  - **Tree 2:** 25 (Leaf 3)
+**Average Data Count:**
 
 .. math::
 
-   AC[x \in (3.0, \infty)] = \frac{1}{2} (25 + 25) = 25
+   AC[x \in (3.0, \infty)] = \frac{1}{2} (50 + 25) = 37.5
 
-Calculation of Overall Expected Value
+3. Overall Expected Value Calculation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Overall Expected Value**
+Using the formula:
 
 .. math::
 
-   E[F(x)] = \frac{(1.454 \times 43.75) + (1.9686 \times 31.25) + (2.282 \times 25)}{43.75 + 31.25 + 25} = 1.821
+   E[F(x)] = \frac{\sum_{\text{interval}} E[F(x) \mid x \in \text{interval}] \cdot AC[x \in \text{interval}]}{\sum_{\text{interval}} AC[x \in \text{interval}]}
 
-**Overall Expected Value for Tree 2:**
+We get:
 
-Summary of Results
-~~~~~~~~~~~~~~~~~~~
+.. math::
 
-We summarize the expected values and average data counts for each interval:
+   E[F(x)] = \frac{(1.454 \times 62.5) + (1.986 \times 62.5) + (2.282 \times 37.5)}{62.5 + 62.5 + 37.5} = 1.821
+
+4. Summary of Results
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :header-rows: 1
    :widths: 20 20 20 20 20
 
-   * - Interval (:math:`\text{feature}_2` range)
-     - Expected Value (:math:`E[F(x) \mid \text{interval}]`)
-     - Overall Expected Value (:math:`E[F(x)]`)
-     - Difference (:math:`E[F(x) \mid \text{interval}] - E[F(x)]`)
-     - Average Data Count (:math:`AC[x \in \text{interval}]`)
-   * - :math:`(-\infty, 1.5]`
+   * - Interval
+     - Expected Value
+     - Overall Expected Value
+     - Difference
+     - Average Data Count
+   * - (-∞, 1.5]
      - 1.454
      - 1.821
      - -0.367
-     - 43.75
-   * - :math:`(1.5, 3.0]`
+     - 62.5
+   * - (1.5, 3.0]
      - 1.986
      - 1.821
      - +0.165
-     - 31.25
-   * - :math:`(3.0, \infty)`
+     - 62.5
+   * - (3.0, ∞)
      - 2.282
      - 1.821
      - +0.461
-     - 25
+     - 37.5
 
-Conclusion
-----------
+- **Interval (-∞, 1.5]:**
 
-By incorporating leaf counts into our calculations, we follow the treemind algorithm more precisely. The average data counts help us understand the distribution of data across the intervals and ensure that each tree's contribution is weighted appropriately.
+  - **Difference:** -0.367 (negative contribution; below the overall model expectation).
+  - **Interpretation:** Feature_2 in this range reduces the model's output compared to the average.
 
-- In the interval :math:`(-\infty, 1.5]`, the expected value is lower than the overall expected value, indicating that **feature_2** has a negative contribution in this range.
-- In the interval :math:`(1.5, 3.0]`, the expected value is slightly higher than the overall expected value, showing a positive contribution.
-- In the interval :math:`(3.0, \infty)`, the expected value is significantly higher, suggesting that higher values of **feature_2** greatly increase the model's prediction.
+- **Interval (1.5, 3.0]:**
 
-By calculating both the expected values and average data counts, we gain a comprehensive understanding of how **feature_2** influences the model's predictions across different ranges of data. This detailed analysis allows us to quantify the marginal effect of features accurately, adhering closely to the treemind algorithm's methodology.
+  - **Difference:** +0.165 (moderate positive contribution).
+  - **Interpretation:** Feature_2 in this range slightly increases the model's output compared to the average.
 
-The inclusion of leaf counts and average data counts ensures that our calculations reflect the true impact of each feature, weighted by the number of data points in each leaf. This approach minimizes noise and provides a clear picture of feature contributions within specific intervals.
+- **Interval (3.0, ∞):**
+
+  - **Difference:** +0.461 (strong positive contribution).
+  - **Interpretation:** Feature_2 in this range significantly boosts the model's output compared to the average.
+
 
 Additional Notes
 -----------------
