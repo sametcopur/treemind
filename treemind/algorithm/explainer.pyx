@@ -34,7 +34,7 @@ cdef class Explainer:
 
     def __call__(self, model):
         if not hasattr(model, '__module__'):
-            raise ValueError("The provided model is neither a LightGBM nor an XGBoost model. Please provide a supported model type.")
+            raise ValueError("The provided model isn't a LightGBM, XGBoost or CatBoost model. Please provide a supported model type.")
 
         module_name = model.__module__
 
@@ -44,6 +44,10 @@ cdef class Explainer:
                 self.model = model.booster_
             else:
                 self.model = model
+
+            if self.model._Booster__num_class != 1:
+                raise ValueError("Multiclass LightGBM models are not supported yet.")
+            
             self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
             self.model_type = "lightgbm"
@@ -74,7 +78,7 @@ cdef class Explainer:
 
         # Raise an error if the model is not LightGBM or XGBoost
         else:
-            raise ValueError("The provided model is neither a LightGBM nor an XGBoost model. Please provide a supported model type.")
+            raise ValueError("The provided model isn't a LightGBM, XGBoost or CatBoost model. Please provide a supported model type.")
 
     @boundscheck(False)
     @nonecheck(False)

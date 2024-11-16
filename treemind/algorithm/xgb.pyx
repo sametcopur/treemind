@@ -41,6 +41,9 @@ cdef vector[vector[Rule]] analyze_xgboost(object model, int len_col):
     cdef str dump
     cdef dict tree_json, column_dict = (None if model.feature_names is None else dict(zip(model.feature_names, range(len(model.feature_names)))))
 
+    if model.num_boosted_rounds() != len(dumps):
+        raise ValueError("Multiclass XGBoost models are not supported yet.")
+
     for dump in dumps:
         tree_json = json.loads(dump)
 
