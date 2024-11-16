@@ -1,8 +1,15 @@
 import os
 import sys
 from sphinx.ext import autodoc
+import shutil
 
 project_path = os.path.abspath("../..")
+
+build_dir = os.path.abspath("../../build")  # Adjust path if needed
+if os.path.exists(build_dir):
+    print(f"Cleaning build directory: {build_dir}")
+    shutil.rmtree(build_dir)
+
 sys.path.insert(0, project_path)
 
 project = "treemind"
@@ -34,7 +41,6 @@ html_static_path = ["_static"]
 html_css_files = [
     'custom.css',
 ]
-
 
 
 class MockedClassDocumenter(autodoc.ClassDocumenter):
