@@ -42,6 +42,7 @@ html_css_files = [
     'custom.css',
 ]
 
+autodoc_mock_imports = ['treemind']
 
 class MockedClassDocumenter(autodoc.ClassDocumenter):
     def add_line(self, line: str, source: str, *lineno: int) -> None:
