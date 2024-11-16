@@ -1,10 +1,23 @@
 import os
-import sys
-from sphinx.ext import autodoc
+import glob
 
-# Proje yolunu kontrol etmek için çıktılar ekleyelim
-print(f"Current working directory (cwd): {os.getcwd()}")  # Çalışma dizini
-print(f"sys.path: {sys.path}")  # Python'un yükleme yolları
+# Kök dizinini belirleyin (en üst dizine kadar çıkmak için ../../../../ kullanıyoruz)
+project_root = os.path.abspath('../../../../')
+
+# Tüm Python dosyalarını arayın
+python_files = glob.glob(os.path.join(project_root, '**', '*.py'), recursive=True)
+
+# Bulunan dosyaları yazdırın
+print(f"Found Python files: {python_files}")
+
+# Eğer bir 'treemind' klasörü içeriyorsa onun bulunduğu yolu ekleyin
+for py_file in python_files:
+    if 'treemind' in py_file:
+        treemind_path = os.path.dirname(py_file)
+        print(f"'treemind' module found at: {treemind_path}")
+        break
+else:
+    print("No 'treemind' module found.")
 
 # Projenizin kök dizinini ekleyin
 project_path = os.path.abspath("../..")
