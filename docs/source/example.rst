@@ -1,5 +1,5 @@
-Setup and Usage
-===============
+Usage
+======
 
 This example demonstrates how to set up and use the ``Explainer`` with a basic ``lightgbm`` model trained on the Breast Cancer dataset. 
 Note that similar configurations can be applied to other models,  ``Explainer`` is also  compatible with ``XGBoost``  and ``CatBoost``.

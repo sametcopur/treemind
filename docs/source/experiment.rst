@@ -1,6 +1,6 @@
 
-Experiment
-============================
+Performance
+============
 
 .. toctree::
    :maxdepth: 2

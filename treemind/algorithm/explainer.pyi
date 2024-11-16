@@ -13,7 +13,10 @@ class Explainer:
 
     def __call__(self, model: Any) -> None:
         """
-        Invokes the Explainer instance with a model to perform analysis.
+        The Explainer class provides methods to analyze and interpret trained models by examining
+        feature dependencies, split points, interaction effects, and predicted values. This class
+        enables detailed inspection of how individual features and their interactions impact model
+        predictions, offering insights into the model's decision-making process.
 
         Parameters
         ----------
@@ -25,30 +28,33 @@ class Explainer:
         None
         """
         ...
-
     def analyze_feature(
         self, columns: Union[int, List[int]], back_data: Optional[ArrayLike] = None
     ) -> pd.DataFrame:
         """
-        Analyzes interactions between multiple features based on the model's decision rules,
-        returning a DataFrame with interaction metrics.
+        Analyzes feature interactions based on the model's decision rules and computes metrics
+        that quantify their combined influence on predictions.
 
         Parameters
         ----------
         columns : int or list[int]
-            Column indice or list of column indices representing features to analyze for interactions.
+            The index or list of indices of the features to analyze for interactions. Each index
+            corresponds to a feature in the input data.
 
-        back_data : Optional[object], default=None
-            Optional data used to update leaf counts in the decision trees. If provided, this
-            data is used to refine the interaction analysis.
+        back_data : Optional[ArrayLike], default=None
+            Optional data for updating the tree's leaf counts dynamically. This data allows for
+            re-calculating interaction metrics based on new or baseline data.
 
         Returns
         -------
         pd.DataFrame
-            A DataFrame containing the interaction analysis metrics:
-            - Lover and upper bound columns for each feature in `columns`
-            - Interaction values, standard deviations, and average leaf counts for each
-            feature pair.
+            A DataFrame containing the interaction analysis results with the following columns:
+            - `feature_X_lower_bound`, `feature_X_upper_bound` (float): Lower and upper bounds
+              for each analyzed feature.
+            - `interaction_value` (float): The calculated metric representing the combined influence
+              of the features.
+            - `std_dev` (float): The standard deviation of the interaction value.
+            - `average_leaf_count` (float): The average count of data points across relevant tree leaves.
         """
         ...
 
@@ -56,56 +62,49 @@ class Explainer:
         self, x: ArrayLike, back_data: Optional[ArrayLike] = None
     ) -> np.ndarray:
         """
-        Analyzes input data to extract row and column-based impact values, with an option to use
-        baseline data for feature impact calculation.
+        Analyzes input data to compute the per-feature impact on predictions. Optionally,
+        calculates feature contributions relative to a baseline dataset.
 
         Parameters
         ----------
         x : ArrayLike
-            Input data for analysis. The data type of `x` should be compatible with the trained model,
-            which can accept any type that matches its input requirements. Note that `x` must be
-            two-dimensional; single-dimensional arrays are not accepted. If input is intended to
-            be row-based, it must have the appropriate shape.
+            Input data for analysis. Must be a 2D array with shape `(n_rows, n_features)`, where
+            each row is a data instance, and each column corresponds to a feature.
 
-        back_data : ArrayLike, optional
-            Baseline data used to calculate impact values. When provided, each feature's effect is
-            computed as the deviation from this baseline value.. If `None`, the function will use 
-            the model's expected output as the reference for impact calculations.
+        back_data : Optional[ArrayLike], default=None
+            Baseline data used for calculating feature impact deviations. If provided, feature
+            contributions are computed as differences from the model's prediction for this baseline.
+            If not provided, the model's overall expected output is used as the reference.
 
         Returns
         -------
         np.ndarray
-            A two-dimensional array where each element represents the impact of a feature in `x` on a
-            specific row, based on either the provided baseline (`back_data`) or the model's output
-            as the reference if `back_data` is `None`. The array shape corresponds to (n_rows, n_features),
-            where each row gives the per-feature impact for a specific instance in `x`, enabling row
-            and column-based impact analysis.
-
+            A 2D array with shape `(n_rows, n_features)` where each element represents the impact
+            of a feature on the prediction for a specific instance in `x`. Rows correspond to data
+            instances, and columns correspond to features.
         """
         ...
 
     def count_node(self, order: int = 2) -> pd.DataFrame:
         """
-        Counts how often combinations of features appear in decision splits across the model's trees.
+        Counts the frequency of feature combinations used in decision splits across all trees
+        in the model.
 
         Parameters
         ----------
-        order : int, default 2
-            Specifies the number of features in each combination to count.
-
-            - If `order=1`, counts how often individual features appear in splits.
-            - If `order=2`, counts how often pairs of features appear together in splits.
-            - For higher values of `order`, counts combinations of the specified number of features.
+        order : int, default=2
+            The number of features in each combination to count:
+            - `order=1`: Counts how often individual features are used in splits.
+            - `order=2`: Counts how often pairs of features appear together in splits.
+            - `order=N`: Counts combinations of `N` features.
 
         Returns
         -------
         pd.DataFrame
-            A DataFrame containing the counts of feature combinations appearing in splits, with the following columns:
-
-            - `column1_index`, `column2_index`, ..., `columnN_index` (int): Indices of the features in the combination,
-              where `N` equals the `order` parameter.
-
-            - `count` (int): Number of times the feature combination appears in splits.
-
+            A DataFrame containing the following columns:
+            - `feature_1_index`, `feature_2_index`, ..., `feature_N_index` (int): Indices of the
+              features in the combination, where `N` equals the `order` parameter.
+            - `count` (int): The number of times this feature combination appears in the splits
+              across all trees.
         """
         ...

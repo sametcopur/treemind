@@ -32,10 +32,10 @@ def bar_plot(
     label_fontsize: float = 12.0,
 ) -> None:
     """
-    Creates a horizontal bar plot illustrating the contribution of each feature
-    in a dataset. This plot highlights the positive and negative contributions
-    distinctly with color-coded bars, providing a clear visual representation
-    of each feature’s impact on a model’s output or a decision-making process.
+    Creates a horizontal bar plot to visualize feature contributions. Positive contributions
+    are displayed in green, and negative contributions in red. If multiple rows are provided
+    in the `values` array, the mean of the absolute values across rows is calculated for each
+    feature and displayed.
 
     Parameters
     ----------
@@ -208,11 +208,10 @@ def feature_plot(
     ylabel: Optional[str] = None,
 ) -> None:
     """
-    Plots the mean, min, and max values of a feature based on tree split points.
-
-    This method takes as input the output DataFrame from the `analyze_feature`
-    method of the `treemind.Explainer` class (`analyze_feature(self, col: int) -> pd.DataFrame`).
-
+    Visualizes feature statistics across ranges defined by tree split points. The plot includes
+    the difference from the mean, optional standard deviation, and the distribution of feature
+    counts for each tree split point range.
+    
     Parameters
     ----------
     df : pd.DataFrame
@@ -425,10 +424,8 @@ def interaction_plot(
     color_bar_label: Optional[str] = None,
 ) -> None:
     """
-    Plots to visualize interactions between two features using model split points.
-
-    This method takes as input the output DataFrame from the `analyze_interaction`
-    method of the `treemind.Explainer` class (`analyze_interaction(self, main_col: int, sub_col: int) -> pd.DataFrame`).
+    Creates a heatmap-style plot to visualize feature interactions. Each rectangle represents 
+    an interaction region, with its color indicating the interaction value.
 
     Parameters
     ----------
@@ -610,7 +607,7 @@ def interaction_scatter_plot(
     color_bar_label: Optional[str] = None,
 ) -> None:
     """
-    Creates a scatter plot based on interaction data and feature values.
+    Creates a scatter plot of feature values with colors representing interaction values.
 
     Parameters
     ----------

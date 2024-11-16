@@ -12,24 +12,16 @@ Install TreeMind via pip:
 
    pip install treemind
 
-Overview
---------
-
-TreeMind simplifies model interpretation by analyzing and visualizing tree structures. With TreeMind, you can explore split points, evaluate feature importance, and calculate predictions based on specific feature intervals. The library supports weighted raw scores and interaction analysis, making it ideal for identifying nuanced patterns within your data.
 
 Key Features
 ------------
 
-1. **Interaction Analysis:** Identifies complex relationships between features by analyzing how they work together to influence predictions.
+1. **Feature Analysis:** Provides statistical analysis on how features behave across different decision splits.
 
-2. **Feature Importance and Split Counting:** Determines how often individual features or feature pairs are used in the decision-making process, highlighting the most influential factors.
+2. **Interaction Analysis:**  Identifies complex relationships between features by analyzing how they work together to influence predictions. The algorithm can analyze interactions up to n features, depending on memory constraints and time limitations.
 
-3. **Detailed Prediction Breakdown:** Analyzes individual predictions to show how features contribute step-by-step to the final output.
+3. **High Performance:** Optimized with Cython for fast execution, even on large models and datasets.
 
-4. **Feature-specific Insights:** Provides statistical analysis on how features behave across different decision splits, including their typical ranges.
+4. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions. 
 
-5. **High Performance:** Optimized with Cython for fast execution, even on large models and datasets.
-
-6. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions.
-
-These features help users interpret ensemble models comprehensively, providing both quantitative insights and visual explanations.
+5. **Compatibility with Popular Frameworks:** Fully compatible with `XGBoost`, `LightGBM` and `CatBoost`, supporting regression and binary classification tasks.
