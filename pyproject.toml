@@ -11,7 +11,7 @@ dependencies = [
 authors = [
     { name = "Samet Copur", email = "sametcopur@yahoo.com" },
 ]
-description = "Ensemble treemind"
+description = "feature and feature interaction analyzer for gradient boosting"
 readme = "README.md"
 license = {text = "BSD 3-Clause License"}
 classifiers = [
