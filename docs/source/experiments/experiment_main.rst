@@ -19,6 +19,10 @@ on the model's predictions under specific conditions. For instance, if the model
 by a target function like ``(x1 - x2)^2``, treemind captures not only ``-2x1x2`` but also the total effect, 
 including ``x1^2`` and ``x2^2``.
 
+
+treemind is exceptionally fast in terms of computational time, particularly excelling in interaction analysis. 
+It can analyze the entire model within seconds.
+
 Experiments
 -----------
 
@@ -43,7 +47,7 @@ Next, feature interactions, such as ``interaction_0_1``, were created by combini
 The target variable was then generated using a combination of these components. You can check how the target was created at the beginning of each experiment.
 
 Value Adjustment
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 The adjusted values were computed to ensure that comparisons between Treemind and SHAP analyses are both fair and meaningful. 
 By centering the predictions and target function around their respective means, we isolate the relative contributions.

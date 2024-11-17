@@ -28,19 +28,19 @@ feature_0
 
 **Function plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_0_real.png
+.. image:: ../_static/experiments/experiment_2/feature_0_real.png
    :alt: Contribution of feature 0
    :width: 600px
 
 **treemind plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_0_treemind.png
+.. image:: ../_static/experiments/experiment_2/feature_0_treemind.png
    :alt: treemind's extracted values for feature 0
    :width: 600px
 
 **SHAP plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_0_shap.png
+.. image:: ../_static/experiments/experiment_2/feature_0_shap.png
    :alt: SHAP values for feature 0
    :width: 600px
 
@@ -49,19 +49,19 @@ feature_1
 
 **Function plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_1_real.png
+.. image:: ../_static/experiments/experiment_2/feature_1_real.png
    :alt: Contribution of feature 1
    :width: 600px
 
 **treemind plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_1_treemind.png
+.. image:: ../_static/experiments/experiment_2/feature_1_treemind.png
    :alt: treemind's extracted values for feature 1
    :width: 600px
 
 **SHAP plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_1_shap.png
+.. image:: ../_static/experiments/experiment_2/feature_1_shap.png
    :alt: SHAP values for feature 1
    :width: 600px
 
@@ -70,19 +70,19 @@ feature_2
 
 **Function plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_2_real.png
+.. image:: ../_static/experiments/experiment_2/feature_2_real.png
    :alt: Contribution of feature 2
    :width: 600px
 
 **treemind plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_2_treemind.png
+.. image:: ../_static/experiments/experiment_2/feature_2_treemind.png
    :alt: treemind's extracted values for feature 2
    :width: 600px
 
 **SHAP plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_2_shap.png
+.. image:: ../_static/experiments/experiment_2/feature_2_shap.png
    :alt: SHAP values for feature 2
    :width: 600px
 
@@ -91,19 +91,19 @@ feature_3
 
 **Function plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_3_real.png
+.. image:: ../_static/experiments/experiment_2/feature_3_real.png
    :alt: Contribution of feature 3
    :width: 600px
 
 **treemind plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_3_treemind.png
+.. image:: ../_static/experiments/experiment_2/feature_3_treemind.png
    :alt: treemind's extracted values for feature 3
    :width: 600px
 
 **SHAP plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_3_shap.png
+.. image:: ../_static/experiments/experiment_2/feature_3_shap.png
    :alt: SHAP values for feature 3
    :width: 600px
 
@@ -112,19 +112,19 @@ feature_4
 
 **Function plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_4_real.png
+.. image:: ../_static/experiments/experiment_2/feature_4_real.png
    :alt: Contribution of feature 4
    :width: 600px
 
 **treemind plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_4_treemind.png
+.. image:: ../_static/experiments/experiment_2/feature_4_treemind.png
    :alt: treemind's extracted values for feature 4
    :width: 600px
 
 **SHAP plot:**
 
-.. image:: ../_static/experiments/experiment_0/feature_4_shap.png
+.. image:: ../_static/experiments/experiment_2/feature_4_shap.png
    :alt: SHAP values for feature 4
    :width: 600px
 
@@ -133,19 +133,19 @@ feature_5
 
 **Function plot:** 
 
-.. image:: ../_static/experiments/experiment_0/feature_5_real.png  
+.. image:: ../_static/experiments/experiment_2/feature_5_real.png  
    :alt: Contribution of feature 5  
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_5_treemind.png  
+.. image:: ../_static/experiments/experiment_2/feature_5_treemind.png  
    :alt: treemind's extracted values for feature 5  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_5_shap.png  
+.. image:: ../_static/experiments/experiment_2/feature_5_shap.png  
    :alt: SHAP values for feature 5  
    :width: 600px  
 
@@ -155,19 +155,19 @@ feature_6
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_6_real.png  
+.. image:: ../_static/experiments/experiment_2/feature_6_real.png  
    :alt: Contribution of feature 6  
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_6_treemind.png  
+.. image:: ../_static/experiments/experiment_2/feature_6_treemind.png  
    :alt: treemind's extracted values for feature 6  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_6_shap.png  
+.. image:: ../_static/experiments/experiment_2/feature_6_shap.png  
    :alt: SHAP values for feature 6  
    :width: 600px  
 
@@ -177,19 +177,19 @@ feature_7
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_7_real.png  
+.. image:: ../_static/experiments/experiment_2/feature_7_real.png  
    :alt: Contribution of feature 7  
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_7_treemind.png  
+.. image:: ../_static/experiments/experiment_2/feature_7_treemind.png  
    :alt: treemind values for feature 7  
    :width: 600px 
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/feature_7_shap.png  
+.. image:: ../_static/experiments/experiment_2/feature_7_shap.png  
    :alt: SHAP values for feature 7  
    :width: 600px  
 
@@ -202,29 +202,29 @@ feature_0 - feature_1
 
 **Prediction plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_0_1_pred.png  
+.. image:: ../_static/experiments/experiment_2/interaction_0_1_pred.png  
    :alt: Prediction values between feature 0 and feature 1
    :width: 600px  
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_0_1_real_1.png  
+.. image:: ../_static/experiments/experiment_2/interaction_0_1_real_1.png  
    :alt: Actual interaction values between feature 0 and feature 1
    :width: 600px  
 
-.. image:: ../_static/experiments/experiment_0/interaction_0_1_real_2.png  
+.. image:: ../_static/experiments/experiment_2/interaction_0_1_real_2.png  
    :alt: Actual interaction values between feature 0 and feature 1
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_0_1_treemind.png  
+.. image:: ../_static/experiments/experiment_2/interaction_0_1_treemind.png  
    :alt: treemind interaction values between feature 0 and feature 1
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_0_1_shap.png  
+.. image:: ../_static/experiments/experiment_2/interaction_0_1_shap.png  
    :alt: SHAP interaction values between feature 0 and feature 1
    :width: 600px  
 
@@ -233,31 +233,31 @@ feature_2 - feature_3
 
 **Prediction plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_2_3_pred.png  
+.. image:: ../_static/experiments/experiment_2/interaction_2_3_pred.png  
    :alt: Prediction values between feature 2 and feature 3
    :width: 600px  
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_2_3_real_1.png  
+.. image:: ../_static/experiments/experiment_2/interaction_2_3_real_1.png  
    :alt: Actual interaction values between feature 2 and feature 3  
    :width: 600px  
 
 
-.. image:: ../_static/experiments/experiment_0/interaction_2_3_real_2.png  
+.. image:: ../_static/experiments/experiment_2/interaction_2_3_real_2.png  
    :alt: Actual interaction values between feature 2 and feature 3  
    :width: 600px  
 
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_2_3_treemind.png  
+.. image:: ../_static/experiments/experiment_2/interaction_2_3_treemind.png  
    :alt: treemind interaction values between feature 2 and feature 3  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_2_3_shap.png  
+.. image:: ../_static/experiments/experiment_2/interaction_2_3_shap.png  
    :alt: SHAP interaction values between feature 2 and feature 3  
    :width: 600px  
 
@@ -266,30 +266,30 @@ feature_4 - feature_5
 
 **Prediction plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_4_5_pred.png  
+.. image:: ../_static/experiments/experiment_2/interaction_4_5_pred.png  
    :alt: Prediction values between feature 4 and feature 5
    :width: 600px  
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_4_5_real_1.png  
+.. image:: ../_static/experiments/experiment_2/interaction_4_5_real_1.png  
    :alt: Actual interaction values between feature 4 and feature 5  
    :width: 600px  
 
-.. image:: ../_static/experiments/experiment_0/interaction_4_5_real_2.png  
+.. image:: ../_static/experiments/experiment_2/interaction_4_5_real_2.png  
    :alt: Actual interaction values between feature 4 and feature 5  
    :width: 600px  
 
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_4_5_treemind.png  
+.. image:: ../_static/experiments/experiment_2/interaction_4_5_treemind.png  
    :alt: treemind interaction values between feature 4 and feature 5  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_4_5_shap.png  
+.. image:: ../_static/experiments/experiment_2/interaction_4_5_shap.png  
    :alt: SHAP interaction values between feature 4 and feature 5  
    :width: 600px  
 
@@ -298,29 +298,29 @@ feature_6 - feature_7
 
 **Prediction plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_6_7_pred.png  
+.. image:: ../_static/experiments/experiment_2/interaction_6_7_pred.png  
    :alt: Prediction values between feature 6 and feature 7
    :width: 600px  
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_6_7_real_1.png  
+.. image:: ../_static/experiments/experiment_2/interaction_6_7_real_1.png  
    :alt: Actual interaction values between feature 6 and feature 7  
    :width: 600px  
 
-.. image:: ../_static/experiments/experiment_0/interaction_6_7_real_2.png  
+.. image:: ../_static/experiments/experiment_2/interaction_6_7_real_2.png  
    :alt: Actual interaction values between feature 6 and feature 7
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_6_7_treemind.png  
+.. image:: ../_static/experiments/experiment_2/interaction_6_7_treemind.png  
    :alt: treemind interaction values between feature 6 and feature 7  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_6_7_shap.png  
+.. image:: ../_static/experiments/experiment_2/interaction_6_7_shap.png  
    :alt: SHAP interaction values between feature 6 and feature 7  
    :width: 600px  
 
@@ -329,28 +329,28 @@ feature_7 - feature_8
 
 **Prediction plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_7_8_pred.png  
+.. image:: ../_static/experiments/experiment_2/interaction_7_8_pred.png  
    :alt: Prediction values between feature 7 and feature 8
    :width: 600px  
 
 **Function plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_7_8_real_1.png  
+.. image:: ../_static/experiments/experiment_2/interaction_7_8_real_1.png  
    :alt: Actual interaction values between feature 7 and feature 8
    :width: 600px  
 
-.. image:: ../_static/experiments/experiment_0/interaction_7_8_real_2.png  
+.. image:: ../_static/experiments/experiment_2/interaction_7_8_real_2.png  
    :alt: Actual interaction values between feature 7 and feature 8  
    :width: 600px  
 
 **treemind plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_7_8_treemind.png  
+.. image:: ../_static/experiments/experiment_2/interaction_7_8_treemind.png  
    :alt: treemind interaction values between feature 7 and feature 8  
    :width: 600px  
 
 **SHAP plot:**  
 
-.. image:: ../_static/experiments/experiment_0/interaction_7_8_shap.png  
+.. image:: ../_static/experiments/experiment_2/interaction_7_8_shap.png  
    :alt: SHAP interaction values between feature 7 and feature 8  
    :width: 600px

@@ -17,7 +17,7 @@ def feature_plot(
     show_min_max: bool = False,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
-    title: str | None = None,
+    title: str | None = "treemind",
     xlabel: str | None = None,
     ylabel: str | None = None,
 ) -> None:
@@ -199,7 +199,7 @@ def interaction_scatter_plot(
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsizes: float = 14.0,
-    title: str | None = None,
+    title: str | None = "treemind plot",
     xlabel: str | None = None,
     ylabel: str | None = None,
     color_bar_label: str | None = None,
@@ -292,9 +292,10 @@ def interaction_scatter_plot(
     )
 
     # Set title
-    ax.set_title(
-        "Interaction Scatter Plot" if title is None else title, fontsize=title_fontsize
-    )
+    if title is not None:
+        ax.set_title(
+            title, fontsize=title_fontsize
+        )
 
     plt.tight_layout()
     plt.show()
