@@ -61,7 +61,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
 
             # If class_params exist and indicate multi-class, raise an error
             if num_classes > 2:
-                raise ValueError("Multiclass CatBoost models are not supported yet.")
+                raise ValueError("Multiclass catboost models are not supported yet.")
 
         # At this point, we are assured that it's a regression model
         # Adjust leaf_values for regression

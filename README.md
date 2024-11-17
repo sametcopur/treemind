@@ -35,7 +35,7 @@ pip install treemind
 
 4. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions. 
 
-5. **Compatibility with Popular Frameworks:** Fully compatible with `XGBoost`, `LightGBM` and `CatBoost`, supporting regression and binary classification tasks.
+5. **Compatibility with Popular Frameworks:** Fully compatible with `xgboost`, `lightgbm` and `catboost`, supporting regression and binary classification tasks.
 ---
 
 ## Usage

@@ -12,7 +12,7 @@ Below is an example of how to use the `feature_plot` function:
     from treemind import Explainer
     from treemind.plot import feature_plot
 
-    # Assume 'model' is a trained LightGBM or XGBoost or CatBoost model object
+    # Assume 'model' is a trained lightgbm or xgboost or catboost model object
 
     # Create an instance of the Explainer
     explainer = Explainer()
@@ -41,7 +41,7 @@ Below is an example of how to use the `interaction_plot` function:
     from treemind import Explainer
     from treemind.plot import interaction_plot
 
-    # Assume 'model' is a trained LightGBM or XGBoost or CatBoost model object
+    # Assume 'model' is a trained lightgbm or xgboost or catboost model object
 
     # Create an instance of the Explainer
     explainer = Explainer()
@@ -70,7 +70,7 @@ Below is an example of how to use the `interaction_scatter_plot` function:
     from treemind import Explainer
     from treemind.plot import interaction_scatter_plot
 
-    # Assume 'model' is a trained LightGBM or XGBoost or CatBoost model object
+    # Assume 'model' is a trained lightgbm or xgboost or catboost model object
 
     # Create an instance of the Explainer
     explainer = Explainer()

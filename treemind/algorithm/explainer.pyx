@@ -32,11 +32,11 @@ cdef class Explainer:
 
     def __call__(self, model):
         if not hasattr(model, '__module__'):
-            raise ValueError("The provided model isn't a LightGBM, XGBoost or CatBoost model. Please provide a supported model type.")
+            raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
 
         module_name = model.__module__
 
-        # Handle LightGBM models
+        # Handle lightgbm models
         if "lightgbm" in module_name: 
             if "basic" not in module_name:
                 self.model = model.booster_
@@ -44,14 +44,14 @@ cdef class Explainer:
                 self.model = model
 
             if self.model._Booster__num_class != 1:
-                raise ValueError("Multiclass LightGBM models are not supported yet.")
+                raise ValueError("Multiclass lightgbm models are not supported yet.")
             
             self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
             self.model_type = "lightgbm"
             self.trees = analyze_lightgbm(self.model, self.len_col)
 
-        # Handle XGBoost models
+        # Handle xgboost models
         elif "xgboost" in module_name:
             if "core" not in module_name:
                 self.model = model.get_booster()
@@ -75,9 +75,9 @@ cdef class Explainer:
             self.trees = analyze_catboost(self.model, self.len_col)
             self.model_type = "catboost"
 
-        # Raise an error if the model is not LightGBM or XGBoost
+        # Raise an error if the model is not lightgbm or xgboost
         else:
-            raise ValueError("The provided model isn't a LightGBM, XGBoost or CatBoost model. Please provide a supported model type.")
+            raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
 
     @boundscheck(False)
     @nonecheck(False)
