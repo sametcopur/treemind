@@ -2,8 +2,6 @@ from libcpp.vector cimport vector
 
 from libc.math cimport INFINITY
 
-import numpy as np
-cimport numpy as cnp 
 import pandas as pd
 
 from libcpp.pair cimport pair
@@ -11,9 +9,9 @@ from libcpp.pair cimport pair
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
 from .rule cimport update_leaf_counts
-from .utils cimport add_lower_bound, _expected_value, _analyze_feature
+from .utils cimport add_lower_bound, _analyze_feature
 from .lgb cimport analyze_lightgbm
-from .xgb cimport analyze_xgboost, convert_d_matrix, xgb_leaf_correction
+from .xgb cimport analyze_xgboost
 from .cb cimport analyze_catboost
 
 from collections import Counter
@@ -171,82 +169,6 @@ cdef class Explainer:
             add_lower_bound(df, i * 2, col_name)
         
         return df
-
-
-    @boundscheck(False)
-    @nonecheck(False)
-    @wraparound(False)
-    @initializedcheck(False)
-    @overflowcheck(False)
-    @cdivision(True)
-    @infer_types(True)
-    cpdef cnp.ndarray[cnp.float64_t, ndim=2] analyze_data(self, object x, object back_data = None):
-        if self.len_col == -1:
-            raise ValueError("Explainer(model) must be called before this operation.")
-
-        cdef:
-            double  ensemble_sum 
-            size_t i, j, num_trees, tree_size
-            double rule_val, n_count, point, expected_value
-            vector[vector[Rule]] trees = self.trees
-
-            int[:,:] x_ 
-            int[:] tree_loc 
-
-            int row, col, num_rows 
-
-            vector[double] expected_values
-
-            const Rule* rule_ptr
-            const vector[Rule]* tree_ptr
-        
-            double[:,:] values 
-            object x_dmatrix 
-
-        if self.model_type == "xgboost":
-            x_dmatrix = convert_d_matrix(x)
-            x_ = self.model.predict(x_dmatrix, pred_leaf=True).astype(np.int32)
-            x_ = xgb_leaf_correction(trees, x_)
-
-        elif self.model_type == "catboost":
-            x_ = self.model.calc_leaf_indexes(x).astype(np.int32)
-
-        else:
-            x_ = self.model.predict(x, pred_leaf=True).astype(np.int32)
-
-        num_rows = x_.shape[0]
-        values = np.zeros((num_rows, self.len_col), dtype=np.float64)
-
-        if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
-
-        num_trees = trees.size()
-
-        expected_values.resize(self.len_col)
-        for col in range(self.len_col):
-            expected_values[col] = _expected_value(col, trees)
-
-        with nogil:
-            for col in range(self.len_col):
-                expected_value = expected_values[col]
-                
-                for row in range(num_rows):
-                    tree_loc = x_[row, :]
-                    ensemble_sum = 0.0
-
-                    for i in range(num_trees):
-                        tree_ptr = &trees[i]
-                        rule_ptr = &(tree_ptr[0][tree_loc[i]])
-
-                        if not ((rule_ptr.lbs[col] == -INFINITY )and (rule_ptr.ubs[col] == INFINITY)):
-                            ensemble_sum += rule_ptr.value
-
-                    
-                    if ensemble_sum != 0.0:
-                        values[row, col] = ensemble_sum - expected_value
-
-        return np.asarray(values)
-
 
 
     @boundscheck(False)

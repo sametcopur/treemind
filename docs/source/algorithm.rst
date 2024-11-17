@@ -129,56 +129,7 @@ This formula ensures that the model's behavior is correctly aggregated across al
 
 The forward steps remain consistent as described, and this approach can be extended to accommodate additional features.
 
-
-7. Instance-based Feature Explanations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The algorithm calculates feature contributions for specific instances by analyzing the trees where the feature appears as a split 
-node in the instance's prediction path.
-
-1. **Expected Value Calculation Per Tree**
-
-   For a given feature :math:`x` and tree :math:`t`:
-
-   - Let :math:`L_{t,i}` be the leaf count for leaf :math:`i` in tree :math:`t`
-   - Let :math:`V_{t,i}` be the prediction value for leaf :math:`i` in tree :math:`t`
-   - Let :math:`D_{x,t}` be the set of all leaves in tree :math:`t` where feature :math:`x` is used as a split node (regardless of ranges)
-
-   The expected value for feature :math:`x` in tree :math:`t` is:
-
-   .. math::
-
-      E[f_t(x)] = \frac{\sum_{i \in D_{x,t}} L_{t,i} \cdot V_{t,i}}{\sum_{i \in D_{x,t}} L_{t,i}}
-
-2. **Total Expected Value**
-
-   The total expected value for feature :math:`x` across all trees is simply the sum of individual tree expectations:
-
-   .. math::
-
-      E[F(x)] = \sum_{t=1}^T E[f_t(x)]
-
-3. **Instance-Specific Feature Contribution**
-
-   For a specific instance :math:`i` and feature :math:`x`:
-   
-   - For each tree :math:`t`, let :math:`P_{t,i}` be the leaf reached during prediction
-   - Let :math:`V_{t,i}` be the prediction value of the reached leaf
-   - Let :math:`S_{t,x}` be the set of trees where feature :math:`x` is used as a split node in the decision path leading to the leaf.
-
-   The contribution for instance :math:`i` and feature :math:`x` is:
-
-   .. math::
-
-      \text{Contribution}_{i,x} = \sum_{t \in S_{t,x}} V_{t,i}
-
-   If feature :math:`x` is not used as a split node in tree :math:`t`:
-
-   .. math::
-
-      \text{Contribution}_{i,x} = 0
-
-8. Back Data Integration
+7. Back Data Integration
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The treemind algorithm allows for the integration of back data, which dynamically updates the leaf counts to reflect the new data while 
@@ -197,7 +148,6 @@ where:
 - :math:`B`: Set of back data instances
 - :math:`I(d \text{ falls into leaf } i)`: Indicator function (1 if instance :math:`d` falls into leaf :math:`i`, 0 otherwise)
 
-This formula completely replaces the original leaf counts with counts derived from the back data.
 
 Example Application
 -------------------

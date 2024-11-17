@@ -58,33 +58,6 @@ class Explainer:
         """
         ...
 
-    def analyze_data(
-        self, x: ArrayLike, back_data: Optional[ArrayLike] = None
-    ) -> np.ndarray:
-        """
-        Analyzes input data to compute the per-feature impact on predictions. Optionally,
-        calculates feature contributions relative to a baseline dataset.
-
-        Parameters
-        ----------
-        x : ArrayLike
-            Input data for analysis. Must be a 2D array with shape `(n_rows, n_features)`, where
-            each row is a data instance, and each column corresponds to a feature.
-
-        back_data : Optional[ArrayLike], default=None
-            Baseline data used for calculating feature impact deviations. If provided, feature
-            contributions are computed as differences from the model's prediction for this baseline.
-            If not provided, the model's overall expected output is used as the reference.
-
-        Returns
-        -------
-        np.ndarray
-            A 2D array with shape `(n_rows, n_features)` where each element represents the impact
-            of a feature on the prediction for a specific instance in `x`. Rows correspond to data
-            instances, and columns correspond to features.
-        """
-        ...
-
     def count_node(self, order: int = 2) -> pd.DataFrame:
         """
         Counts the frequency of feature combinations used in decision splits across all trees

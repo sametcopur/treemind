@@ -10,6 +10,5 @@ cdef class Explainer:
     cdef list columns
     cdef str model_type
 
-    cpdef cnp.ndarray[cnp.float64_t, ndim=2] analyze_data(self, object x, object back_data = ?)
     cpdef object count_node(self, int order=?)
     cpdef object analyze_feature(self, object columns, object back_data = ?)

@@ -18,7 +18,6 @@ Setup Code
 
     from treemind import Explainer
     from treemind.plot import (
-        bar_plot,
         feature_plot,
         interaction_plot,
         interaction_scatter_plot,
@@ -164,39 +163,3 @@ To visualize interactions between two features on given data by ``analyze_intera
     :width: 80%
 
 The ``interaction_scatter_plot`` function visualizes feature interactions reflected on given data.
-
-
-Analyzing Feature Contributions on Data
----------------------------------------
-The ``analyze_data`` function in the ``Explainer`` takes input data and computes feature contributions toward a target prediction. This function 
-allows you to analyze feature contributions for a single data point (row) or across the entire dataset, providing insights into the effect 
-of each feature on the model's predictions in both classification and regression tasks.
-
-
-For analyzing contributions across the entire dataset ``X``, use:
-
-.. code-block:: python
-
-    values = explainer.analyze_data(X)
-
-To inspect feature contributions for a specific row, e.g., ``X.iloc[5, :]``, use the following code:
-
-.. code-block:: python
-
-    values = explainer.analyze_data(X.iloc[[5], :])
-
-To visualize the feature contributions using ``bar_plot``:
-
-.. code-block:: python
-
-    bar_plot(values, columns=X.columns)
-
-.. image:: _static/example/bar_plot.png
-    :alt: Bar plot visualizing feature contributions
-    :align: center
-    :width: 80%
-
-This bar plot presents each feature's contribution, showing the positive or negative impact 
-on the prediction. If column names (``columns``) are not specified, ``bar_plot`` will generate 
-default names based on feature indices. If values contains more than single row, then results will
-be mean of their absolute values.

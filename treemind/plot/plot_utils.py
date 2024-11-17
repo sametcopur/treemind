@@ -1,5 +1,4 @@
 from typing import Tuple, Optional, Union
-from numpy.typing import ArrayLike
 
 import pandas as pd
 import numpy as np
@@ -34,86 +33,6 @@ def _check_columns(columns):
     # Check if all elements in columns are strings
     if not all(isinstance(col, str) for col in arr):
         raise ValueError("All elements in `columns` must be strings.")
-
-
-def _validate_bar_plot_parameters(
-    values: np.ndarray,
-    columns: ArrayLike,
-    max_col: Optional[int],
-    figsize: Tuple[float, float],
-    title: Optional[str],
-    title_fontsize: float,
-    label_fontsize: float,
-) -> None:
-    """
-    Validates parameters for the bar_plot function.
-
-    Parameters
-    ----------
-    values : np.ndarray
-        An array of contribution values for each feature.
-    raw_score : float
-        The raw score associated with the contributions.
-    columns : list, optional
-        A list of column names for labeling. If None, column indices will be used.
-    max_col : int, optional
-        The maximum number of features to display in the plot.
-    figsize : Tuple[int, int]
-        The figure size for the plot.
-    title : str, optional
-        Custom title for the plot. If None, a default title will be used.
-    title_fontsize : float
-        Font size for the title.
-    label_fontsize : float
-        Font size for the y-axis labels.
-
-    Returns
-    -------
-    None
-        Raises an error if any validation check fails.
-    """
-
-    # Check values
-    if not isinstance(values, np.ndarray):
-        raise TypeError("The 'values' parameter must be a numpy.ndarray.")
-
-    if not np.issubdtype(values.dtype, np.number):
-        raise ValueError("All elements in 'values' must be numeric.")
-
-    # Check columns
-    if columns is not None:
-        # Assuming _check_columns is a function defined elsewhere
-        _check_columns(columns)
-
-        if len(columns) != len(values):
-            raise ValueError(
-                "The length of 'columns' must match the length of 'values'."
-            )
-
-    # Check max_col
-    if max_col is not None:
-        if not isinstance(max_col, int) or max_col <= 0:
-            raise ValueError(
-                "The 'max_col' parameter must be a positive integer or None."
-            )
-
-    # Check figsize
-    if not isinstance(figsize, tuple) or len(figsize) != 2:
-        raise TypeError(
-            "The 'figsize' parameter must be a tuple of two numeric values."
-        )
-    if not all(isinstance(dim, (int, float)) for dim in figsize):
-        raise ValueError("Both dimensions in 'figsize' must be numeric.")
-
-    # Check title
-    if title is not None and not isinstance(title, str):
-        raise TypeError("The 'title' parameter must be a string or None.")
-
-    # Check title_fontsize and label_fontsize
-    if not isinstance(title_fontsize, (int, float)) or title_fontsize <= 0:
-        raise ValueError("The 'title_fontsize' must be a positive number.")
-    if not isinstance(label_fontsize, (int, float)) or label_fontsize <= 0:
-        raise ValueError("The 'label_fontsize' must be a positive number.")
 
 
 def _validate_interaction_plot_parameters(
