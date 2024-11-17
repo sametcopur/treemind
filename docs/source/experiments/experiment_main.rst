@@ -1,62 +1,93 @@
 Evaluating treemind's Performance
-==================================
+=================================
 
-treemind represents an experimental approach to feature and feature interaction analysis, developed through practical observations rather 
-than theoretical foundations. Our extensive testing reveals interesting patterns in its behavior that are worth examining in detail.
+treemind is an experimental approach to feature and feature interaction analysis, 
+developed based on practical observations rather than theoretical foundations. 
+Our extensive testing reveals intriguing patterns in its behavior that warrant detailed examination.
 
+The algorithm's performance exhibits variability—even with similarly structured synthetic data, 
+treemind can produce both meaningful and less interpretable results. This variability arises primarily 
+from its reliance on the model's underlying tree structure. In some cases, it successfully isolates 
+the cumulative effects of features, while in others, it produces results that are more challenging to interpret.
 
-The algorithm's performance exhibits considerable variability—even with similarly structured synthetic data, Treemind can produce both 
-meaningful and less interpretable results. This variability primarily stems from its dependence on the underlying tree structure of the 
-model. In some cases, it successfully isolates feature interactions, while in others, it may capture collective effects of features and  
-on the other hand it may isolate nothing. 
+treemind focuses on analyzing how a feature behaves under specific intervals and explains its impact 
+on model predictions. In single-feature analysis, treemind generally aligns closely with results obtained 
+from widely used libraries like SHAP.
 
-Notably, in single-feature analysis, Treemind generally aligns well with results obtained from widely-used libraries like SHAP, demonstrating 
-consistency in this aspect. However, when it comes to analyzing feature interactions, its behavior appears more experimental, as it does not 
-follow a standardized framework. Instead, it reflects the nuances of the tree-based model's partitioning, which can be both an advantage and 
-a challenge depending on the use case.
+When analyzing pairwise feature interactions, treemind examines the cumulative effects of both features 
+on the model's predictions under specific conditions. For instance, if the model's behavior is influenced 
+by a target function like ``(x1 - x2)^2``, treemind captures not only ``-2x1x2`` but also the total effect, 
+including ``x1^2`` and ``x2^2``.
 
-One notable characteristic of *Treemind* is its computational efficiency. When analyzing single-feature effects, it typically produces quick 
-results—a trait it shares with most frameworks, as single-feature analysis is generally computationally lightweight across the board. However,
-when it comes to feature interactions, many frameworks tend to slow down significantly due to the complexity of capturing these relationships.
+Experiments
+-----------
 
-treemind, in contrast, stands out with its exceptional speed in this area. It can analyze highly complex interactions in just a few seconds,
-making it an excellent tool for exploratory analysis where rapid insights into feature relationships are valuable. This remarkable efficiency 
-provides a practical edge, especially in scenarios requiring iterative experimentation or large-scale datasets.
+Data Generation
+^^^^^^^^^^^^^^^^
 
-It's important to note that treemind makes no claims of mathematical guarantees or absolute consistency. Instead, it evolved from practical 
-applications and empirical observations, offering a pragmatic, if sometimes uncertain, approach to understanding feature relationships in 
-tree-based models.
+The datasets used in this analysis were synthetically generated to adhere to specific distributions. Features were labeled as ``feature_0, feature_1, ..., feature_n`` for clarity and ease of reference. 
 
-
-Data Generation Process
--------------------------
-
-The datasets used in this analysis were synthetically generated, adhering to specific distributions. Features were named as ``feature_0, feature_1, ..., feature_n`` to maintain clarity.
-
-Subsequently, transformations, denoted as ``transform_0, transform_1, ..., transform_n``, were applied to these features. These transformations included operations such as conditional statements (e.g., ``where`` conditions), trigonometric functions like ``sin``, or more complex functions. Each transformation utilized only its corresponding feature (e.g., ``transform_0`` was applied solely to ``feature_0``).
-
-Finally, feature interactions, such as ``interaction_0_1``, were constructed using combinations of transformations, e.g., ``interaction_0_1 = function(transform_0, transform_1)``. These interactions could be continuous or discrete depending on the chosen function.
-
-The target variable was generated using the formula:
+To introduce complexity, transformations—denoted as ``transform_0, transform_1, ..., transform_n``—were applied to these features. Each transformation was expressed as a function of its corresponding feature. For example:
 
 .. math::
 
-   \text{target} = (a \cdot \text{transformed_0}) + (b \cdot \text{transformed_1}) + (c \cdot \text{interaction_0_1})
+   \text{transform_i} = f(\text{feature_i})
 
-where ``a``, ``b``, and ``c`` are coefficients. A regression problem was then set up to predict this target.
 
-For single-feature analyses, simple line plots and scatter plots were employed. The x-axis represented feature values, while the y-axis varied depending on the context. For SHAP values, the y-axis displayed the SHAP values; for Treemind, it showed the expected values. In cases involving the true values, the interaction effect of the analyzed feature on the target was highlighted. The values were calculated such that, for example, if ``feature_0`` alone influenced the target alongside ``interaction_0_1``, the expression:
+Next, feature interactions, such as ``interaction_0_1``, were created by combining these transformations. For example:
 
 .. math::
 
-   \text{feature_0 + interaction_0_1} - \text{mean(feature_0 + interaction_0_1)}
+   \text{interaction_i_j} = g(\text{transform_i}, \text{transform_j})
 
-was evaluated to remove the mean offset.
+The target variable was then generated using a combination of these components. You can check how the target was created at the beginning of each experiment.
 
-For pairwise analyses, scatter plots were used with the x and y axes representing feature values and a color bar for the values. Additionally, ``prediction - mean(prediction)`` was considered in pairwise analyses to detect interactions clearly visible in predictions, ensuring the algorithm was not portrayed as overly successful. This approach allowed users to assess interactions critically.
+Value Adjustment
+^^^^^^^^^^^^^^^^^^^^^^^
 
-A notable challenge in pairwise interactions is distinguishing between capturing only ``interaction_0_1`` versus capturing the combined effect of ``transformed_0``, ``transformed_1``, and ``interaction_0_1``. This distinction was explicitly highlighted in the analysis.
+The adjusted values were computed to ensure that comparisons between Treemind and SHAP analyses are both fair and meaningful. 
+By centering the predictions and target function around their respective means, we isolate the relative contributions.
 
-Furthermore, two additional tests were designed to evaluate specific cases. Details of these tests can be found in the experiments section of the provided GitHub repository. 
+For the truth values, the adjustment was applied as follows:
 
-`treemind experiments <https://github.com/sametcopur/treemind/blob/main/examples/>`_
+.. math::
+
+   \text{truth_adjusted} = \text{truth} - \text{mean}(\text{truth})
+
+The adjusted predicted values were included to ensure that Treemind does not achieve over-success by capturing relationships that are already visually evident in the raw predictions. Similarly, for the predicted values:
+
+.. math::
+
+   \text{predicted_adjusted} = \text{predicted} - \text{mean}(\text{predicted})
+
+
+Single-Feature Analysis
+^^^^^^^^^^^^^^^^^^^^^^^
+
+For single-feature analyses, we visualized the results using line and scatter plots:
+
+- The **x-axis** represented feature values.
+- The **y-axis** varied depending on the context:
+
+  - **SHAP values** derived from SHAP-based methods.
+  - **treemind interaction values** as computed by the treemind algorithm.
+  - **Adjusted prediction values** indicating the raw model output.
+  - **Adjusted truth values**, which are the ground truth for the target variable.
+
+Pairwise Interaction Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For pairwise interactions, scatter plots were utilized to visualize the relationship between two interacting features and their cumulative impact on the model's predictions:
+
+- The **x-axis** and **y-axis** represent the values of two interacting features.
+- A **color bar** indicates the effect on predictions:
+
+  - **SHAP interaction values** for SHAP-based analyses.
+  - **treemind interaction values** as computed by treemind.
+  - **Adjusted prediction values** indicating the raw model output.
+  - **Adjusted truth values**, which are the ground truth for the target variable.
+
+For details on the experiment design and target functions used, refer to the experiment setup documentation:
+
+`treemind Experiments <https://github.com/sametcopur/treemind/blob/main/examples/>`_
+ 
