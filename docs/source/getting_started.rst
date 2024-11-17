@@ -7,7 +7,7 @@ within specific intervals and provides powerful tools for analyzing individual f
 Installation
 ------------
 
-Install TreeMind via pip:
+Install treemind via pip:
 
 .. code-block:: bash
 

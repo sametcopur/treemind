@@ -49,7 +49,7 @@ The target variable was then generated using a combination of these components. 
 Value Adjustment
 ^^^^^^^^^^^^^^^^^
 
-The adjusted values were computed to ensure that comparisons between Treemind and SHAP analyses are both fair and meaningful. 
+The adjusted values were computed to ensure that comparisons between truth values and (treemind and shap) analyses are both fair and meaningful. 
 By centering the predictions and target function around their respective means, we isolate the relative contributions.
 
 For the truth values, the adjustment was applied as follows:
@@ -58,7 +58,7 @@ For the truth values, the adjustment was applied as follows:
 
    \text{truth_adjusted} = \text{truth} - \text{mean}(\text{truth})
 
-The adjusted predicted values were included to ensure that Treemind does not achieve over-success by capturing relationships that are already visually evident in the raw predictions. Similarly, for the predicted values:
+The adjusted predicted values were included to ensure that treemind does not achieve over-success by capturing relationships that are already visually evident in the raw predictions. Similarly, for the predicted values:
 
 .. math::
 

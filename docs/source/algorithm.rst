@@ -48,9 +48,6 @@ Before determining :math:`D_t(x)`, we traverse each tree to establish intervals 
    - :math:`(s_{k-1}, s_k]`  
    - :math:`(s_k, \infty)`  
 
-3. **Storing Intervals**  
-   These intervals are stored for use during the matching phase.
-
 **Matching Intervals**
 
 When determining :math:`D_t(x)`, we use the intervals established above. A leaf is included in :math:`D_t(x)` if it satisfies one of the following conditions:

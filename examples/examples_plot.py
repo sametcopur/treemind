@@ -127,7 +127,7 @@ def feature_plot(
     plt.show()
     
     # Functions for plotting real data:
-# - _set_common_style: Applies a consistent visual style to all plots to match the style used by TreeMind.
+# - _set_common_style: Applies a consistent visual style to all plots to match the style used by treemind.
 # - plot_line_chart: Creates a line chart to visualize trends in data over a continuous range.
 # - plot_scatter_chart: Generates a scatter plot to explore relationships between two variables, with a third variable indicated by color.
 
