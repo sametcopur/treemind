@@ -1,7 +1,8 @@
-Getting Started with TreeMind
+Getting Started with treemind
 =============================
 
-TreeMind is a powerful, flexible Python library for interpreting decision tree-based models with ease. It provides intuitive tools for analyzing feature importance, understanding feature interactions, and visualizing decision paths. Built for speed and functionality, TreeMind is optimized for high-performance analysis of complex tree ensembles like gradient boosting and random forests.
+treemind is designed for analyzing gradient boosting models. It simplifies understanding how features influence predictions
+within specific intervals and provides powerful tools for analyzing individual features and their interactions.
 
 Installation
 ------------
@@ -24,4 +25,4 @@ Key Features
 
 4. **Advanced Visualization:** Offers user-friendly plots to visually explain the model's decision-making process and feature interactions. 
 
-5. **Compatibility with Popular Frameworks:** Fully compatible with `XGBoost`, `LightGBM` and `CatBoost`, supporting regression and binary classification tasks.
+5. **Compatibility with Popular Frameworks:** Fully compatible with ``XGBoost``, ``LightGBM`` and ``CatBoost``, supporting regression and binary classification tasks.

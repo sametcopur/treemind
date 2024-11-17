@@ -1,5 +1,5 @@
 # treemind 
-The treemind library is designed to interpret ensemble tree models by breaking down individual trees and analyzing the model's predictions. It explains the model's decision-making process by calculating the expected value of the predictions at each decision point. The treemind library is fully integrated with `LightGBM` and `XGBoost`.
+treemind is designed for analyzing gradient boosting models. It simplifies understanding how features influence predictions within specific intervals and provides powerful tools for analyzing individual features and their interactions.
 
 ---
 ## Algorithm
@@ -88,12 +88,13 @@ explainer.count_node(order=1)
 ```
 
 ```none
-column_index  count
-21            1739
-27            1469
-22            1422
-23            1323
-1             1129
+| column_index | count |
+|--------------|-------|
+| 21           | 1739  |
+| 27           | 1469  |
+| 22           | 1422  |
+| 23           | 1323  |
+| 1            | 1129  |
 ```
 
 To count feature-pair interactions in splits:
@@ -103,12 +104,13 @@ explainer.count_node(order=2)
 ```
 
 ```none
-column1_index  column2_index  count
-21             22             927
-21             23             876
-21             27             852
-1              27             792
-23             27             734
+| column1_index | column2_index | count |
+|---------------|---------------|-------|
+| 21            | 22            | 927   |
+| 21            | 23            | 876   |
+| 21            | 27            | 852   |
+| 1             | 27            | 792   |
+| 23            | 27            | 734   |
 ```
 
 ### Analyzing Specific Feature
@@ -122,12 +124,13 @@ feature_df = explainer.analyze_feature(21)
 ```
 
 ```none
-worst_texture_lb  worst_texture_ub   mean        min       max
--inf              15.470             8.535704   -3.632846   10.822743
-15.470            17.710             8.536465   -3.632846   10.822743
-17.710            17.825             8.557027   -3.632846   10.822743
-17.825            18.460             8.553872   -3.632846   10.822743
-18.460            19.415             8.429304   -3.849259   10.822743
+| worst_texture_lb | Worst_texture_ub |   value   |   std    |  count  |
+|------------------|------------------|-----------|----------|---------|
+| -inf             | 18.460           | 3.185128  | 8.479232 | 402.24  |
+| 18.460           | 19.300           | 3.160656  | 8.519873 | 402.39  |
+| 19.300           | 19.415           | 3.119814  | 8.489262 | 401.85  |
+| 19.415           | 20.225           | 3.101601  | 8.490439 | 402.55  |
+| 20.225           | 20.360           | 2.772929  | 8.711773 | 433.16  |
 ```
 
 To visualize feature statistics calculated by `analyze_feature` using `feature_plot`:
@@ -151,12 +154,14 @@ df = explainer.analyze_feature([21, 22])
 Example output:
 
 ```none
-worst_texture_lb  worst_texture_ub  worst_perimeter_lb  worst_perimeter_ub   value
--inf              17.710            -inf                71.06                6.111742
-17.710            17.825            -inf                71.06                6.126359
-17.825            18.460            -inf                71.06                6.125672
-18.460            19.415            -inf                71.06                6.125672
-19.415            20.225            -inf                71.06                6.125672
+| worst_texture_lb | worst_texture_ub | worst_concave_points_lb | worst_concave_points_ub |   value   |   std    |  count  |
+|------------------|------------------|--------------------------|------------------------|-----------|----------|---------|
+| -inf             | 18.46            | -inf                     | 0.058860               | 4.929324  | 7.679424 | 355.40  |
+| -inf             | 18.46            | 0.058860                 | 0.059630               | 4.928594  | 7.679772 | 355.34  |
+| -inf             | 18.46            | 0.059630                 | 0.065540               | 4.923128  | 7.679783 | 355.03  |
+| -inf             | 18.46            | 0.065540                 | 0.069320               | 4.912888  | 7.682064 | 354.70  |
+| -inf             | 18.46            | 0.069320                 | 0.069775               | 4.912888  | 7.682064 | 354.70  |
+
 ```
 
 To visualize interactions between two features calculated by `analyze_interaction` using `interaction_plot`:

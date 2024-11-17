@@ -79,7 +79,6 @@ cdef tuple[vector[vector[double]],
         # Statistics vectors
         vector[double] average_counts
         vector[double] mean_values
-        vector[double] total_tree_counts
         vector[double] ensemble_std
 
         # Per-tree temporary storage
@@ -101,7 +100,6 @@ cdef tuple[vector[vector[double]],
         cdef bint done
 
         vector[vector[double]] combined_points
-        size_t total_points
         size_t col_idx, remaining, point_idx, split_size
 
     # Initialize split points and calculate max_size
@@ -114,7 +112,6 @@ cdef tuple[vector[vector[double]],
     # Initialize result vectors
     average_counts = vector[double](max_size, 0.0)
     mean_values = vector[double](max_size, 0.0)
-    total_tree_counts = vector[double](max_size, 0.0)
     ensemble_std = vector[double](max_size, 0.0)
 
     # Initialize temporary vectors
@@ -184,7 +181,6 @@ cdef tuple[vector[vector[double]],
                 count = tree_count[idx]
 
                 if count > 0:
-                    total_tree_counts[idx] += 1.0
                     average_counts[idx] += count
                     mean = tree_sum[idx] / count
 
@@ -199,15 +195,12 @@ cdef tuple[vector[vector[double]],
 
         # Finalize aggregate statistics
         for idx in range(max_size):
-            count = total_tree_counts[idx]
-            if count > 0:
-                average_counts[idx] /= count
+            average_counts[idx] /= num_trees
 
     # Prepare output points
-    total_points = max_size
-    combined_points = vector[vector[double]](total_points, vector[double](num_cols))
+    combined_points = vector[vector[double]](max_size, vector[double](num_cols))
     
-    for idx in range(total_points):
+    for idx in range(max_size):
         remaining = idx
         for k in reversed(range(num_cols)):
             point_idx = remaining % sizes[k]
