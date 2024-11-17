@@ -3,13 +3,8 @@
 treemind Algorithm
 ==================
 
-This document provides a comprehensive explanation of the treemind algorithm, detailing its theoretical foundation and practical application through an example.
-
-Algorithm Explanation
----------------------
-
 1. Prediction Phase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 - Each tree :math:`t \in \{1, 2, ..., T\}` operates independently during the prediction phase.
 - Each tree produces predictions in the form :math:`f_t(x)`.
@@ -23,7 +18,7 @@ This assumption implies that each tree contributes independently to the final pr
 
 
 2. Leaf Statistics for Each Split Node
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------
 
 Let :math:`S_t` denote the set of trees in the ensemble.
 
@@ -33,26 +28,42 @@ Let :math:`S_t` denote the set of trees in the ensemble.
   - :math:`V_{t,i}`: Leaf value—the prediction output of leaf :math:`i` in tree :math:`t`.
   - :math:`D_t(x)`: Set of leaves in tree :math:`t` where **the** :math:`x` **node matches the analysis interval**.
 
-**Matching Intervals:**
+**Establishing Intervals**
 
-When determining :math:`D_t(x)`, we must ensure that the intervals of feature :math:`x` represented by the nodes align with the interval we are analyzing. For instance, if the split points in the ensemble for feature :math:`x` are at 15, 18, and 20, this creates intervals:
+Before determining :math:`D_t(x)`, we traverse each tree to establish intervals for the analyzed feature. This process consists of the following steps:
 
-- :math:`(-\infty, 15]`
-- :math:`(15, 18]`
-- :math:`(18, 20]`
-- :math:`(20, \infty)`
+1. **Tree Traversal to Identify Split Nodes**  
+   Each tree is traversed to locate nodes where the analyzed feature is used for splitting. For each such node:
+   
+   - Record the split value associated with the analyzed feature.  
+   - Collect these split values into a set :math:`S = \{s_1, s_2, ..., s_k\}`, ensuring no duplicates, where :math:`s_1 < s_2 < ... < s_k`.
 
-A leaf is included in :math:`D_t(x)` if it satisfies one of the following conditions:
+2. **Defining Intervals**  
+   Using the collected split values, the following intervals are constructed:
+   
+   - :math:`(-\infty, s_1]`  
+   - :math:`(s_1, s_2]`  
+   - :math:`(s_2, s_3]`  
+   - ...  
+   - :math:`(s_{k-1}, s_k]`  
+   - :math:`(s_k, \infty)`  
 
-1. **Analyzed Feature Exists in the Path**:  
-   If the analyzed feature :math:`x` is part of the splitting path of the leaf, the feature split value must align with the analysis interval. For example, if the analysis interval is :math:`(-\infty, 15]` and the leaf contains a split node with :math:`x \leq 20`, it is valid and included in :math:`D_t(x)`.
+3. **Storing Intervals**  
+   These intervals are stored for use during the matching phase.
 
-2. **Analyzed Feature is Absent from the Path**:  
+**Matching Intervals**
+
+When determining :math:`D_t(x)`, we use the intervals established above. A leaf is included in :math:`D_t(x)` if it satisfies one of the following conditions:
+
+1. **Analyzed Feature Exists in the Path**  
+   If the analyzed feature :math:`x` is part of the splitting path of the leaf, the feature split value must align with the interval being analyzed.  
+   For example, if the analysis interval is :math:`(-\infty, s_1]` and the leaf contains a split node with :math:`x \leq s_k`, it is valid and included in :math:`D_t(x)`.
+
+2. **Analyzed Feature is Absent from the Path**  
    If the analyzed feature :math:`x` is not part of the splitting path for the leaf, the leaf is still included in :math:`D_t(x)`. This is because such leaves represent general conditions that can apply to the analyzed feature.
 
-
 3. Calculation of Expected Value
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 **Expected Value for Each Tree:**
 
@@ -81,7 +92,7 @@ The average expected value across all trees using feature :math:`x` is:
 This represents the aggregated contribution of feature :math:`x \in \text{interval}` over all relevant trees.
 
 4. Difference from Mean
-~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 To evaluate the contribution of a feature within a specific interval, the difference is computed between the expected model output conditioned on that interval (:math:`E[F(x) \mid x \in \text{interval}]`) and the overall expected model output (:math:`E[F(x)]`).
 
@@ -100,7 +111,7 @@ The contribution of feature :math:`x` within a given interval is then:
 This formula ensures that the model's behavior is correctly aggregated across all intervals when calculating the baseline (:math:`E[F(x)]`), allowing for an accurate assessment of the feature's interval-specific influence.
 
 5. Feature Interactions
-~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 1. **Interval Determination**
 
@@ -119,7 +130,7 @@ This formula ensures that the model's behavior is correctly aggregated across al
 The forward steps remain consistent as described, and this approach can be extended to accommodate additional features.
 
 6. Back Data Integration
-~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 The treemind algorithm allows for the integration of back data, which dynamically updates the leaf counts to reflect the new data while 
 keeping the tree structure (splits and leaf values) unchanged.
@@ -137,13 +148,10 @@ where:
 - :math:`B`: Set of back data instances
 - :math:`I(d \text{ falls into leaf } i)`: Indicator function (1 if instance :math:`d` falls into leaf :math:`i`, 0 otherwise)
 
-
-Additional Notes
------------------
+7. Mathematical Limitations and Practical Considerations
+--------------------------------------------------------
 
 .. note::
-
-   **Mathematical Limitations and Practical Considerations**
 
    1. **Theoretical Foundation:**
       Although the algorithm produces desired results in practice, it lacks formal mathematical proof.
