@@ -24,6 +24,4 @@ cdef int compare_rules(const Rule& a, const Rule& b)
 
 cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col)
 
-cdef vector[vector[Rule]] filter_trees(vector[vector[Rule]] trees, vector[int] columns)
-
 cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data, str model_type)

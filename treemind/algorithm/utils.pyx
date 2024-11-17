@@ -1,5 +1,5 @@
 from libcpp.vector cimport vector
-from .rule cimport filter_trees, get_split_point, check_value
+from .rule cimport get_split_point, check_value
 
 from libc.math cimport sqrt
 
@@ -70,11 +70,10 @@ cdef tuple[vector[vector[double]],
            vector[double]] _analyze_feature(const vector[vector[Rule]]& trees,
                                                     const vector[int]& columns):
     cdef:
-        vector[vector[Rule]] filtered_trees = filter_trees(trees, columns)
         vector[vector[double]] split_points_list = vector[vector[double]]()
         size_t num_cols = columns.size()
         size_t max_size = 1
-        size_t num_trees = filtered_trees.size()
+        size_t num_trees = trees.size()
         size_t i, j, k, idx, tree_idx, rule_idx
 
         # Statistics vectors
@@ -107,7 +106,7 @@ cdef tuple[vector[vector[double]],
 
     # Initialize split points and calculate max_size
     for col_idx in range(num_cols):
-        split_points = get_split_point(filtered_trees, columns[col_idx])
+        split_points = get_split_point(trees, columns[col_idx])
         split_points_list.push_back(split_points)
         sizes[col_idx] = split_points.size()
         max_size *= sizes[col_idx]
@@ -126,7 +125,7 @@ cdef tuple[vector[vector[double]],
     with nogil:
         # Process each tree
         for tree_idx in range(num_trees):
-            tree_ptr = &filtered_trees[tree_idx]
+            tree_ptr = &trees[tree_idx]
             
             # Reset per-tree accumulators
             tree_sum.assign(max_size, 0.0)
@@ -227,7 +226,6 @@ cdef tuple[vector[vector[double]],
 @infer_types(True)
 cdef double _expected_value(int col, const vector[vector[Rule]] trees):
         cdef:
-            vector[vector[Rule]] filtered_trees 
             size_t num_trees 
 
             const Rule* rule_ptr
@@ -240,13 +238,11 @@ cdef double _expected_value(int col, const vector[vector[Rule]] trees):
             double rule_val, n_count
             double ub, lb
 
-
-        filtered_trees = filter_trees(trees, vector[int](col))
-        num_trees = filtered_trees.size()
+        num_trees = trees.size()
 
         with nogil:
             for k in range(num_trees):
-                tree_ptr = &filtered_trees[k]
+                tree_ptr = &trees[k]
                 tree_size = tree_ptr.size()
 
                 tree_sum = 0.0
