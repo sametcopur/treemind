@@ -53,7 +53,6 @@ from sklearn.model_selection import train_test_split
 
 from treemind import Explainer
 from treemind.plot import (
-    bar_plot,
     feature_plot,
     interaction_plot,
     interaction_scatter_plot,
@@ -176,31 +175,6 @@ interaction_scatter_plot(X, df, 21, 22)
 
 ![Interaction plot visualizing dependencies between two features](/docs/source/_static/example/interaction_scatter_plot.png)
 
-### Analyzing Feature Contributions on Data
-
-The `analyze_data` function in the `Explainer` takes input data and computes feature contributions toward a target prediction. This function allows you to analyze feature contributions for a single data point (row) or across the entire dataset, providing insights into the effect of each feature on the model's predictions in both classification and regression tasks.
-
-For analyzing contributions across the entire dataset `X`, use:
-
-```python
-values = explainer.analyze_data(X)
-```
-
-To inspect feature contributions for a specific row, e.g., `X.iloc[5, :]`, use the following code:
-
-```python
-values = explainer.analyze_data(X.iloc[[5], :])
-```
-
-To visualize the feature contributions using `bar_plot`:
-
-```python
-bar_plot(values, columns=X.columns)
-```
-
-![Bar plot visualizing feature contributions](/docs/source/_static/example/bar_plot.png)
-
-This bar plot presents each feature's contribution, showing the positive or negative impact on the prediction. If column names (`columns`) are not specified, `bar_plot` will generate default names based on feature indices. If values contains more than a single row, then results will be mean of their absolute values.
 
 ---
 
