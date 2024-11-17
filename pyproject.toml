@@ -1,12 +1,12 @@
 [project]
 name = "treemind"
-version = "0.1.0"
+version = "0.1.1"
 
 dependencies = [
-    "numpy>=1.26.4",
-    "pandas>=2.2.2",
-    "matplotlib>=3.8.0",
-    "seaborn>=0.13.2"
+    "numpy>=1.24.4",
+    "pandas>=1.5.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0"
 ]
 authors = [
     { name = "Samet Copur", email = "sametcopur@yahoo.com" },

@@ -57,8 +57,8 @@ import treemind
 project = "treemind"
 copyright = "2024, Samet Çopur"
 author = "Samet Çopur"
-version = "0.1.0"
-release = "0.1.0"
+version = "0.1.1"
+release = "0.1.1"
 
 autodoc_member_order = "bysource"
 extensions = [
