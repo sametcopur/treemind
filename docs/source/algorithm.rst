@@ -84,7 +84,7 @@ The average expected value across all trees using feature :math:`x` is:
 
 .. math::
 
-   E[F(x) \mid x \in \text{interval}] = \frac{\sum_{t \in S_t} E[f_t(x) \mid x \in \text{interval}] \cdot \left( \sum_{i \in D_t(x)} L_{t,i} \right)}{\sum_{t \in S_t}\sum_{i \in D_t(x)} L_{t,i}}
+   E[F(x) \mid x \in \text{interval}] = \sum_{t \in S_t} E[f_t(x) \mid x \in \text{interval}]
 
 This represents the aggregated contribution of feature :math:`x \in \text{interval}` over all relevant trees.
 
