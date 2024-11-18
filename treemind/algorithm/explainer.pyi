@@ -49,6 +49,7 @@ class Explainer:
         -------
         pd.DataFrame
             A DataFrame containing the interaction analysis results with the following columns:
+            
             - `feature_X_lower_bound`, `feature_X_upper_bound` (float): Lower and upper bounds
               for each analyzed feature.
             - `interaction_value` (float): The calculated metric representing the combined influence
@@ -67,6 +68,7 @@ class Explainer:
         ----------
         order : int, default=2
             The number of features in each combination to count:
+            
             - `order=1`: Counts how often individual features are used in splits.
             - `order=2`: Counts how often pairs of features appear together in splits.
             - `order=N`: Counts combinations of `N` features.
@@ -75,6 +77,7 @@ class Explainer:
         -------
         pd.DataFrame
             A DataFrame containing the following columns:
+            
             - `feature_1_index`, `feature_2_index`, ..., `feature_N_index` (int): Indices of the
               features in the combination, where `N` equals the `order` parameter.
             - `count` (int): The number of times this feature combination appears in the splits
