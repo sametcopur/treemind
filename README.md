@@ -1,12 +1,12 @@
 # treemind 
 treemind is designed for analyzing gradient boosting models. It simplifies understanding how features influence predictions within specific intervals and provides powerful tools for analyzing individual features and their interactions.
 
+**A formal research paper detailing the theoretical foundation and implementation of treemind is forthcoming.**
+
 ---
 ## Algorithm
 
 The `treemind` algorithm analyzes feature contributions and interactions in tree-based models, focusing on specific feature intervals to evaluate their impact on predictions.
-
-**A formal research paper detailing the theoretical foundation and implementation of the algorithm is forthcoming.**
 
 [Algorithm Overview](https://treemind.readthedocs.io/en/latest/algorithm.html)
 
