@@ -42,7 +42,7 @@ pip install treemind
 
 This example demonstrates how to set up and use the `Explainer` with a basic `lightgbm` model trained on the Breast Cancer dataset. 
 
-For detailed information, please refer to the [API Reference](api_reference.html#api_reference).
+For detailed information, please refer to the [API Reference](https://treemind.readthedocs.io/en/latest/api_reference.html).
 
 ### Setup Code
 
