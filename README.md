@@ -187,4 +187,4 @@ interaction_scatter_plot(X, df, 21, 22)
 Contributions are welcome! If you'd like to improve `treemind` or suggest new features, feel free to fork the repository and submit a pull request.
 
 ## License
-`treemind` is released under the BSD 3-Clause License. See the LICENSE file for more details.
+`treemind` is released under the MIT License. See the LICENSE file for more details.
