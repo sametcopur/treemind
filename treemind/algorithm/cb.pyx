@@ -7,13 +7,11 @@ from libcpp.pair cimport pair
 
 ctypedef pair[double, double] RangePair
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
-
 import json
 import tempfile
 import os
 
-@infer_types(True)
+
 cdef extract_leaf_paths_with_counts(dict model_dict):
     cdef list trees 
     cdef dict feature_info
@@ -101,13 +99,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
     return all_trees_info
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef vector[vector[Rule]] analyze_catboost(object model, int len_col):
     cdef int tree_index
     cdef Rule rule

@@ -9,13 +9,7 @@ ctypedef pair[double, double] RangePair
 
 from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef void traverse_lightgbm_tree(dict node, vector[RangePair]& feature_ranges, vector[Rule]& rules, int tree_index):
     cdef int int_node_index, feature_index
     cdef Rule rule
@@ -60,13 +54,7 @@ cdef void traverse_lightgbm_tree(dict node, vector[RangePair]& feature_ranges, v
     feature_ranges[feature_index] = prev_range
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef vector[vector[Rule]] analyze_lightgbm(object model, int len_col):
     cdef int tree_index
     cdef Rule rule

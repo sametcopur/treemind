@@ -6,7 +6,7 @@ import pandas as pd
 
 from libcpp.pair cimport pair
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
+
 
 from .rule cimport update_leaf_counts
 from .utils cimport add_lower_bound, _analyze_feature
@@ -78,14 +78,7 @@ cdef class Explainer:
         # Raise an error if the model is not lightgbm or xgboost
         else:
             raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
-
-    @boundscheck(False)
-    @nonecheck(False)
-    @wraparound(False)
-    @initializedcheck(False)
-    @overflowcheck(False)
-    @cdivision(True)
-    @infer_types(True)
+    
     cpdef object analyze_feature(self, object columns, object back_data = None):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
@@ -171,13 +164,7 @@ cdef class Explainer:
         return df
 
 
-    @boundscheck(False)
-    @nonecheck(False)
-    @wraparound(False)
-    @initializedcheck(False)
-    @overflowcheck(False)
-    @cdivision(True)
-    @infer_types(True)
+    
     cpdef object count_node(self, int order=2):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")

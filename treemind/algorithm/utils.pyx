@@ -3,46 +3,31 @@ from .rule cimport get_split_point, check_value
 
 from libc.math cimport sqrt
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
-
 import numpy as np
 cimport numpy as cnp
 from pandas import Categorical
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef inline double cmax(double a, double b) noexcept nogil:
     return a if a > b else b
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef inline double cmin(double a, double b) noexcept nogil:
     return a if a < b else b
 
 
-@infer_types(True)
 cdef object replace_inf(object data, str column_name):
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
     cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
     cdef double max_main = unique_points.max()
-    cdef double difference_main = max_main - (unique_points[-2] if unique_points.size > 1 else max_main * 0.9)
+    cdef double difference_main = max_main - (unique_points[unique_points.size -2] if unique_points.size > 1 else max_main * 0.9)
 
     data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main
 
     return data
 
 
-@infer_types(True)
+
 cdef add_lower_bound(object data, int loc, str column):
     cdef:
         str column_ub = f"{column}_ub"
@@ -50,20 +35,13 @@ cdef add_lower_bound(object data, int loc, str column):
         cnp.ndarray[cnp.float64_t, ndim=1] lower_bounds = np.empty_like(unique_values, dtype=np.float64)
 
     lower_bounds[0] = -np.inf
-    lower_bounds[1:] = unique_values[:-1]
+    lower_bounds[1:] = unique_values[:unique_values.size - 1]
 
     categories = Categorical(data[column_ub], categories=unique_values, ordered=True)
 
     data.insert(loc, f"{column}_lb", lower_bounds[categories.codes])
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef tuple[vector[vector[double]],
            vector[double],
            vector[double],

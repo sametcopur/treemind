@@ -1,7 +1,7 @@
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
+
 from .rule cimport Rule
 from .xgb cimport convert_d_matrix, xgb_leaf_correction
 
@@ -10,13 +10,6 @@ import numpy as np
 
 from collections import Counter
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     """
     Initializes a new Rule struct with the given parameters.
@@ -45,13 +38,7 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     rule.count = -1
     return rule
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef void update_rule(Rule* rule, int index, double lb, double ub):
     """
     Updates the lower and upper bounds for a feature at the specified index.
@@ -70,13 +57,7 @@ cdef void update_rule(Rule* rule, int index, double lb, double ub):
     rule.lbs[index] = max(rule.lbs[index], lb)
     rule.ubs[index] = min(rule.ubs[index], ub)
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noexcept nogil:
     """
     Checks whether the rule has been fully defined for the given feature indices.
@@ -99,13 +80,6 @@ cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noex
             return 0
     return 1
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nogil:
     """
     Checks if the given value lies within the bounds for the specified feature index.
@@ -127,22 +101,11 @@ cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nog
     return rule.lbs[i] < value <= rule.ubs[i]
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
@@ -181,12 +144,6 @@ cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
         
     return points
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
     cdef Py_ssize_t num_trees = array.shape[1]
     cdef Py_ssize_t num_rows = array.shape[0]
@@ -205,12 +162,6 @@ cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
     return results
 
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data, str model_type):
     cdef:
         cnp.ndarray[cnp.int32_t, ndim=2] back_data_

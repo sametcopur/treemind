@@ -5,7 +5,7 @@ import sys
 
 if sys.platform == "win32":
     extra_compile_args = [
-        "/O2",  
+        "/O2",
         "/fp:fast",
         "/Ot",
         "/Ox",
@@ -25,10 +25,13 @@ elif sys.platform == "linux":
     ]
     extra_link_args = []
 
-elif sys.platform == "darwin":  # macOS
+elif sys.platform == "darwin":
     extra_compile_args = [
+        "-Wall",
         "-O3",
-        "-ffast-math",
+        "-fno-math-errno",       
+        "-fno-signed-zeros",    
+        "-fno-trapping-math", 
         "-funroll-loops",
         "-ftree-vectorize",
         "-fstrict-aliasing",
@@ -102,5 +105,18 @@ setup(
     version="0.0.1",
     description="treemind",
     packages=find_packages(include=["treemind", "treemind.*"]),
-    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={
+            "language_level": 3,
+            "boundscheck": False,
+            "wraparound": False,
+            "initializedcheck": False,
+            "cdivision": True,
+            "nonecheck": False,
+            "overflowcheck": False,
+            "infer_types": True,
+        },
+    ),
 )
+

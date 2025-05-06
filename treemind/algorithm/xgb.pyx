@@ -1,5 +1,4 @@
 
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
 from libcpp.vector cimport vector
 from libc.math cimport INFINITY
 from libcpp.algorithm cimport sort
@@ -24,13 +23,7 @@ cdef class XGBNode:
     cdef double leaf_value
     cdef double cover
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef vector[vector[Rule]] analyze_xgboost(object model, int len_col):
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[Rule] rules
@@ -66,13 +59,7 @@ cdef vector[vector[Rule]] analyze_xgboost(object model, int len_col):
     return trees
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef void parse_xgboost_node(dict node_json, dict node_dict):
     cdef XGBNode node = XGBNode()
 
@@ -91,13 +78,7 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
         parse_xgboost_node(child_json, node_dict)
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(False)
+
 cdef void traverse_xgboost(dict node_dict, int nodeid, vector[pair[double, double]]& feature_ranges, vector[Rule]& rules, int tree_index, dict column_dict):    
     cdef XGBNode node = node_dict[nodeid]
     cdef int feature_index
