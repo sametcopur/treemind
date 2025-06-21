@@ -1,9 +1,6 @@
-from .plot_funcs import (
-    feature_plot,
-    interaction_plot,
-    interaction_scatter_plot,
-    
-)
+from ._feature_plot import feature_plot
+from ._interaction_plot import interaction_plot
+from ._interaction_scatter_plot import interaction_scatter_plot
 
 __all__ = [
     "feature_plot",

@@ -1,6 +1,5 @@
 import pandas as pd
 from numpy.typing import ArrayLike
-import numpy as np
 from typing import List, Any, Optional, Union
 
 class Explainer:
@@ -29,7 +28,7 @@ class Explainer:
         """
         ...
     def analyze_feature(
-        self, columns: Union[int, List[int]], back_data: Optional[ArrayLike] = None
+        self, columns: Union[int, List[int]], *, back_data: Optional[ArrayLike] = None
     ) -> pd.DataFrame:
         """
         Analyzes feature interactions based on the model's decision rules and computes metrics

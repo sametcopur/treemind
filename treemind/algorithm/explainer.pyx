@@ -6,8 +6,6 @@ import pandas as pd
 
 from libcpp.pair cimport pair
 
-
-
 from .rule cimport update_leaf_counts
 from .utils cimport add_lower_bound, _analyze_feature
 from .lgb cimport analyze_lightgbm
@@ -16,16 +14,21 @@ from .cb cimport analyze_catboost
 
 from collections import Counter
 from itertools import combinations
+import warnings
 
 cdef vector[pair[double, double]] feature_ranges
 
 cdef class Explainer:
     def __init__(self):
         self.trees = vector[vector[Rule]]()
+        self.cat_cols = vector[vector[int]]()
+        self.cat_indices = vector[int]()
         self.model = None
+        self.categorical = None
         self.len_col = -1
         self.columns = None
         self.model_type = "none"
+        self.must_backdata = 0
 
     def __repr__(self) -> str:
         return f"Explainer(model={self.model_type})"
@@ -49,7 +52,8 @@ cdef class Explainer:
             self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
             self.model_type = "lightgbm"
-            self.trees = analyze_lightgbm(self.model, self.len_col)
+            self.categorical = self.model.pandas_categorical
+            self.trees, self.cat_cols, self.cat_indices = analyze_lightgbm(self.model, self.len_col)
 
         # Handle xgboost models
         elif "xgboost" in module_name:
@@ -66,20 +70,37 @@ cdef class Explainer:
                 self.columns = self.model.feature_names
 
             self.model_type = "xgboost"
-            self.trees = analyze_xgboost(self.model, self.len_col)
+            self.categorical = None
+            self.trees, self.cat_cols, self.cat_indices = analyze_xgboost(self.model, self.len_col)
+
+            if self.cat_indices.size() > 0:
+                warnings.warn(
+                    "XGBoost models store categorical variables as indices, "
+                    "making it impossible to retrieve their original category names.\n"
+                    "If a categorical feature or its values are not used in any split, "
+                    "they may not appear in the extracted results.\n"
+                    "To map indices back to category names, you need to provide the original "
+                    "categorical mappings from the training data and include them in the output of analyze_feature."
+                )
 
         elif "catboost" in module_name:
             self.model = model
+            if len(self.model.get_cat_feature_indices()) > 0:
+                raise ValueError(
+                    "Obtaining which category and prior a CTR split belongs to from a catboost model dump is not possible.\n"
+                    "For more details, please refer to: https://github.com/catboost/catboost/issues/2414"
+                )
+
             self.len_col = self.model.n_features_in_
             self.columns = model.feature_names_
-            self.trees = analyze_catboost(self.model, self.len_col)
+            self.trees, self.cat_cols, self.cat_indices = analyze_catboost(self.model, self.len_col)
             self.model_type = "catboost"
 
         # Raise an error if the model is not lightgbm or xgboost
         else:
             raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
     
-    cpdef object analyze_feature(self, object columns, object back_data = None):
+    def analyze_feature(self, columns, *, back_data = None):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
         
@@ -90,7 +111,8 @@ cdef class Explainer:
             vector[vector[Rule]] trees = self.trees
             vector[vector[double]] points
             vector[double] mean_values, ensemble_std, counts
-            int num_cols, i, col_idx
+            int num_cols, i
+            str col_str
 
         
         if isinstance(columns, int):
@@ -130,7 +152,7 @@ cdef class Explainer:
             trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
         
         # Analyze interactions
-        points, mean_values, ensemble_std, counts = _analyze_feature(trees, col_indices)
+        points, mean_values, ensemble_std, counts = _analyze_feature(trees, col_indices, self.cat_cols)
         
         # Get column names using regular Python list
         column_names = [self.columns[idx] for idx in col_indices]
@@ -140,7 +162,18 @@ cdef class Explainer:
         
         # Add points columns
         for i in range(num_cols):
-            df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
+            check = True
+            for j in range(self.cat_indices.size()):
+                if col_indices[i] == self.cat_indices[j]:
+                    if self.categorical is not None:
+                        cats = self.categorical[j]
+                        df_dict[f"{column_names[i]}"] = [cats[int(row[i])] for row in points]
+                    else:
+                        df_dict[f"{column_names[i]}"] = [int(row[i]) for row in points]
+                    check = False
+
+            if check:
+                df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
         
         # Add statistics columns
         df_dict.update({
@@ -151,20 +184,51 @@ cdef class Explainer:
         
         df = pd.DataFrame(df_dict)
         
-        if df.shape[0] == 0:
-            raise ValueError(f"No interaction found between the specified features: {column_names}")
-        
         # Center the values
-        df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
+        if df["count"].sum() == 0:
+            df.loc[:, "std"] = df["value"]
+
+            if isinstance(columns, int) or len(columns) == 1:
+                msg = f"Feature {columns} was not used in any split by the model."
+            else:
+                msg = f"One or more of the features {columns} were  not used in any split by the model."
+
+            warnings.warn(msg)
+                
+
+        else:
+            df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
         
-        # Add lower bounds for all columns
-        for i, col_name in enumerate(column_names):
-            add_lower_bound(df, i * 2, col_name)
+        # # Add lower bounds for all columns
+        for col_name in column_names:
+            col_ub = f"{col_name}_ub"
+
+            if col_ub in df.columns:
+                # 'column_ub' kolonunun indeksini bul
+                ub_index = df.columns.get_loc(col_ub)
+                
+                # 'column_lb' bu indeksin önüne eklenmeli
+                add_lower_bound(df, ub_index, col_name)
+
+        # Closure olmayan biçimiyle yaz
+        only_default_split = True
+        for col_str in df.columns:
+            if col_str not in {"value", "std", "count"} and not col_str.endswith("_lb") and not col_str.endswith("_ub"):
+                only_default_split = False
+                break
+
+        if df.shape[0] == 1 and only_default_split:
+            if isinstance(columns, int) or len(columns) == 1:
+                msg = f"Feature {columns} was not used in any split. Values are based on the default range (-inf, +inf)."
+            else:
+                msg = f"All of the features {columns} were not used in any split. Values are based on the default range (-inf, +inf)."
+            
+            warnings.warn(msg)
+
         
         return df
 
 
-    
     cpdef object count_node(self, int order=2):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
@@ -189,7 +253,7 @@ cdef class Explainer:
                 finite_indices = [
                     i
                     for i in range(self.len_col)
-                    if rule.lbs[i] != -INFINITY or rule.ubs[i] != INFINITY
+                    if rule.lbs[i] != -INFINITY or rule.ubs[i] != INFINITY or rule.cat_flags[i]
                 ]
                 n = len(finite_indices)
 

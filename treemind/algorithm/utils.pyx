@@ -46,7 +46,8 @@ cdef tuple[vector[vector[double]],
            vector[double],
            vector[double],
            vector[double]] _analyze_feature(const vector[vector[Rule]]& trees,
-                                                    const vector[int]& columns):
+                                                    const vector[int]& columns,
+                                                    const vector[vector[int]]& cat_cols):
     cdef:
         vector[vector[double]] split_points_list = vector[vector[double]]()
         size_t num_cols = columns.size()
@@ -79,10 +80,22 @@ cdef tuple[vector[vector[double]],
 
         vector[vector[double]] combined_points
         size_t col_idx, remaining, point_idx, split_size
+        double val         # split-point değeri (num / cat)
+        int val_idx     # kategorik maske indeksi
+        vector[vector[int]] cat_slice = vector[vector[int]]()
 
-    # Initialize split points and calculate max_size
+    for i in range(columns.size()):
+        col_idx = columns[i]
+        cat_slice.push_back(cat_cols[col_idx])
+
     for col_idx in range(num_cols):
-        split_points = get_split_point(trees, columns[col_idx])
+        if cat_slice[col_idx].size() == 0:                 # ↩︎ SAYISAL
+            split_points = get_split_point(trees, columns[col_idx])
+        else:                                             # ↩︎ KATEGORİK
+            split_points = vector[double]()
+            for i in range(cat_slice[col_idx].size()):
+                split_points.push_back(cat_slice[col_idx][i])   # -1,0,1,2…
+
         split_points_list.push_back(split_points)
         sizes[col_idx] = split_points.size()
         max_size *= sizes[col_idx]
@@ -120,8 +133,16 @@ cdef tuple[vector[vector[double]],
                     valid_indices_per_col[k].clear()
                     split_size = split_points_list[k].size()
                     for i in range(split_size):
-                        if check_value(rule_ptr, columns[k], split_points_list[k][i]):
-                            valid_indices_per_col[k].push_back(i)
+                        val = split_points_list[k][i]
+                        
+                        if cat_cols[columns[k]].size() == 0:                            
+                            if check_value(rule_ptr, columns[k], val):
+                                valid_indices_per_col[k].push_back(i)
+                        else:                                                   
+                            val_idx = (<int>val)      
+                            if rule_ptr.cats[columns[k]][val_idx]:
+                                valid_indices_per_col[k].push_back(i)
+
                     if valid_indices_per_col[k].empty():
                         skip_rule = True
                         break

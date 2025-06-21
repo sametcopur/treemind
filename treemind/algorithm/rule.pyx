@@ -29,15 +29,46 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
         The initialized Rule struct.
     """
     cdef Rule rule
+    cdef int i
+
     rule.len_col = len_col
     rule.tree_index = tree_index
     rule.leaf_index = leaf_index
     rule.lbs = vector[double](len_col, -INFINITY)
-    rule.ubs = vector[double](len_col, INFINITY)
+    rule.ubs = vector[double](len_col, INFINITY) 
     rule.value = np.nan
     rule.count = -1
+    rule.cats = vector[vector[bint]]()
+    rule.cat_flags = vector[bint]()
     return rule
 
+cdef void update_cats_for_rule(Rule* rule, const vector[vector[bint]]& cats):
+    """
+    Copies the active categorical mask constraints into the Rule struct and
+    prints them (debug).
+
+    Parameters
+    ----------
+    rule : Rule*
+        The Rule struct being constructed for a leaf node.
+    cats : vector[vector[bint]]&
+        Temporary categorical mask collected during tree traversal.
+        Each cats[i] is a boolean mask indicating allowed category values for feature i.
+    """
+    cdef size_t i, j
+    cdef bint all_one
+    rule.cats.resize(cats.size())
+    rule.cat_flags.resize(cats.size(), 0)
+
+    for i in range(cats.size()):
+        rule.cats[i] = cats[i]
+
+        all_one = True
+        for j in range(cats[i].size()):
+            if cats[i][j] == 0:
+                all_one = False
+                break
+        rule.cat_flags[i] = 0 if all_one else 1
 
 cdef void update_rule(Rule* rule, int index, double lb, double ub):
     """

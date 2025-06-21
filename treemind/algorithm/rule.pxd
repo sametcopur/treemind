@@ -5,14 +5,17 @@ cdef struct Rule:
     double value
     double count
     vector[double] lbs 
-    vector[double] ubs 
+    vector[double] ubs
+    vector[vector[bint]] cats 
     int len_col
     int tree_index
     int leaf_index
-
+    vector[bint] cat_flags
 
 
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index)
+
+cdef void update_cats_for_rule(Rule* rule, const vector[vector[bint]]& cats)
 
 cdef void update_rule(Rule* rule, int index, double lb, double ub)
 

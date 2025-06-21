@@ -16,4 +16,6 @@ cdef add_lower_bound(object data, int loc, str column)
 cdef tuple[vector[vector[double]],
            vector[double],
            vector[double],
-           vector[double]] _analyze_feature(const vector[vector[Rule]]& trees, const vector[int]& columns)
+           vector[double]] _analyze_feature(const vector[vector[Rule]]& trees,
+                                            const vector[int]& columns,
+                                            const vector[vector[int]]& cat_cols)
