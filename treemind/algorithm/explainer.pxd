@@ -12,6 +12,15 @@ cdef class Explainer:
     cdef Py_ssize_t len_col
     cdef list columns
     cdef str model_type
-    cdef bint must_backdata
+    cdef int n_classes
 
     cpdef object count_node(self, int order=?)
+
+    cdef object prepare_dataframe(self, vector[int] col_indices, 
+                    int num_cols, 
+                    list column_names,
+                    vector[vector[double]]& points,
+                    vector[double]& mean_values,
+                    vector[double]& ensemble_std,
+                    vector[double]& counts,
+                    object columns)

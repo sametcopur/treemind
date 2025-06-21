@@ -25,7 +25,7 @@ cdef class XGBNode:
     cdef bint is_categorical  # kategorik mi değil mi
 
 
-cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_xgboost(object model, int len_col):
+cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_xgboost(object model, int len_col):
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[Rule] rules
     cdef dict node_dict
@@ -42,10 +42,12 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_xgboo
     cdef bint has_cat = 0
 
     cat_values.resize(len_col)
-    for i, j in enumerate(model.feature_types):
-        if j == "c":
-            has_cat = 1
-            cat_indices.push_back(i)
+
+    if model.feature_types is not None:
+        for i, j in enumerate(model.feature_types):
+            if j == "c":
+                has_cat = 1
+                cat_indices.push_back(i)
 
     if has_cat:
         cat_max = {}  # normal dict
@@ -75,8 +77,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_xgboo
                 for cat in range(cat_max[j] + 1):  # +1 eklendi
                     cat_values[i].push_back(cat)
 
-    if model.num_boosted_rounds() != len(dumps):
-        raise ValueError("Multiclass xgboost models are not supported yet.")
+    n_classes = len(dumps) // model.num_boosted_rounds()
 
     for dump in dumps:
         tree_json = json.loads(dump)
@@ -102,7 +103,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_xgboo
 
         tree_index += 1
 
-    return trees, cat_values, cat_indices
+    return trees, cat_values, cat_indices, n_classes
 
 
 cdef void parse_xgboost_node(dict node_json, dict node_dict):

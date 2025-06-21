@@ -34,12 +34,6 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
         leaf_values = tree['leaf_values']
         leaf_counts = tree.get('leaf_weights', [1] * num_leaves)
 
-        class_params = model_dict['model_info'].get('class_params')
-        if class_params is not None:
-            num_classes = len(class_params.get('class_names', []))
-            if num_classes > 2:
-                raise ValueError("Multiclass CatBoost models are not supported yet.")
-
         tree_info = {
             'tree_index': tree_index,
             'feature_count': feature_count,
@@ -89,6 +83,12 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_catbo
         model.save_model(tmp_file, format="json")
         with open(tmp_file, encoding="utf-8") as fh:
             model_json = json.load(fh)
+
+    class_params = model_json['model_info'].get('class_params')
+    if class_params is not None:
+        num_classes = len(class_params.get('class_names', []))
+        if num_classes > 2:
+            raise ValueError("Multiclass CatBoost models are not supported yet.")
 
     cdef list tree_info = extract_leaf_paths_with_counts(model_json)
     cdef int tree_index, leaf_index, feature_index

@@ -19,3 +19,7 @@ cdef tuple[vector[vector[double]],
            vector[double]] _analyze_feature(const vector[vector[Rule]]& trees,
                                             const vector[int]& columns,
                                             const vector[vector[int]]& cat_cols)
+
+cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,  
+                                              const int n_classes, 
+                                              const int class_idx)

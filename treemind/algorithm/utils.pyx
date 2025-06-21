@@ -42,6 +42,24 @@ cdef add_lower_bound(object data, int loc, str column):
     data.insert(loc, f"{column}_lb", lower_bounds[categories.codes])
 
 
+cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,  
+                                              const int n_classes, 
+                                              const int class_idx):
+    cdef vector[vector[Rule]] class_trees = vector[vector[Rule]]()
+    cdef vector[Rule] class_tree
+    cdef size_t i
+    cdef int tree_idx
+
+    # Her sınıfa ait ağaç sayısı = toplam ağaç / sınıf sayısı
+    class_trees.resize(trees.size() // n_classes)
+
+    for i in range(class_trees.size()):
+        tree_idx = i * n_classes + class_idx
+        class_trees[i] = trees[tree_idx]
+
+    return class_trees
+
+
 cdef tuple[vector[vector[double]],
            vector[double],
            vector[double],
