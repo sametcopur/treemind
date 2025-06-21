@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 from matplotlib.colors import TwoSlopeNorm
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, List
 
 from treemind.plot.plot_utils import _replace_infinity, _find_tick_decimal
 
@@ -119,9 +119,9 @@ def interaction_plot(
     df: pd.DataFrame,
     figsize: Tuple[float, float] = (10.0, 8.0),
     axis_ticks_n: int = 10,
-    ticks_fontsize: float = 10.0,
-    title_fontsize: float = 16.0,
-    label_fontsizes: float = 14.0,
+    ticks_fontsize: Union[int, float] = 10,
+    title_fontsize: Union[int, float] = 16,
+    label_fontsizes: Union[int, float] = 14,
     title: Optional[str] = None,
     xlabel: Optional[str] = None,
     ylabel: Optional[str] = None,
@@ -162,6 +162,7 @@ def interaction_plot(
     None
         Displays the figure.
     """
+
     # validate all inputs ----------------------------------------------------------
     _validate_interaction_plot_parameters(
         df,
@@ -180,7 +181,10 @@ def interaction_plot(
     meta_cols = {"value", "std", "count"}
     feature_cols = [c for c in df.columns if c not in meta_cols]
 
-    cont_pairs, cat_cols, used = {}, [], set()
+    df = df.copy()
+
+    cont_pairs, used = {}, set()
+    cat_cols: List[str] = []
     for col in feature_cols:
         if col in used:
             continue
@@ -193,100 +197,141 @@ def interaction_plot(
             cat_cols.append(col)
             used.add(col)
 
-    ordered: list[tuple[str, str]] = []
+    ordered: List[Tuple[str, str]] = []
     for col in feature_cols:
-        if col in used:
-            if col.endswith("_lb"):
-                name = col[:-3]
-                if name not in [f[0] for f in ordered]:
-                    ordered.append((name, "continuous"))
-            elif not col.endswith("_ub"):
-                ordered.append((col, "categorical"))
+        if col not in used:
+            continue
+        if col.endswith("_lb") and (name := col[:-3]) not in [f[0] for f in ordered]:
+            ordered.append((name, "continuous"))
+        elif not col.endswith("_ub"):
+            ordered.append((col, "categorical"))
 
-    (feat1, type1), (feat2, type2) = ordered  # guaranteed by validator
+    if len(ordered) != 2:
+        raise ValueError("Exactly two logical features are required.")
 
-    # ---------------- 2. rectangle geometry --------------------------------------
+    (feat1, type1), (feat2, type2) = ordered
+
+    # --------------------------- 2. Kenar Dizileri/Kodlama
     if type1 == "continuous":
         lb1, ub1 = cont_pairs[feat1]
+
+        # Infinity değerlerini değiştir
         df = _replace_infinity(df, lb1, "negative")
         df = _replace_infinity(df, ub1, "positive")
-        x_left, x_right = df[lb1].values, df[ub1].values
+
+        x_left = df[lb1].to_numpy()
+        x_right = df[ub1].to_numpy()
+
     else:
-        cats1 = list(dict.fromkeys(df[feat1].astype(str)))
-        cat_to_x = {c: i for i, c in enumerate(cats1)}
-        x_left = np.array([cat_to_x[v] for v in df[feat1].astype(str)])
-        x_right = x_left + 1
+        cats1 = df[feat1].astype("category")
+        codes1 = cats1.cat.codes.to_numpy()
+        x_left, x_right = codes1, codes1 + 1
+        cats1_labels = cats1.cat.categories.tolist()
 
     if type2 == "continuous":
         lb2, ub2 = cont_pairs[feat2]
+
+        # Infinity değerlerini değiştir
         df = _replace_infinity(df, lb2, "negative")
         df = _replace_infinity(df, ub2, "positive")
-        y_bottom, y_top = df[lb2].values, df[ub2].values
+
+        y_bottom = df[lb2].to_numpy()
+        y_top = df[ub2].to_numpy()
+
     else:
-        cats2 = list(dict.fromkeys(df[feat2].astype(str)))
-        cat_to_y = {c: i for i, c in enumerate(cats2)}
-        y_bottom = np.array([cat_to_y[v] for v in df[feat2].astype(str)])
-        y_top = y_bottom + 1
+        cats2 = df[feat2].astype("category")
+        codes2 = cats2.cat.codes.to_numpy()
+        y_bottom, y_top = codes2, codes2 + 1
+        cats2_labels = cats2.cat.categories.tolist()
 
-    # ---------------- 3. rectangles & colours ------------------------------------
-    rects = [
-        Rectangle((lx, ly), w, h)
-        for lx, ly, w, h in zip(x_left, y_bottom, x_right - x_left, y_top - y_bottom)
-    ]
-
-    values = df["value"].values
+    # --------------------------- 3. Renkler
+    values = df["value"].to_numpy()
     vmax, vmin = values.max(), values.min()
     abs_max = max(abs(vmax), abs(vmin))
+    if abs_max == 0:
+        abs_max = 1e-8
+
     cmap = plt.get_cmap("coolwarm")
-    norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
-    colors = cmap(norm(values))
+    norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0.0, vmax=abs_max)
 
-    # ---------------- 4. plotting -------------------------------------------------
+    # --------------------------- 4. Çizim
     fig, ax = plt.subplots(figsize=figsize)
-    ax.add_collection(PatchCollection(rects, facecolor=colors, edgecolor="none"))
 
-    ax.set_xlim(x_left.min(), x_right.max())
-    ax.set_ylim(y_bottom.min(), y_top.max())
+    if type1 == type2 == "continuous":
+        # Continuous-continuous case için pcolormesh kullan
+        x_edges = np.sort(np.unique(np.concatenate([x_left, x_right])))
+        y_edges = np.sort(np.unique(np.concatenate([y_bottom, y_top])))
 
-    # x-axis ticks ---------------------------------------------------------------
+        mat = np.full((len(y_edges) - 1, len(x_edges) - 1), np.nan)
+        ix = np.searchsorted(x_edges, x_left, side="left")
+        iy = np.searchsorted(y_edges, y_bottom, side="left")
+
+        # Index bounds kontrolü
+        ix = np.clip(ix, 0, len(x_edges) - 2)
+        iy = np.clip(iy, 0, len(y_edges) - 2)
+
+        for i, j, v in zip(iy, ix, values):
+            if 0 <= i < mat.shape[0] and 0 <= j < mat.shape[1]:
+                mat[i, j] = v if np.isnan(mat[i, j]) else (mat[i, j] + v) / 2.0
+
+        mesh = ax.pcolormesh(
+            x_edges, y_edges, mat, cmap=cmap, norm=norm, shading="auto"
+        )
+        cbar = fig.colorbar(mesh, ax=ax, spacing="proportional")
+    else:
+        # Mixed case için rectangles kullan
+        rects = [
+            Rectangle((lx, ly), w, h)
+            for lx, ly, w, h in zip(
+                x_left, y_bottom, x_right - x_left, y_top - y_bottom
+            )
+        ]
+        pc = PatchCollection(rects, cmap=cmap, norm=norm)
+        pc.set_array(values)
+        ax.add_collection(pc)
+        cbar = fig.colorbar(pc, ax=ax, spacing="proportional")
+        ax.set_xlim(x_left.min(), x_right.max())
+        ax.set_ylim(y_bottom.min(), y_top.max())
+
+    # --------------------------- 5. Eksen Tick'leri (Orijinal kodla uyumlu)
     if type1 == "continuous":
         ticks = np.linspace(x_left.min(), x_right.max(), axis_ticks_n)
         dec = _find_tick_decimal(ticks, axis_ticks_n)
         ax.set_xticks(ticks)
+        # Orijinal kodla aynı tick labeling mantığı
         ax.set_xticklabels(
             ["-∞"] + [f"{t:.{dec}f}" for t in ticks[1:-1]] + ["+∞"],
             fontsize=ticks_fontsize,
         )
     else:
-        ax.set_xticks(np.arange(len(cats1)) + 0.5)
-        ax.set_xticklabels(cats1, rotation=45, ha="right", fontsize=ticks_fontsize)
+        ax.set_xticks(np.arange(len(cats1_labels)) + 0.5)
+        ax.set_xticklabels(
+            cats1_labels, rotation=45, ha="right", fontsize=ticks_fontsize
+        )
 
-    # y-axis ticks ---------------------------------------------------------------
     if type2 == "continuous":
         ticks = np.linspace(y_bottom.min(), y_top.max(), axis_ticks_n)
         dec = _find_tick_decimal(ticks, axis_ticks_n)
         ax.set_yticks(ticks)
+        # Orijinal kodla aynı tick labeling mantığı
         ax.set_yticklabels(
             ["-∞"] + [f"{t:.{dec}f}" for t in ticks[1:-1]] + ["+∞"],
             fontsize=ticks_fontsize,
         )
     else:
-        ax.set_yticks(np.arange(len(cats2)) + 0.5)
-        ax.set_yticklabels(cats2, fontsize=ticks_fontsize)
+        ax.set_yticks(np.arange(len(cats2_labels)) + 0.5)
+        ax.set_yticklabels(cats2_labels, fontsize=ticks_fontsize)
 
-    # colour-bar ------------------------------------------------------------------
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    cbar = fig.colorbar(sm, ax=ax, spacing="proportional")
-    cbar.ax.set_ylim(vmin, vmax)
-    cbar.ax.tick_params(labelsize=ticks_fontsize)
-    cbar.set_label(color_bar_label or "Impact", fontsize=label_fontsizes)
-
-    # labels & title --------------------------------------------------------------
+    # --------------------------- 6. Başlık & Etiketler
     ax.set_xlabel(xlabel or feat1, fontsize=label_fontsizes)
     ax.set_ylabel(ylabel or feat2, fontsize=label_fontsizes)
     if title:
         ax.set_title(title, fontsize=title_fontsize)
+
+    # Color bar ayarları (orijinal kodla uyumlu)
+    cbar.ax.set_ylim(vmin, vmax)
+    cbar.ax.tick_params(labelsize=ticks_fontsize)
+    cbar.set_label(color_bar_label or "Impact", fontsize=label_fontsizes)
 
     plt.tight_layout()
     plt.show()
