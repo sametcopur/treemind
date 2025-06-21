@@ -66,8 +66,7 @@ cdef extract_leaf_paths_with_counts(dict model_dict):
 
     return all_trees_info
 
-
-cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_catboost(object model, int len_col):
+cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_catboost(object model, int len_col):
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[Rule] rules
 
@@ -75,7 +74,6 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_catbo
     cdef vector[vector[int]] cat_values = vector[vector[int]]()
     cdef vector[int]        cat_indices = vector[int]()
     cat_values.resize(len_col)
-
 
     cdef dict model_json
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -85,37 +83,60 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_catbo
             model_json = json.load(fh)
 
     class_params = model_json['model_info'].get('class_params')
+    cdef int num_classes = 1
     if class_params is not None:
         num_classes = len(class_params.get('class_names', []))
-        if num_classes > 2:
-            raise ValueError("Multiclass CatBoost models are not supported yet.")
 
     cdef list tree_info = extract_leaf_paths_with_counts(model_json)
-    cdef int tree_index, leaf_index, feature_index
+    cdef int tree_index, leaf_index, feature_index, decision, class_index
     cdef float border
-    cdef int decision
     cdef Rule rule
+    cdef object path, leaf_value
+    cdef int leaf_count
 
     for tree_index in range(len(tree_info)):
-        rules = vector[Rule]()
         for leaf in tree_info[tree_index]['leaves']:
             leaf_index = leaf['leaf_index']
-            rule = create_rule(len_col, tree_index, leaf_index)
+            path = leaf['path']
+            leaf_value = leaf['leaf_value']
+            leaf_count = leaf['leaf_count']
 
-            for feature_index, border, decision in leaf['path']:
-                if decision == 0:
-                    update_rule(&rule, feature_index, -INFINITY, border)
-                else:
-                    update_rule(&rule, feature_index, border, INFINITY)
+            if isinstance(leaf_value, list):
+                # Multi-class: Her sınıf için ayrı rule
+                for class_index in range(len(leaf_value)):
+                    rules = vector[Rule]()
+                    rule = create_rule(len_col, tree_index * num_classes + class_index, leaf_index)
 
-            # Kategorik bilgi yok ama akış gereği fonksiyona boş mask veriyoruz
-            rule.cat_flags = vector[bint](len_col, 0)
+                    for feature_index, border, decision in path:
+                        if decision == 0:
+                            update_rule(&rule, feature_index, -INFINITY, border)
+                        else:
+                            update_rule(&rule, feature_index, border, INFINITY)
 
-            rule.value = leaf['leaf_value']
-            rule.count = leaf['leaf_count']
-            rules.push_back(rule)
+                    rule.cat_flags = vector[bint](len_col, 0)
+                    rule.value = leaf_value[class_index]
+                    rule.count = leaf_count
+                    rules.push_back(rule)
 
-        sort(rules.begin(), rules.end(), compare_rules)
-        trees.push_back(rules)
+                    sort(rules.begin(), rules.end(), compare_rules)
+                    trees.push_back(rules)
+            else:
+                # Binary: Tek değerli leaf
+                rules = vector[Rule]()
+                rule = create_rule(len_col, tree_index, leaf_index)
 
-    return trees, cat_values, cat_indices
+                for feature_index, border, decision in path:
+                    if decision == 0:
+                        update_rule(&rule, feature_index, -INFINITY, border)
+                    else:
+                        update_rule(&rule, feature_index, border, INFINITY)
+
+                rule.cat_flags = vector[bint](len_col, 0)
+                rule.value = leaf_value
+                rule.count = leaf_count
+                rules.push_back(rule)
+
+                sort(rules.begin(), rules.end(), compare_rules)
+                trees.push_back(rules)
+
+    return trees, cat_values, cat_indices, num_classes

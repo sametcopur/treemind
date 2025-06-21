@@ -93,7 +93,7 @@ cdef class Explainer:
             self.categorical = None
             self.len_col = self.model.n_features_in_
             self.columns = model.feature_names_
-            self.trees, self.cat_cols, self.cat_indices = analyze_catboost(self.model, self.len_col)
+            self.trees, self.cat_cols, self.cat_indices, self.n_classes = analyze_catboost(self.model, self.len_col)
             self.model_type = "catboost"
 
         # Raise an error if the model is not lightgbm or xgboost
