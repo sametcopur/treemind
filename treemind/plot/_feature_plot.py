@@ -82,7 +82,9 @@ def _validate_feature_plot_parameters(
             )
     else:
         # For categorical data, we expect the first column to be the category identifier
-        if len(df.columns) < 4:  # category, value, std, count (minimum)
+        # (but excluding 'class' column if it exists)
+        non_class_cols = [col for col in df.columns if col != 'class']
+        if len(non_class_cols) < 4:  # category, value, std, count (minimum)
             raise ValueError(
                 "For categorical data, the DataFrame must have at least 4 columns: category identifier, value, std, count."
             )
@@ -141,11 +143,20 @@ def _is_categorical_data(df: pd.DataFrame) -> bool:
     return len(lb_columns) == 0 or len(ub_columns) == 0
 
 
+def _has_multiclass_data(df: pd.DataFrame) -> bool:
+    """
+    Determines if the DataFrame contains multiclass data (has 'class' column).
+    
+    Returns True if multiclass, False otherwise.
+    """
+    return 'class' in df.columns
+
+
 def feature_plot(
     df: pd.DataFrame,
     figsize: Tuple[float, float] = (12.0, 8.0),
     show_std: bool = False,
-    show_range: bool = True,
+    show_range: bool = False,
     xticks_n: int = 10,
     yticks_n: int = 10,
     ticks_fontsize: float = 10.0,
@@ -169,6 +180,9 @@ def feature_plot(
     * a count / frequency distribution (*kde* for continuous, line plot for
       categorical).
 
+    **New**: Supports multiclass problems. If a 'class' column is present,
+    separate plots will be generated for each class.
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -185,6 +199,7 @@ def feature_plot(
         `value`      Mean impact inside the interval
         `std`        Standard deviation of the impact
         `count`      Row count in the interval
+        `class`      (Optional) Class identifier for multiclass problems
         ========  ========================================================
 
         **Categorical layout**
@@ -192,17 +207,18 @@ def feature_plot(
         ========  ========================================================
         Column    Meaning
         --------  --------------------------------------------------------
-        `<name>`    Category identifier (first column in *df*)
+        `<name>`    Category identifier (first non-class column in *df*)
         `value`     Mean impact for the category
         `std`       Standard deviation of the impact
         `count`     Row count for the category
+        `class`     (Optional) Class identifier for multiclass problems
         ========  ========================================================
 
     figsize : (float, float), default ``(12, 8)``
         Width × height of the figure (in inches).
 
     show_std : bool, default ``False``
-        If *True*, plot ± ``std`` shaded regions.
+        If *True*, plot ± ``std`` shaded regions.
 
     show_range : bool, default ``True``
         If *True*, draw the count / frequency distribution:
@@ -223,7 +239,7 @@ def feature_plot(
 
     title : str or None, default ``None``
         Custom figure title.  If *None*, a title of the form
-        ``"Contribution of <feature>"`` is generated automatically.
+        ``"Contribution of <feature> - Class X"`` is generated automatically.
 
     xlabel, ylabel : str or None, default ``None``
         Custom axis labels.  If *None*, they default to the feature name
@@ -232,15 +248,17 @@ def feature_plot(
     Returns
     -------
     None
-        The function draws the figure and shows it; nothing is returned.
+        The function draws the figure(s) and shows them; nothing is returned.
 
     Notes
     -----
     * **Continuous data** is rendered with a *step* line (tree-split style).
-      Interval endpoints of ± ∞ are compressed to the outermost finite split
+      Interval endpoints of ± ∞ are compressed to the outermost finite split
       so the geometry remains well defined.
     * **Categorical data** is rendered with vertical bars originating from
       zero; categories appear in the order they occur in *df*.
+    * **Multiclass data** generates separate plots for each class, with class
+      information appended to the plot title.
     """
     # Parameter validation
     _validate_feature_plot_parameters(
@@ -258,6 +276,85 @@ def feature_plot(
         ylabel=ylabel,
     )
 
+    # Check if this is multiclass data
+    is_multiclass = _has_multiclass_data(df)
+    
+    if is_multiclass:
+        # Get unique classes and plot for each
+        unique_classes = sorted(df['class'].unique())
+        
+        for class_idx in unique_classes:
+
+            
+            # Filter data for current class
+            class_df = df[df['class'] == class_idx].copy()
+            # Remove the class column for plotting
+            class_df = class_df.drop('class', axis=1)
+            
+            # Create class-specific title
+            if title is None:
+                # Determine feature name for auto title
+                is_categorical = _is_categorical_data(class_df)
+                if is_categorical:
+                    feature_name = class_df.columns[0].replace("_", " ").title()
+                else:
+                    ub_columns = [col for col in class_df.columns if col.endswith("_ub")]
+                    feature_name = ub_columns[0][:-3] if ub_columns else "Feature"
+                
+                class_title = f"Contribution of {feature_name} - Class {class_idx}"
+            else:
+                class_title = f"{title} - Class {class_idx}"
+            
+            # Plot for this class
+            _plot_single_class(
+                class_df,
+                figsize,
+                show_std,
+                show_range,
+                xticks_n,
+                yticks_n,
+                ticks_fontsize,
+                title_fontsize,
+                label_fontsizes,
+                class_title,
+                xlabel,
+                ylabel,
+            )
+    else:
+        # Single class data - use existing logic
+        _plot_single_class(
+            df,
+            figsize,
+            show_std,
+            show_range,
+            xticks_n,
+            yticks_n,
+            ticks_fontsize,
+            title_fontsize,
+            label_fontsizes,
+            title,
+            xlabel,
+            ylabel,
+        )
+
+
+def _plot_single_class(
+    df: pd.DataFrame,
+    figsize: Tuple[float, float],
+    show_std: bool,
+    show_range: bool,
+    xticks_n: int,
+    yticks_n: int,
+    ticks_fontsize: float,
+    title_fontsize: float,
+    label_fontsizes: float,
+    title: Optional[str],
+    xlabel: Optional[str],
+    ylabel: Optional[str],
+) -> None:
+    """
+    Plot a single class's feature data.
+    """
     # Determine if data is categorical or continuous
     is_categorical = _is_categorical_data(df)
 
@@ -308,10 +405,6 @@ def _plot_categorical_feature(
     """
     Plot categorical feature as vertical bars from y=0, with optional std and count distribution.
     """
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-
     category_col = df.columns[0]
     xlabel = xlabel or category_col.replace("_", " ").title()
     ylabel = ylabel or "Value"

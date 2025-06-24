@@ -30,7 +30,8 @@ def _validate_interaction_plot_parameters(
     * a single **categorical** column ``<feature>``.
 
     Exactly two logical features plus the numeric columns ``value``, ``std`` and
-    ``count`` are required.
+    ``count`` are required. If a ``class`` column is present, separate plots
+    will be created for each class.
 
     Parameters
     ----------
@@ -63,6 +64,11 @@ def _validate_interaction_plot_parameters(
     if not required_meta.issubset(df.columns):
         missing = required_meta - set(df.columns)
         raise ValueError(f"`df` is missing required columns: {missing}")
+
+    # Check if class column exists (optional)
+    has_class_column = "class" in df.columns
+    if has_class_column:
+        required_meta.add("class")
 
     feature_cols = [c for c in df.columns if c not in required_meta]
 
@@ -115,80 +121,43 @@ def _validate_interaction_plot_parameters(
             raise TypeError(f"`{name}` must be a string if provided.")
 
 
-def interaction_plot(
-    df: pd.DataFrame,
-    figsize: Tuple[float, float] = (10.0, 8.0),
-    axis_ticks_n: int = 10,
-    ticks_fontsize: Union[int, float] = 10,
-    title_fontsize: Union[int, float] = 16,
-    label_fontsizes: Union[int, float] = 14,
-    title: Optional[str] = None,
-    xlabel: Optional[str] = None,
-    ylabel: Optional[str] = None,
-    color_bar_label: Optional[str] = None,
+def _plot_single_class(
+    df_class: pd.DataFrame,
+    class_name: str,
+    figsize: Tuple[float, float],
+    axis_ticks_n: int,
+    ticks_fontsize: Union[int, float],
+    title_fontsize: Union[int, float],
+    label_fontsizes: Union[int, float],
+    title: Optional[str],
+    xlabel: Optional[str],
+    ylabel: Optional[str],
+    color_bar_label: Optional[str],
 ) -> None:
     """
-    Plot a heat-map of interaction strengths for **two** features that may be
-    continuous, categorical, or one of each.
-
-    A continuous feature must appear as column pair ``<name>_lb`` +
-    ``<name>_ub`` (interval bounds); a categorical feature appears as a single
-    column ``<name>``.  The DataFrame must also include ``value`` (mean impact),
-    ``std`` (standard deviation) and ``count`` (bin size).
+    Plot interaction heat-map for a single class.
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Interaction summary table (see above).
-    figsize : (float, float), default (10, 8)
-        Width × height of the figure.
-    axis_ticks_n : int, default 10
-        Number of ticks to show on a continuous axis.
-    ticks_fontsize : float, default 10
-        Font size for tick labels.
-    title_fontsize : float, default 16
-        Font size for the title.
-    label_fontsizes : float, default 14
-        Font size for axis- and colour-bar labels.
-    title : str or None, default None
-        Optional figure title.
-    xlabel, ylabel : str or None, default None
-        Optional axis labels (fall back to feature names).
-    color_bar_label : str or None, default None
-        Label for the colour-bar (“Impact” if *None*).
-
-    Returns
-    -------
-    None
-        Displays the figure.
+    df_class : pandas.DataFrame
+        Interaction data for a single class.
+    class_name : str
+        Name of the class for title.
+    Other parameters : same as interaction_plot
     """
-
-    # validate all inputs ----------------------------------------------------------
-    _validate_interaction_plot_parameters(
-        df,
-        figsize,
-        axis_ticks_n,
-        ticks_fontsize,
-        title_fontsize,
-        label_fontsizes,
-        title,
-        xlabel,
-        ylabel,
-        color_bar_label,
-    )
 
     # ---------------- 1. identify features ---------------------------------------
     meta_cols = {"value", "std", "count"}
-    feature_cols = [c for c in df.columns if c not in meta_cols]
+    feature_cols = [c for c in df_class.columns if c not in meta_cols]
 
-    df = df.copy()
+    df_class = df_class.copy()
 
     cont_pairs, used = {}, set()
     cat_cols: List[str] = []
     for col in feature_cols:
         if col in used:
             continue
-        if col.endswith("_lb") and (ub := f"{col[:-3]}_ub") in df.columns:
+        if col.endswith("_lb") and (ub := f"{col[:-3]}_ub") in df_class.columns:
             cont_pairs[col[:-3]] = (col, ub)
             used.update({col, ub})
         elif col.endswith("_ub"):
@@ -216,14 +185,14 @@ def interaction_plot(
         lb1, ub1 = cont_pairs[feat1]
 
         # Infinity değerlerini değiştir
-        df = _replace_infinity(df, lb1, "negative")
-        df = _replace_infinity(df, ub1, "positive")
+        df_class = _replace_infinity(df_class, lb1, "negative")
+        df_class = _replace_infinity(df_class, ub1, "positive")
 
-        x_left = df[lb1].to_numpy()
-        x_right = df[ub1].to_numpy()
+        x_left = df_class[lb1].to_numpy()
+        x_right = df_class[ub1].to_numpy()
 
     else:
-        cats1 = df[feat1].astype("category")
+        cats1 = df_class[feat1].astype("category")
         codes1 = cats1.cat.codes.to_numpy()
         x_left, x_right = codes1, codes1 + 1
         cats1_labels = cats1.cat.categories.tolist()
@@ -232,20 +201,20 @@ def interaction_plot(
         lb2, ub2 = cont_pairs[feat2]
 
         # Infinity değerlerini değiştir
-        df = _replace_infinity(df, lb2, "negative")
-        df = _replace_infinity(df, ub2, "positive")
+        df_class = _replace_infinity(df_class, lb2, "negative")
+        df_class = _replace_infinity(df_class, ub2, "positive")
 
-        y_bottom = df[lb2].to_numpy()
-        y_top = df[ub2].to_numpy()
+        y_bottom = df_class[lb2].to_numpy()
+        y_top = df_class[ub2].to_numpy()
 
     else:
-        cats2 = df[feat2].astype("category")
+        cats2 = df_class[feat2].astype("category")
         codes2 = cats2.cat.codes.to_numpy()
         y_bottom, y_top = codes2, codes2 + 1
         cats2_labels = cats2.cat.categories.tolist()
 
     # --------------------------- 3. Renkler
-    values = df["value"].to_numpy()
+    values = df_class["value"].to_numpy()
     vmax, vmin = values.max(), values.min()
     abs_max = max(abs(vmax), abs(vmin))
     if abs_max == 0:
@@ -325,8 +294,14 @@ def interaction_plot(
     # --------------------------- 6. Başlık & Etiketler
     ax.set_xlabel(xlabel or feat1, fontsize=label_fontsizes)
     ax.set_ylabel(ylabel or feat2, fontsize=label_fontsizes)
+
+    # Title'a class bilgisini ekle
     if title:
-        ax.set_title(title, fontsize=title_fontsize)
+        full_title = f"{title} - {'Class ' if class_name else ''}{class_name}"
+    else:
+        full_title = f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()} - {'Class ' if class_name else ''}{class_name}"
+
+    ax.set_title(full_title, fontsize=title_fontsize)
 
     # Color bar ayarları (orijinal kodla uyumlu)
     cbar.ax.set_ylim(vmin, vmax)
@@ -335,3 +310,111 @@ def interaction_plot(
 
     plt.tight_layout()
     plt.show()
+
+
+def interaction_plot(
+    df: pd.DataFrame,
+    figsize: Tuple[float, float] = (10.0, 8.0),
+    axis_ticks_n: int = 10,
+    ticks_fontsize: Union[int, float] = 10,
+    title_fontsize: Union[int, float] = 16,
+    label_fontsizes: Union[int, float] = 14,
+    title: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    color_bar_label: Optional[str] = None,
+) -> None:
+    """
+    Plot a heat-map of interaction strengths for **two** features that may be
+    continuous, categorical, or one of each. If a class column is provided,
+    creates separate plots for each class.
+
+    A continuous feature must appear as column pair ``<name>_lb`` +
+    ``<name>_ub`` (interval bounds); a categorical feature appears as a single
+    column ``<name>``.  The DataFrame must also include ``value`` (mean impact),
+    ``std`` (standard deviation) and ``count`` (bin size).
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Interaction summary table (see above).
+    figsize : (float, float), default (10, 8)
+        Width × height of the figure.
+    axis_ticks_n : int, default 10
+        Number of ticks to show on a continuous axis.
+    ticks_fontsize : float, default 10
+        Font size for tick labels.
+    title_fontsize : float, default 16
+        Font size for the title.
+    label_fontsizes : float, default 14
+        Font size for axis- and colour-bar labels.
+    title : str or None, default None
+        Optional figure title.
+    xlabel, ylabel : str or None, default None
+        Optional axis labels (fall back to feature names).
+    color_bar_label : str or None, default None
+        Label for the colour-bar ("Impact" if *None*).
+    class_column : str or None, default None
+        Name of the class column. If provided, creates separate plots for each class.
+
+    Returns
+    -------
+    None
+        Displays the figure(s).
+    """
+
+    # validate all inputs ----------------------------------------------------------
+    _validate_interaction_plot_parameters(
+        df,
+        figsize,
+        axis_ticks_n,
+        ticks_fontsize,
+        title_fontsize,
+        label_fontsizes,
+        title,
+        xlabel,
+        ylabel,
+        color_bar_label,
+    )
+
+    # Check if class column exists for multi-class plotting
+    if "class" in df.columns:
+        # Get unique classes
+        unique_classes = df["class"].unique()
+
+        # Create a plot for each class
+        for class_name in unique_classes:
+            df_class = df[df["class"] == class_name].copy()
+
+            # Remove class column from the class-specific dataframe
+            df_class = df_class.drop(columns=["class"])
+
+            # Plot for this class
+            _plot_single_class(
+                df_class=df_class,
+                class_name=str(class_name),
+                figsize=figsize,
+                axis_ticks_n=axis_ticks_n,
+                ticks_fontsize=ticks_fontsize,
+                title_fontsize=title_fontsize,
+                label_fontsizes=label_fontsizes,
+                title=title,
+                xlabel=xlabel,
+                ylabel=ylabel,
+                color_bar_label=color_bar_label,
+            )
+    else:
+        # Original single plot behavior
+        _plot_single_class(
+            df_class=df.copy(),
+            class_name="",
+            figsize=figsize,
+            axis_ticks_n=axis_ticks_n,
+            ticks_fontsize=ticks_fontsize,
+            title_fontsize=title_fontsize,
+            label_fontsizes=label_fontsizes,
+            title=title,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            color_bar_label=color_bar_label,
+        )

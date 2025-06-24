@@ -1,11 +1,7 @@
 from libcpp.vector cimport vector
-
 from libc.math cimport INFINITY
-
 import pandas as pd
-
 from libcpp.pair cimport pair
-
 from .rule cimport update_leaf_counts
 from .utils cimport add_lower_bound, _analyze_feature, filter_class_trees
 from .lgb cimport analyze_lightgbm
@@ -18,6 +14,253 @@ import warnings
 
 cdef vector[pair[double, double]] feature_ranges
 
+cdef class Result:
+    """Result class to hold feature interaction analysis statistics"""
+    
+    def __init__(self):
+        self.data = {}
+        self.degree = 0
+        self.n_classes = 0
+        self.feature_names = []
+        self.model_type = ""
+    
+    def __repr__(self) -> str:
+        return f"Result(degree={self.degree}, interactions={len(self.data)}, classes={self.n_classes})"
+        
+    def __getitem__(self, key):
+        """
+        Get statistics for feature interaction using Python indexing
+        
+        Parameters:
+        -----------
+        key : int, list, tuple
+            - Single int: get individual feature stats (for degree=1)
+            - List/tuple of ints: get interaction stats for those features
+            
+        Returns:
+        --------
+        pandas.DataFrame
+            DataFrame with feature interaction statistics. 
+            For multi-class models, includes 'class' column indicating the class.
+        """
+        # Handle single integer (individual feature)
+        if isinstance(key, int):
+            if self.degree == 1:
+                requested_key = (key,)
+            else:
+                raise ValueError(f"Single index only valid for degree=1, current degree={self.degree}")
+        
+        # Handle list or tuple (feature interactions)
+        elif isinstance(key, (list, tuple)):
+            if len(key) != self.degree:
+                raise ValueError(f"Index length ({len(key)}) must match result degree ({self.degree})")
+            requested_key = tuple(key)
+        
+        else:
+            raise TypeError("Index must be int, list, or tuple")
+        
+        # Find the data by checking all possible permutations of the key
+        stored_data = None
+        stored_key = None
+        
+        # Check if exact key exists
+        if requested_key in self.data:
+            stored_data = self.data[requested_key]
+            stored_key = requested_key
+        else:
+            # Check all permutations to find the stored version
+            from itertools import permutations
+            for perm in permutations(requested_key):
+                if perm in self.data:
+                    stored_data = self.data[perm]
+                    stored_key = perm
+                    break
+        
+        if stored_data is None:
+            return None
+        
+        # If requested order is different from stored order, reorder the DataFrames
+        if requested_key != stored_key:
+            stored_data = self._reorder_dataframes(stored_data, stored_key, requested_key)
+        
+        # Convert class-wise data to single DataFrame
+        return self._combine_class_dataframes(stored_data)
+
+    cdef _combine_class_dataframes(self, dict class_data):
+        """
+        Combine class-wise DataFrames into a single DataFrame with optional 'class' column
+        """
+        cdef list dataframes = []
+        cdef int class_idx
+        cdef object df, combined_df
+        
+        # If single class, return the DataFrame directly
+        if self.n_classes == 1:
+            return class_data[0]
+        
+        # For multi-class, combine all class DataFrames
+        for class_idx in sorted(class_data.keys()):
+            df = class_data[class_idx].copy()
+            df['class'] = class_idx
+            dataframes.append(df)
+        
+        # Concatenate all DataFrames
+        combined_df = pd.concat(dataframes, ignore_index=True)
+        
+        # Reorder columns to put 'class' first
+        cols =  [col for col in combined_df.columns if col != 'class'] + ['class']
+        combined_df = combined_df[cols]
+        
+        return combined_df
+
+    cdef _reorder_dataframes(self, dict class_data, tuple stored_key, tuple requested_key):
+        """
+        Reorder DataFrame columns according to requested key order
+        """
+        cdef dict reordered_data = {}
+        cdef int class_idx
+        cdef object df, reordered_df
+        
+        # Create mapping from stored order to requested order
+        cdef list reorder_mapping = []
+        for req_idx in requested_key:
+            stored_position = stored_key.index(req_idx)
+            reorder_mapping.append(stored_position)
+        
+        for class_idx, df in class_data.items():
+            reordered_df = self._reorder_single_dataframe(df, stored_key, requested_key, reorder_mapping)
+            reordered_data[class_idx] = reordered_df
+        
+        return reordered_data
+    
+    cdef _reorder_single_dataframe(self, object df, tuple stored_key, tuple requested_key, list reorder_mapping):
+        """
+        Reorder a single DataFrame's columns according to the requested feature order
+        """
+        cdef list new_columns = []
+        cdef list feature_columns = []
+        cdef list other_columns = []
+        cdef str col
+        cdef int i, req_idx, stored_idx
+        cdef str feature_name
+        cdef list current_feature_cols
+        
+        # Separate feature columns from other columns (value, std, count)
+        for col in df.columns:
+            if col in ['value', 'std', 'count']:
+                other_columns.append(col)
+            else:
+                feature_columns.append(col)
+        
+        # Reorder feature columns according to requested order
+        for req_idx in requested_key:
+            feature_name = self.feature_names[req_idx]
+            current_feature_cols = []
+            
+            # Find all columns belonging to this feature
+            for col in feature_columns:
+                # Check if column belongs to this feature
+                if (col == feature_name or                           # Categorical: exact match
+                    col == f"{feature_name}_lb" or                   # Numerical: lower bound
+                    col == f"{feature_name}_ub"):                    # Numerical: upper bound
+                    current_feature_cols.append(col)
+            
+            # Sort feature columns in consistent order: _lb, _ub, then base name
+            # This handles both cases:
+            # - Categorical: just feature_name
+            # - Numerical: feature_name_lb, feature_name_ub
+            current_feature_cols.sort(key=lambda x: (
+                not x.endswith('_lb'),    # _lb comes first (False = 0)
+                not x.endswith('_ub'),    # _ub comes second (False = 0) 
+                x                         # Then alphabetical for any remaining
+            ))
+            
+            new_columns.extend(current_feature_cols)
+        
+        # Add other columns at the end
+        new_columns.extend(other_columns)
+        
+        # Reorder the DataFrame
+        return df[new_columns]
+
+
+    # Result sınıfı içine ekleyin
+    def importance(self, bint combine_classes=False):
+        cdef list rows = []
+        cdef tuple feat_key
+        cdef dict class_data
+        cdef int cls
+        cdef object df
+        cdef float total_cnt, mu, I_abs, num
+
+        for feat_key, class_data in self.data.items():
+
+            def _calc_I_abs(df):
+                total = df['count'].sum()
+                if total == 0:
+                    return float('nan')
+                mu = (df['value'] * df['count']).sum() / total
+                I_abs = ((df['value'] - mu).abs() * df['count']).sum() / total
+                return I_abs
+
+            if self.n_classes == 1 or combine_classes:
+                # Tek sınıf veya birleştirilmiş çoklu sınıf
+                total_cnt = 0.0
+                num = 0.0
+                for cls, df in class_data.items():
+                    cnt = df['count'].sum()
+                    if cnt == 0:
+                        continue
+                    Ia   = _calc_I_abs(df)
+                    num += Ia * cnt
+                    total_cnt += cnt
+                I_abs = num / total_cnt if total_cnt else float('nan')
+
+                row = {f'feature_{i}': self.feature_names[idx]
+                    for i, idx in enumerate(feat_key)}
+                row['importance'] = I_abs
+                rows.append(row)
+
+            else:
+                # Sınıf bazlı detaylı çıktı
+                for cls, df in class_data.items():
+                    I_abs = _calc_I_abs(df)
+                    row = {f'feature_{i}': self.feature_names[idx]
+                        for i, idx in enumerate(feat_key)}
+                    row['importance'] = I_abs
+                    row['class'] = cls
+                    rows.append(row)
+
+        return pd.DataFrame(rows).sort_values(by='importance', ascending=False).reset_index(drop=True)
+
+    
+    def __contains__(self, key):
+        """Check if a feature interaction exists in the results"""
+        try:
+            return self[key] is not None
+        except (ValueError, TypeError):
+            return False
+    
+    def __len__(self):
+        """Return number of feature interactions"""
+        return len(self.data)
+    
+    def __iter__(self):
+        """Iterate over feature combinations"""
+        return iter(self.data.keys())
+    
+    def keys(self):
+        """Return all feature combinations"""
+        return self.data.keys()
+    
+    def values(self):
+        """Return all statistics"""
+        return self.data.values()
+    
+    def items(self):
+        """Return feature combinations and their statistics"""
+        return self.data.items()
+    
 cdef class Explainer:
     def __init__(self):
         self.trees = vector[vector[Rule]]()
@@ -46,8 +289,6 @@ cdef class Explainer:
             else:
                 self.model = model
 
-            # if self.model._Booster__num_class != 1:
-            #     raise ValueError("Multiclass lightgbm models are not supported yet.")
             self.n_classes = self.model._Booster__num_class
             self.columns = self.model.feature_name()
             self.len_col = len(self.columns)
@@ -148,129 +389,103 @@ cdef class Explainer:
             if isinstance(columns, int) or len(columns) == 1:
                 msg = f"Feature {columns} was not used in any split by the model."
             else:
-                msg = f"One or more of the features {columns} were  not used in any split by the model."
+                msg = f"One or more of the features {columns} were not used in any split by the model."
 
             warnings.warn(msg)
-                
-
         else:
             df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
         
-        # # Add lower bounds for all columns
+        # Add lower bounds for all columns
         for col_name in column_names:
             col_ub = f"{col_name}_ub"
 
             if col_ub in df.columns:
-                # 'column_ub' kolonunun indeksini bul
                 ub_index = df.columns.get_loc(col_ub)
-                
-                # 'column_lb' bu indeksin önüne eklenmeli
                 add_lower_bound(df, ub_index, col_name)
         
         return df
     
-    def analyze_feature(self, columns, *, back_data = None):
+    def analyze(self, int degree, *, back_data=None):
+
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
         
-        # Convert columns list to vector[int]
+        if degree >= self.len_col:
+            raise ValueError("'degree' cannot be greater than or equal to the total number of columns used to train the model.")
+
+        if degree < 1:
+            raise ValueError("The 'degree' parameter must be a positive integer.")
+
         cdef:
-            vector[int] col_indices
-            int col
             vector[vector[Rule]] trees = self.trees
             vector[vector[Rule]] class_trees
+            Result result = Result()
+            list feature_combinations
+            tuple feature_combo
+            vector[int] col_indices
+            int col
             vector[vector[double]] points
             vector[double] mean_values, ensemble_std, counts
-            int num_cols, i
-            str col_str
+            int num_cols, class_idx
+            list column_names
+            object class_df
 
+        # Generate all feature combinations of specified degree
+        feature_combinations = list(combinations(range(self.len_col), degree))
         
-        if isinstance(columns, int):
-            col_indices.push_back(columns)
+        if not feature_combinations:
+            warnings.warn(f"No feature combinations of degree {degree} possible with {self.len_col} features.")
+            return result
 
-        elif isinstance(columns, list):
-            for col in columns:
-                col_indices.push_back(col)
-        else:
-            raise ValueError("Invalid type for 'columns'. Expected an int or a list.")
-
-        num_cols = <int>col_indices.size()
-        
-        # Validate input columns
-        if num_cols < 1:
-            raise ValueError("At least one columns must be provided for feature analysis.")
-
-        elif num_cols > self.len_col:
-            raise ValueError("The length of columns must be smaller than the total number of columns used to train the model.")
-    
-        for col in col_indices:
-            if col >= self.len_col:
-                raise ValueError(f"Column index {col} cannot be greater than or equal to the total number of columns used to train the model.")
-            if col < 0:
-                raise ValueError("Column indices cannot be negative.")
-                
-        # Check for duplicate columns
-
-        if isinstance(columns, list):
-            seen = set()
-            for col in columns:
-                if col in seen:
-                    raise ValueError("Duplicate column indices are not allowed.")
-                seen.add(col)
-
+        # Update trees with background data if provided
         if back_data is not None:
             trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
-        
-        # Get column names using regular Python list
-        column_names = [self.columns[idx] for idx in col_indices]
 
-        # Analyze interactions
-        cdef list all_df = []
-        for class_idx in range(self.n_classes):
-            if self.n_classes == 1:
-                class_trees = trees
-            else:
-                class_trees = filter_class_trees(trees, self.n_classes, class_idx) 
+        # Set result metadata
+        result.degree = degree
+        result.n_classes = self.n_classes
+        result.feature_names = self.columns
+        result.model_type = self.model_type
+
+        # Analyze each feature combination
+        for feature_combo in feature_combinations:
+            # Convert feature combination to vector[int]
+            col_indices.clear()
+            for col in feature_combo:
+                col_indices.push_back(col)
             
-            points, mean_values, ensemble_std, counts = _analyze_feature(class_trees, col_indices, self.cat_cols)
-            class_df = self.prepare_dataframe(col_indices, num_cols, column_names, points, mean_values, ensemble_std, counts, columns)
-
-            if self.n_classes != 1:
-                class_df.loc[:, "class"] = class_idx
+            num_cols = len(feature_combo)
+            column_names = [self.columns[idx] for idx in feature_combo]
             
-            all_df.append(class_df)
-
-        df = pd.concat(all_df, ignore_index=True)
-
-        # Closure olmayan biçimiyle yaz
-        only_default_split = True
-        for col_str in df.columns:
-            if col_str not in {"value", "std", "count"} and not col_str.endswith("_lb") and not col_str.endswith("_ub"):
-                only_default_split = False
-                break
-
-        if df.shape[0] == 1 and only_default_split:
-            if isinstance(columns, int) or len(columns) == 1:
-                msg = f"Feature {columns} was not used in any split. Values are based on the default range (-inf, +inf)."
-            else:
-                msg = f"All of the features {columns} were not used in any split. Values are based on the default range (-inf, +inf)."
+            # Store class-wise statistics for this feature combination
+            class_stats = {}
             
-            warnings.warn(msg)
+            # Analyze for each class
+            for class_idx in range(self.n_classes):
+                if self.n_classes == 1:
+                    class_trees = trees
+                else:
+                    class_trees = filter_class_trees(trees, self.n_classes, class_idx)
+                
+                points, mean_values, ensemble_std, counts = _analyze_feature(class_trees, col_indices, self.cat_cols)
+                class_df = self.prepare_dataframe(col_indices, num_cols, column_names, points, mean_values, ensemble_std, counts, feature_combo)
+                
+                class_stats[class_idx] = class_df
+            
+            # Store in result
+            result.data[feature_combo] = class_stats
 
-        
-        return df
+        return result
 
-
-    cpdef object count_node(self, int order=2):
+    cpdef object count_node(self, int degree=2):
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
 
-        if order >= self.len_col:
-            raise ValueError("'order' cannot be greater than or equal to the total number of columns used to train the model.")
+        if degree >= self.len_col:
+            raise ValueError("'degree' cannot be greater than or equal to the total number of columns used to train the model.")
 
-        if order < 1:
-            raise ValueError("The 'order' parameter must be a positive integer.")
-
+        if degree < 1:
+            raise ValueError("The 'degree' parameter must be a positive integer.")
 
         cdef:
             vector[Rule] rule_set
@@ -289,12 +504,12 @@ cdef class Explainer:
                 ]
                 n = len(finite_indices)
 
-                if n >= order:
-                    for comb in combinations(finite_indices, order):
+                if n >= degree:
+                    for comb in combinations(finite_indices, degree):
                         combination_counts[comb] += 1
 
         # Create column names dynamically based on order
-        columns = [f"column{i+1}_index" for i in range(order)]
+        columns = [f"column{i+1}_index" for i in range(degree)]
         columns.append("count")
 
         # Prepare data for DataFrame
@@ -303,4 +518,3 @@ cdef class Explainer:
         df = pd.DataFrame(data, columns=columns)
 
         return df.sort_values("count", ascending=False).reset_index(drop=True)
-            

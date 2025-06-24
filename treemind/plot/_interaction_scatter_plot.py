@@ -77,22 +77,6 @@ def _validate_interaction_scatter_plot_parameters(
     if df.shape[0] <= 2:
         raise ValueError("There is no interaction between features to plot.")
 
-    # Ensure column names end as required
-    expected_endings = ["_lb", "_ub", "_lb", "_ub"]
-    if (
-        len(df.columns) < 5
-        or not all(
-            col.endswith(end) for col, end in zip(df.columns[:4], expected_endings)
-        )
-        or df.columns[-3] != "value"
-        or df.columns[-2] != "std"
-        or df.columns[-1] != "count"
-    ):
-        raise ValueError(
-            "The first four columns of `df` must end with '_lb', '_ub', '_lb', '_ub' respectively, "
-            "and the last columns must be 'value', 'std', 'count'."
-        )
-
     # Check figsize
     if not isinstance(figsize, tuple) or len(figsize) != 2:
         raise TypeError(
@@ -193,6 +177,7 @@ def interaction_scatter_plot(
 ) -> None:
     """
     Creates a scatter plot of feature values with colors representing interaction values.
+    If 'class' column exists in df, creates separate plots for each class.
 
     Parameters
     ----------
@@ -202,11 +187,12 @@ def interaction_scatter_plot(
         A DataFrame containing interaction data with columns `_lb`, `_ub`, `_lb`, `_ub`, and `value`.
         The first four columns represent intervals for two features, where each pair (_lb, _ub) defines
         the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
+        Optionally contains a 'class' column for creating separate plots per class.
     col_1 : int
         Index of first feature in X
     col_2 : int
         Index of second feature in X
-    figsize : tuple of float, default (10.0, 6.0)
+    figsize : tuple of float, default (10.0, 8.0)
         Width and height of the plot in inches.
     ticks_fontsize : float, default 10.0
         Font size for axis tick labels,
@@ -216,13 +202,13 @@ def interaction_scatter_plot(
         The title displayed at the top of the plot. If `None`, no title is shown.
     xlabel : str, optional, default None
         Label for the x-axis. If None, it will default to the feature name.
-    xlabel : str, optional, default None
+    ylabel : str, optional, default None
         Label for the y-axis. If None, it will default to the feature name.
     color_bar_label : str, optional, default None
         Colorbar label, If None, it will default to "Impact".
     """
     # ---------------------------------------------------------------------
-    # 3-a  Data wrangling
+    # Data wrangling
     # ---------------------------------------------------------------------
     try:
         X = np.asarray(X)
@@ -249,54 +235,113 @@ def interaction_scatter_plot(
     x_vals = X[:, col_1].astype(float)
     y_vals = X[:, col_2].astype(float)
 
-    # ---------------------------------------------------------------------
-    # 3-b  Build or reuse the lookup grid
-    # ---------------------------------------------------------------------
-    x_edges, y_edges, grid = _build_lookup(df)
+    # Check if 'class' column exists
+    has_class_column = 'class' in df.columns
+    
+    if has_class_column:
+        # Get unique classes
+        unique_classes = df['class'].unique()
+        
+        # Create separate plot for each class
+        for class_value in unique_classes:
+            # Filter dataframe for current class
+            df_class = df[df['class'] == class_value].copy()
+            
+            # Skip if no data for this class
+            if df_class.empty:
+                continue
+            
+            # Build lookup grid for this class
+            x_edges, y_edges, grid = _build_lookup(df_class)
+            values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
 
-    values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
+            # Create plot for this class
+            fig, ax = plt.subplots(figsize=figsize)
 
-    # ---------------------------------------------------------------------
-    # 3-c  Plot
-    # ---------------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=figsize)
+            # Symmetric normalisation around 0
+            max_abs = float(np.nanmax(np.abs(values))) or 1.0
+            norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
 
-    # Symmetric normalisation around 0
-    max_abs = float(np.nanmax(np.abs(values))) or 1.0
-    norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+            scatter = ax.scatter(
+                x_vals,
+                y_vals,
+                c=values,
+                cmap="coolwarm",
+                norm=norm,
+                edgecolors="black",
+            )
 
-    scatter = ax.scatter(
-        x_vals,
-        y_vals,
-        c=values,
-        cmap="coolwarm",
-        norm=norm,
-        edgecolors="black",
-    )
+            # Axis labels
+            ax.set_xlabel(
+                xlabel if xlabel is not None else df.columns[0][:-3],
+                fontsize=label_fontsizes,
+            )
+            ax.set_ylabel(
+                ylabel if ylabel is not None else df.columns[2][:-3],
+                fontsize=label_fontsizes,
+            )
 
-    # Axis labels
-    ax.set_xlabel(
-        xlabel if xlabel is not None else df.columns[0][:-3],
-        fontsize=label_fontsizes,
-    )
-    ax.set_ylabel(
-        ylabel if ylabel is not None else df.columns[2][:-3],
-        fontsize=label_fontsizes,
-    )
+            # Colour-bar
+            cbar = plt.colorbar(scatter)
+            cbar.ax.tick_params(labelsize=ticks_fontsize)
+            cbar.set_label(
+                color_bar_label if color_bar_label is not None else "Impact",
+                fontsize=label_fontsizes,
+            )
+            if title:
+                plot_title = f"{title} - Class {class_value}"
+            else:
+                plot_title = f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()} - Class {class_value}"
 
-    # Colour-bar
-    cbar = plt.colorbar(scatter)
-    cbar.ax.tick_params(labelsize=ticks_fontsize)
-    cbar.set_label(
-        color_bar_label if color_bar_label is not None else "Impact",
-        fontsize=label_fontsizes,
-    )
+            ax.set_title(plot_title, fontsize=title_fontsize)
 
-    # Title
-    ax.set_title(
-        title if title is not None else "Interaction Scatter Plot",
-        fontsize=title_fontsize,
-    )
+            plt.tight_layout()
+            plt.show()
+    
+    else:
+        # Original behavior when no class column exists
+        x_edges, y_edges, grid = _build_lookup(df)
+        values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
 
-    plt.tight_layout()
-    plt.show()
+        # Create single plot
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # Symmetric normalisation around 0
+        max_abs = float(np.nanmax(np.abs(values))) or 1.0
+        norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+
+        scatter = ax.scatter(
+            x_vals,
+            y_vals,
+            c=values,
+            cmap="coolwarm",
+            norm=norm,
+            edgecolors="black",
+        )
+
+        # Axis labels
+        ax.set_xlabel(
+            xlabel if xlabel is not None else df.columns[0][:-3],
+            fontsize=label_fontsizes,
+        )
+        ax.set_ylabel(
+            ylabel if ylabel is not None else df.columns[2][:-3],
+            fontsize=label_fontsizes,
+        )
+
+        # Colour-bar
+        cbar = plt.colorbar(scatter)
+        cbar.ax.tick_params(labelsize=ticks_fontsize)
+        cbar.set_label(
+            color_bar_label if color_bar_label is not None else "Impact",
+            fontsize=label_fontsizes,
+        )
+
+        # Title
+        ax.set_title(
+            title if title is not None else f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()}",
+            fontsize=title_fontsize,
+        )
+
+        plt.tight_layout()
+        plt.show()
