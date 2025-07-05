@@ -72,6 +72,15 @@ extensions = [
         define_macros=define_macros,
     ),
     Extension(
+        name="treemind.algorithm.perp",
+        sources=["treemind/algorithm/perp.pyx"],
+        include_dirs=[np.get_include(), "treemind/algorithm"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros,
+    ),
+    Extension(
         name="treemind.algorithm.lgb",
         sources=["treemind/algorithm/lgb.pyx"],
         include_dirs=[np.get_include(), "treemind/algorithm"],

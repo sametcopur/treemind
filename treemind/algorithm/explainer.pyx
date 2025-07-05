@@ -8,6 +8,7 @@ from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost
 from .cb cimport analyze_catboost
 from .sk cimport analyze_sklearn
+from .perp cimport analyze_perpetual
 
 from collections import Counter
 from itertools import combinations
@@ -346,6 +347,16 @@ cdef class Explainer:
             self.model_type = "sklearn"
             self.trees, self.cat_cols, self.cat_indices = analyze_sklearn(self.model, self.len_col, self.n_classes)
 
+        elif "perpetual" in module_name:
+            self.model = model
+            self.len_col = model.n_features_
+            self.columns = model.feature_names_in_
+            self.model_type = "perpetual"
+            self.categorical = list(model.cat_mapping.values())
+            self.n_classes = 1 if len(model.classes_) <= 2 else len(model.classes_)
+
+            self.trees, self.cat_cols, self.cat_indices = analyze_perpetual(self.model)
+
         # Handle xgboost models
         elif "xgboost" in module_name:
             if "core" not in module_name:
@@ -403,10 +414,11 @@ cdef class Explainer:
         cdef int idx, i, j, ub_index
         cdef bint check
     
-        cdef str cats, msg, col_ub
+        cdef str msg, col_ub
         cdef dict df_dict = {}
         cdef vector[double] row
         cdef object df
+        cdef list cats
         
         # Add points columns
         for i in range(num_cols):
