@@ -81,6 +81,15 @@ extensions = [
         define_macros=define_macros,
     ),
     Extension(
+        name="treemind.algorithm.sk",
+        sources=["treemind/algorithm/sk.pyx"],
+        include_dirs=[np.get_include(), "treemind/algorithm"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros,
+    ),
+    Extension(
         name="treemind.algorithm.xgb",
         sources=["treemind/algorithm/xgb.pyx"],
         include_dirs=[np.get_include(), "treemind/algorithm"],

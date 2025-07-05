@@ -7,6 +7,7 @@ from .utils cimport add_lower_bound, _analyze_feature, filter_class_trees
 from .lgb cimport analyze_lightgbm
 from .xgb cimport analyze_xgboost
 from .cb cimport analyze_catboost
+from .sk cimport analyze_sklearn
 
 from collections import Counter
 from itertools import combinations
@@ -295,6 +296,55 @@ cdef class Explainer:
             self.model_type = "lightgbm"
             self.categorical = self.model.pandas_categorical
             self.trees, self.cat_cols, self.cat_indices = analyze_lightgbm(self.model, self.len_col)
+
+        elif "sklearn" in module_name:
+            self.model = model
+            self.categorical = None
+            
+            # Get number of features
+            if hasattr(model, 'n_features_in_'):
+                self.len_col = model.n_features_in_
+            elif hasattr(model, 'n_features_'):
+                self.len_col = model.n_features_
+            else:
+                # Fallback: try to get from tree structure
+                if hasattr(model, 'tree_'):
+                    # Single decision tree
+                    self.len_col = model.tree_.n_features
+                elif hasattr(model, 'estimators_'):
+                    # Check if it's a GradientBoosting model by class name
+                    model_class_name = model.__class__.__name__
+                    if 'GradientBoosting' in model_class_name:
+                        # GradientBoosting: estimators_ is 2D array [n_estimators, n_classes]
+                        # Access first estimator from first class
+                        first_estimator = model.estimators_[0, 0]
+                        if hasattr(first_estimator, 'tree_'):
+                            self.len_col = first_estimator.tree_.n_features
+                        else:
+                            self.len_col = first_estimator.n_features_
+                    else:
+                        # RandomForest or other ensemble: estimators_ is 1D array
+                        if hasattr(model.estimators_[0], 'tree_'):
+                            self.len_col = model.estimators_[0].tree_.n_features
+                        else:
+                            self.len_col = model.estimators_[0].n_features_
+                else:
+                    raise ValueError("Could not determine number of features from sklearn model")
+            
+            # Get feature names
+            if hasattr(model, 'feature_names_in_'):
+                self.columns = list(model.feature_names_in_)
+            else:
+                self.columns = [f"Feature_{i}" for i in range(self.len_col)]
+            
+            # Get number of classes
+            if hasattr(model, 'n_classes_'):
+                self.n_classes = 1 if model.n_classes_ == 2 else model.n_classes_
+            else:
+                self.n_classes = 1  # Regression or binary classification
+            
+            self.model_type = "sklearn"
+            self.trees, self.cat_cols, self.cat_indices = analyze_sklearn(self.model, self.len_col, self.n_classes)
 
         # Handle xgboost models
         elif "xgboost" in module_name:
