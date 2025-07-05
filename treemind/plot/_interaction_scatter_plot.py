@@ -20,81 +20,63 @@ def _validate_interaction_scatter_plot_parameters(
     ylabel: Optional[str],
     color_bar_label: Optional[str],
 ) -> None:
-    """
-    Validates inputs for `interaction_plot` to ensure proper types, dimensions, and values.
-
-    Parameters
-    ----------
-    X : np.ndarray
-        A two-dimensional numeric array containing the feature data.
-    df : pd.DataFrame
-        A DataFrame expected to contain interaction data with columns ending in `_lb`, `_ub`,
-        `_lb`, `_ub`, and `value` as the last column.
-    col1 : int
-        Index of the first feature to use in the interaction plot.
-    col2 : int
-        Index of the second feature to use in the interaction plot.
-    figsize : Tuple[float, float]
-        Size of the figure, should be a tuple of two positive numbers.
-    axis_ticks_n : int
-        Number of ticks on both axes, must be a positive integer.
-    ticks_fontsize : int or float
-        Font size for axis tick labels, must be a positive number.
-    title_fontsize : int or float
-        Font size for plot title, must be a positive number.
-    label_fontsizes : int or float
-        Font size for axis labels, must be a positive number.
-    title : str, optional
-        Plot title, if provided must be a string.
-    xlabel : str, optional
-        X-axis label, if provided must be a string.
-    ylabel : str, optional
-        Y-axis label, if provided must be a string.
-    color_bar_label : str, optional
-        Colorbar label, if provided must be a string.
-
-    Raises
-    ------
-    TypeError, ValueError
-        If any input has an invalid type, dimension, or value.
-    """
-    # Validate `X` is a two-dimensional numeric array
-    if X.ndim != 2:
+    # X validation
+    if not isinstance(X, np.ndarray) or X.ndim != 2:
         raise TypeError("`X` must be a two-dimensional NumPy array.")
 
-    # Validate `col1` and `col2` are valid column indices
+    # Feature indices
     if not isinstance(col_1, int) or not isinstance(col_2, int):
-        raise TypeError("`col1` and `col2` must be integers.")
+        raise TypeError("`col_1` and `col_2` must be integers.")
     if col_1 < 0 or col_2 < 0 or col_1 >= X.shape[1] or col_2 >= X.shape[1]:
-        raise ValueError(
-            "`col1` and `col2` must be valid column indices within the range of `X`."
-        )
+        raise ValueError("`col_1` and `col_2` must be valid indices in `X`.")
 
-    # Validate `df` structure and column names
+    # df type check
     if not isinstance(df, pd.DataFrame):
         raise TypeError("`df` must be a pandas DataFrame.")
 
     if df.shape[0] <= 2:
         raise ValueError("There is no interaction between features to plot.")
 
-    # Check figsize
-    if not isinstance(figsize, tuple) or len(figsize) != 2:
-        raise TypeError(
-            "The 'figsize' parameter must be a tuple of two numeric values."
-        )
-    if not all(isinstance(dim, (int, float)) for dim in figsize):
-        raise ValueError("Both dimensions in 'figsize' must be numeric.")
+    # Detect class column (if exists) and drop it temporarily for validation
+    df_check = df.drop(columns=["class"]) if "class" in df.columns else df.copy()
 
-    # Validate font sizes are positive numbers
-    for font_size, name in [
+    # Identify logical features: continuous features must come in (_lb, _ub) pairs
+    bound_pairs = []
+    columns = df_check.columns
+
+    for i in range(len(columns) - 1):
+        col1, col2 = columns[i], columns[i + 1]
+        if col1.endswith("_lb") and col2 == col1.replace("_lb", "_ub"):
+            bound_pairs.append((col1, col2))
+
+    if len(bound_pairs) != 2:
+        raise ValueError(
+            "Exactly two logical features are required as (_lb, _ub) column pairs."
+        )
+
+    # Check for fully infinite bounds in any feature
+    for lb_col, ub_col in bound_pairs:
+        if np.isinf(df_check[lb_col]).all() or np.isinf(df_check[ub_col]).all():
+            raise ValueError(
+                "No interaction found between the two features - one of them contains only infinite values."
+            )
+
+    # figsize
+    if not (isinstance(figsize, tuple) and len(figsize) == 2):
+        raise TypeError("`figsize` must be a tuple of two numeric values.")
+    if not all(isinstance(f, (int, float)) for f in figsize):
+        raise ValueError("`figsize` values must be numeric.")
+
+    # font sizes
+    for val, name in [
         (ticks_fontsize, "ticks_fontsize"),
         (title_fontsize, "title_fontsize"),
         (label_fontsizes, "label_fontsizes"),
     ]:
-        if not isinstance(font_size, (int, float)) or font_size <= 0:
+        if not isinstance(val, (int, float)) or val <= 0:
             raise ValueError(f"`{name}` must be a positive number.")
 
-    # Check `title`, `xlabel`, `ylabel`, `color_bar_label` if provided, are strings
+    # Optional labels
     for label, name in [
         (title, "title"),
         (xlabel, "xlabel"),

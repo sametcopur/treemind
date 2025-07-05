@@ -91,6 +91,13 @@ def _validate_interaction_plot_parameters(
             "Exactly two logical features are required. "
             f"Found {len(cont_pairs)} continuous + {len(cat_cols)} categorical."
         )
+        
+    for feature, (lb_col, ub_col) in cont_pairs.items():
+        if np.isinf(df[lb_col]).all() or np.isinf(df[ub_col]).all():
+            raise ValueError(
+                "No interaction found between the two features, one of them contains only infinite values."
+            )
+
 
     # figure & typography parameters ----------------------------------------------
     if not (
