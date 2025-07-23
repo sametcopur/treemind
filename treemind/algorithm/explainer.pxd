@@ -4,7 +4,7 @@ from .rule cimport Rule
 cimport numpy as cnp
 
 cdef class Result:
-    cdef public dict data
+    cdef dict _data
     cdef public int degree
     cdef public int n_classes
     cdef public list feature_names
