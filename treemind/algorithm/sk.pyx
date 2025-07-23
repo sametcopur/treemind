@@ -115,11 +115,13 @@ cdef void traverse_sklearn_tree(
             if feature_ranges[i].first != -INFINITY or feature_ranges[i].second != INFINITY:
                 update_rule(&rule, i, feature_ranges[i].first, feature_ranges[i].second)
 
+        # SKLearn trees don't have categorical features
         rule.cat_flags = vector[bint](len(feature_ranges), 0)
         
         # Process leaf value
         if is_classification:
             if n_classes > 2:
+                # Multiclass: tree.value[node_id] shape is (1, n_classes)
                 if tree.value[node_id].shape[1] > class_idx:
                     class_count = tree.value[node_id][0][class_idx]
                     total_samples = tree.n_node_samples[node_id]
@@ -129,6 +131,7 @@ cdef void traverse_sklearn_tree(
                 else:
                     rule.value = 0.0
             else:
+                # Binary classification
                 if tree.value[node_id].shape[1] >= 2:
                     positive_count = tree.value[node_id][0][1]
                     total_samples = tree.n_node_samples[node_id]
@@ -139,6 +142,7 @@ cdef void traverse_sklearn_tree(
                     raw_value = tree.value[node_id][0][0]
                     rule.value = raw_value * scale_factor
         else:
+            # Regression
             raw_value = tree.value[node_id][0][0]
             rule.value = raw_value * scale_factor
             
@@ -347,6 +351,7 @@ cdef void initialize_categorical_info(
                 if all_categories_mask[original_feature_idx][cat_val] == 1:
                     cat_values[original_feature_idx].push_back(cat_val)
 
+
 cdef void process_histgb_predictor(
     object predictor,
     int tree_index,
@@ -384,6 +389,67 @@ cdef void process_histgb_predictor(
     trees.push_back(rules)
 
 
+cdef void process_standard_sklearn_trees(
+    list trees_list,
+    float scale_factor,
+    bint is_classification,
+    int n_classes,
+    int len_col,
+    vector[vector[Rule]]& trees
+):
+    """Standard sklearn tree'leri işle (RandomForest, GradientBoosting, etc.)"""
+    cdef int tree_index, class_idx, i, effective_tree_index
+    cdef vector[RangePair] feature_ranges
+    cdef vector[Rule] rules
+    cdef object tree
+    
+    for tree_index in range(len(trees_list)):
+        tree = trees_list[tree_index]
+        
+        # Validate tree structure
+        if not hasattr(tree, 'children_left') or not hasattr(tree, 'children_right'):
+            raise ValueError(f"Invalid tree structure at index {tree_index}")
+        
+        if len(tree.children_left) == 0:
+            raise ValueError(f"Empty tree at index {tree_index}")
+        
+        if is_classification and n_classes > 2:
+            # Multiclass: create rules for each class
+            for class_idx in range(n_classes):
+                # Initialize feature ranges
+                feature_ranges = vector[RangePair](len_col)
+                for i in range(len_col):
+                    feature_ranges[i] = (-INFINITY, INFINITY)
+                
+                rules = vector[Rule]()
+                effective_tree_index = tree_index * n_classes + class_idx
+                
+                traverse_sklearn_tree(tree, 0, feature_ranges, rules, effective_tree_index, 
+                                    scale_factor, is_classification, n_classes, class_idx)
+                
+                if rules.empty():
+                    raise ValueError(f"No rules extracted from tree {tree_index}, class {class_idx}")
+                
+                sort(rules.begin(), rules.end(), compare_rules)
+                trees.push_back(rules)
+        else:
+            # Binary classification or regression
+            feature_ranges = vector[RangePair](len_col)
+            for i in range(len_col):
+                feature_ranges[i] = (-INFINITY, INFINITY)
+            
+            rules = vector[Rule]()
+            
+            traverse_sklearn_tree(tree, 0, feature_ranges, rules, tree_index, 
+                                scale_factor, is_classification, n_classes, 0)
+            
+            if rules.empty():
+                raise ValueError(f"No rules extracted from tree {tree_index}")
+            
+            sort(rules.begin(), rules.end(), compare_rules)
+            trees.push_back(rules)
+
+
 cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_sklearn(object model, int len_col, int n_classes):
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[vector[int]] cat_values = vector[vector[int]]()
@@ -391,7 +457,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_sklea
     cdef float scale_factor = 1.0
     cdef bint is_classification = False
     cdef bint is_histgb = False
-    cdef int tree_index, class_idx, i
+    cdef int tree_index, i
     
     # Categorical support variables
     cdef vector[bint] is_categorical_features
@@ -403,20 +469,19 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_sklea
     is_classification = 'Classifier' in model_name
     is_histgb = 'HistGradientBoosting' in model_name
     
-    # Initialize categorical information
+    # Initialize categorical information for HistGB
     if is_histgb:
         initialize_categorical_info(model, len_col, is_categorical_features, 
                                   all_categories_mask, cat_values, cat_indices)
         bin_to_original_mapping = create_bin_to_original_mapping(model, len_col)
     else:
-        is_categorical_features = vector[bint](len_col, 0)
-        all_categories_mask = vector[vector[bint]](len_col)
-        cat_values = vector[vector[int]](len_col)
+        # Standard sklearn trees don't have categorical support
+        cat_values.resize(len_col)
     
     # Process trees based on model type
     if is_histgb:
+        # HistGradientBoosting specific processing
         predictors = model._predictors
-
         scale_factor = getattr(model, 'learning_rate', 1.0)
         
         for tree_index in range(len(predictors)):
@@ -451,48 +516,46 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_sklea
             trees_list = [est.tree_ for est in model.estimators_]
             scale_factor = 1.0 / len(trees_list)
         
-        # Process each tree
-        for tree_index, tree in enumerate(trees_list):
-            if is_classification and n_classes > 2:
-                # Multiclass
-                for class_idx in range(n_classes):
-                    feature_ranges = vector[RangePair](len_col)
-                    for i in range(len_col):
-                        feature_ranges[i] = (-INFINITY, INFINITY)
-                    
-                    rules = vector[Rule]()
-                    effective_tree_index = tree_index * n_classes + class_idx
-                    
-                    traverse_sklearn_tree(tree, 0, feature_ranges, rules, effective_tree_index, 
-                                        scale_factor, is_classification, n_classes, class_idx)
-                    
-                    sort(rules.begin(), rules.end(), compare_rules)
-                    trees.push_back(rules)
-            else:
-                # Binary classification or regression
+        if not trees_list:
+            raise ValueError("No trees found in model")
+        
+        # Process standard sklearn trees
+        process_standard_sklearn_trees(trees_list, scale_factor, is_classification, 
+                                     n_classes, len_col, trees)
+    
+    else:
+        # Single tree (DecisionTreeClassifier/Regressor)
+        if not hasattr(model, 'tree_'):
+            raise ValueError(f"Cannot extract tree from model type: {type(model)}")
+        
+        tree = model.tree_
+        
+        if is_classification and n_classes > 2:
+            # Multiclass single tree
+            for class_idx in range(n_classes):
                 feature_ranges = vector[RangePair](len_col)
                 for i in range(len_col):
                     feature_ranges[i] = (-INFINITY, INFINITY)
                 
                 rules = vector[Rule]()
                 
-                traverse_sklearn_tree(tree, 0, feature_ranges, rules, tree_index, 
-                                    scale_factor, is_classification, n_classes, 0)
+                traverse_sklearn_tree(tree, 0, feature_ranges, rules, class_idx, 
+                                    1.0, is_classification, n_classes, class_idx)
                 
                 sort(rules.begin(), rules.end(), compare_rules)
                 trees.push_back(rules)
-    
-    else:
-        tree = model.tree_
-        feature_ranges = vector[RangePair](len_col)
-        for i in range(len_col):
-            feature_ranges[i] = (-INFINITY, INFINITY)
-        
-        rules = vector[Rule]()
-        
-        traverse_sklearn_tree(tree, 0, feature_ranges, rules, 0, 1.0, is_classification, n_classes, 0)
-        
-        sort(rules.begin(), rules.end(), compare_rules)
-        trees.push_back(rules)
+        else:
+            # Binary classification or regression single tree
+            feature_ranges = vector[RangePair](len_col)
+            for i in range(len_col):
+                feature_ranges[i] = (-INFINITY, INFINITY)
+            
+            rules = vector[Rule]()
+            
+            traverse_sklearn_tree(tree, 0, feature_ranges, rules, 0, 1.0, 
+                                is_classification, n_classes, 0)
+            
+            sort(rules.begin(), rules.end(), compare_rules)
+            trees.push_back(rules)
     
     return trees, cat_values, cat_indices
