@@ -70,15 +70,8 @@ class Result:
         Returns
         -------
         pandas.DataFrame
-            Sorted by descending importance. Column structure:
-
-            * Degree = 1: ``feature_0``, ``importance`` [+ ``class`` if multi-class]
-            * Degree > 1: ``feature_0``, ..., ``feature_{degree-1}``, ``importance`` [+ ``class`` if multi-class]
-
-        Notes
-        -----
-        Higher ``importance`` implies greater influence over model predictions,
-        based on fluctuations under the reference data distribution.
+            A DataFrame listing feature or interaction importances (``I_abs``),
+            sorted by descending importance.
         """
         ...
 
@@ -86,20 +79,6 @@ class Explainer:
     """
     Extracts interpretable structure from tree models, showing how
     features and feature combinations influence predictions.
-
-    Two main methods are provided:
-
-    - :meth:`explain` — Computes metrics for all interactions of a given degree.
-    - :meth:`count_node` — Counts feature appearances in split conditions.
-
-    Usage
-    -----
-    After initializing, call the object with a trained model:
-
-    >>> explainer = Explainer()
-    >>> explainer(model)
-
-    Then use ``explain`` or ``count_node`` as needed.
     """
 
     def __init__(self, model: Any) -> None:
@@ -133,11 +112,6 @@ class Explainer:
         -------
         Result
             A mapping from feature index tuples to per-class DataFrames.
-
-        Raises
-        ------
-        ValueError
-            If the object has not been called with a model or the degree is invalid.
         """
 
     def count_node(self, degree: int = 2) -> pd.DataFrame:
@@ -152,20 +126,6 @@ class Explainer:
         Returns
         -------
         pandas.DataFrame
-            Table sorted by count, with the following columns:
-
-            +-------------------+--------------------------------------------+
-            | Column            | Description                                |
-            +===================+============================================+
-            | ``column1_index`` | Index of the first feature in the group    |
-            | ``...``           | ...                                        |
-            | ``columnN_index`` | Index of the Nth feature in the group      |
-            | ``count``         | Number of times this group appeared        |
-            +-------------------+--------------------------------------------+
-
-        Raises
-        ------
-        ValueError
-            If the explainer has not been initialized with a model, or if
-            the requested degree is invalid.
+            A DataFrame listing feature groups of the given degree and how
+            often they appear in tree split rules, sorted by descending count.
         """
