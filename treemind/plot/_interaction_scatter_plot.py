@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
-from ..algorithm import Result
+from .. import Result
 
 
 def _validate_interaction_scatter_plot_parameters(

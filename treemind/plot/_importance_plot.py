@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import Optional, Tuple, Iterable
 import re
-from ..algorithm.explainer import Result
+from .. import Result
 
 
 def natural_sort_key(text):
@@ -130,8 +130,8 @@ def importance_plot(
             pivot = pivot.reindex(index=feat_order, columns=feat_order)
 
             vmax = np.nanmax(pivot.values)
-
-            fig, ax = plt.subplots(figsize=figsize)
+            max_fig_size = max(figsize[0], figsize[1])
+            fig, ax = plt.subplots(figsize=(max_fig_size, max_fig_size))
             sns.heatmap(
                 pivot,
                 cmap=cmap,

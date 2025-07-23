@@ -7,7 +7,7 @@ from matplotlib.colors import TwoSlopeNorm
 from typing import Tuple, Union, Optional, List
 
 from .plot_utils import _replace_infinity, _find_tick_decimal
-from ..algorithm import Result
+from .. import Result
 
 def _validate_interaction_plot_parameters(
     result: Result,

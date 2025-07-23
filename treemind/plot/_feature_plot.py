@@ -8,7 +8,7 @@ from .plot_utils import (
     _replace_infinity,
     _find_tick_decimal,
 )
-from ..algorithm import Result
+from .. import Result
 
 
 def _validate_feature_plot_parameters(

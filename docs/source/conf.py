@@ -7,6 +7,7 @@ project_path = os.path.abspath("../..")
 
 sys.path.insert(0, project_path)
 
+
 def process_explainer_files(directory: str):
     """
     Process the explainer files in the specified directory.
@@ -55,10 +56,10 @@ print("File processing completed.")
 import treemind
 
 project = "treemind"
-copyright = "2024, Samet Çopur"
+copyright = "2025, Samet Çopur"
 author = "Samet Çopur"
-version = "0.1.1"
-release = "0.1.1"
+version = treemind.__version__
+release = treemind.__version__
 
 autodoc_member_order = "bysource"
 extensions = [
@@ -87,5 +88,6 @@ class MockedClassDocumenter(autodoc.ClassDocumenter):
         if line == "   Bases: :py:class:`object`":
             return
         super().add_line(line, source, *lineno)
+
 
 autodoc.ClassDocumenter = MockedClassDocumenter

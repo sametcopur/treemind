@@ -107,6 +107,7 @@ The contribution of feature :math:`x` within a given interval is then:
 
 This formula ensures that the model's behavior is correctly aggregated across all intervals when calculating the baseline (:math:`E[F(x)]`), allowing for an accurate assessment of the feature's interval-specific influence.
 
+
 5. Feature Interactions
 -------------------------
 
@@ -126,7 +127,46 @@ This formula ensures that the model's behavior is correctly aggregated across al
 
 The forward steps remain consistent as described, and this approach can be extended to accommodate additional features.
 
-6. Back Data Integration
+
+6. Multiclass Classification
+------------------------------
+
+For multiclass problems, the treemind algorithm is applied independently for each class.
+
+- Let :math:`C = \{c_1, c_2, ..., c_K\}` be the set of class labels.
+- For each class :math:`c_k`, a separate prediction function :math:`F_k(x)` is computed:
+
+  .. math::
+
+     F_k(x) = \sum_{t=1}^{T} f_{t}^{(k)}(x)
+
+- All steps in the treemind algorithm (interval determination, expected value calculation, feature contribution, etc.) are performed independently for each :math:`F_k(x)`.
+
+This allows feature attribution and interval analysis to be conducted on a per-class basis, supporting detailed multiclass interpretability.
+
+7. Categorical Features
+-------------------------
+
+For categorical features, interval-based splitting does not apply.
+
+- Each unique category value is treated independently.
+- Let :math:`C = \{c_1, c_2, ..., c_n\}` be the set of distinct values for a categorical feature :math:`x`.
+- The expected value is computed for each category:
+
+  .. math::
+
+     E[F(x) \mid x = c_i] = \sum_{t \in S_t} \frac{\sum\limits_{j \in D_t(x = c_i)} L_{t,j} \cdot V_{t,j}}{\sum\limits_{j \in D_t(x = c_i)} L_{t,j}}
+
+- The baseline :math:`E[F(x)]` and contributions for each category are computed analogously to the numerical case, using:
+
+  .. math::
+
+     \text{Contribution}(x = c_i) = E[F(x) \mid x = c_i] - E[F(x)]
+
+This enables direct interpretability of each categorical value's effect on model prediction without defining artificial intervals.
+
+
+8. Back Data Integration
 --------------------------
 
 The treemind algorithm allows for the integration of back data, which dynamically updates the leaf counts to reflect the new data while 
@@ -145,7 +185,7 @@ where:
 - :math:`B`: Set of back data instances
 - :math:`I(d \text{ falls into leaf } i)`: Indicator function (1 if instance :math:`d` falls into leaf :math:`i`, 0 otherwise)
 
-7. Mathematical Limitations and Practical Considerations
+9. Mathematical Limitations and Practical Considerations
 --------------------------------------------------------
 
 .. note::
