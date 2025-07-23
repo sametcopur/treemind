@@ -1,11 +1,10 @@
 from typing import (
     Any,
-    Iterable,
     Iterator,
-    Mapping,
     Optional,
     Sequence,
     Tuple,
+    Dict,
     Union,
 )
 
@@ -18,10 +17,6 @@ class Result:
     :meth:`Explainer.explain`. Acts like a mapping from feature-index tuples
     to per-class :class:`pandas.DataFrame` objects with computed metrics.
 
-    For multi-class models, values are nested dictionaries:
-
-        result[(2, 5)]  ->  {0: df_class0, 1: df_class1, …}
-
     The ``__getitem__`` method simplifies this by returning a single DataFrame
     merged across classes, with a ``"class"`` column when applicable.
 
@@ -30,32 +25,30 @@ class Result:
     The content of ``Result`` is intended to be read-only.
     """
 
+    degree: int
+    n_classes: int
+    feature_names: list[str]
+    model_type: str
+
     def __init__(self) -> None: ...
     def __repr__(self) -> str: ...
-    def __getitem__(self, key: Union[int, Sequence[int]]) -> pd.DataFrame:
-        """
-        Retrieve interaction statistics for the given feature(s).
+    
+    def __getitem__(self, key: Union[int, Sequence[int]]) -> pd.DataFrame: ...
+    def __contains__(self, key: object) -> bool: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Tuple[int, ...]]: ...
 
-        Parameters
-        ----------
-        key : int or sequence of int
-            If ``degree == 1``, a single integer refers to one feature.
-            If ``degree >= 2``, a tuple/list must be passed with length equal
-            to the interaction degree.
+    @property
+    def data(self) -> Dict[Tuple[int, ...], Dict[int, pd.DataFrame]]:
+        """
+        Internal dictionary mapping feature-index tuples to per-class DataFrames.
 
         Returns
         -------
-        pandas.DataFrame or None
-            Statistics for the specified feature(s), optionally including
-            a ``"class"`` column if multi-class.
-
-        Raises
-        ------
-        ValueError
-            If the key length does not match the interaction degree.
-        TypeError
-            If the key is not an int or sequence of ints.
+        dict
+            The full internal representation of interaction data.
         """
+        ...
 
     def importance(self, combine_classes: bool = False) -> pd.DataFrame:
         """
@@ -87,15 +80,7 @@ class Result:
         Higher ``importance`` implies greater influence over model predictions,
         based on fluctuations under the reference data distribution.
         """
-
         ...
-
-    def __contains__(self, key: object) -> bool: ...
-    def __len__(self) -> int: ...
-    def __iter__(self) -> Iterator[Tuple[int, ...]]: ...
-    def keys(self) -> Iterable[Tuple[int, ...]]: ...
-    def values(self) -> Iterable[Mapping[int, pd.DataFrame]]: ...
-    def items(self) -> Iterable[Tuple[Tuple[int, ...], Mapping[int, pd.DataFrame]]]: ...
 
 class Explainer:
     """

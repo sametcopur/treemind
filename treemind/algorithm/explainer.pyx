@@ -22,14 +22,14 @@ cdef class Result:
     """Result class to hold feature interaction analysis statistics"""
     
     def __init__(self):
-        self.data = {}
+        self._data = {}
         self.degree = 0
         self.n_classes = 0
         self.feature_names = []
         self.model_type = ""
     
     def __repr__(self) -> str:
-        return f"Result(degree={self.degree}, interactions={len(self.data)}, classes={self.n_classes})"
+        return f"Result(degree={self.degree}, interactions={len(self._data)}, classes={self.n_classes})"
         
     def __getitem__(self, key):
         """
@@ -47,7 +47,7 @@ cdef class Result:
             DataFrame with feature interaction statistics. 
             For multi-class models, includes 'class' column indicating the class.
         """
-        if self.data == {}:
+        if self._data == {}:
             raise ValueError("No data available. Please run the explain method first.")
 
         # Handle single integer (individual feature)
@@ -83,14 +83,14 @@ cdef class Result:
         stored_key = None
         
         # Check if exact key exists
-        if requested_key in self.data:
-            stored_data = self.data[requested_key]
+        if requested_key in self._data:
+            stored_data = self._data[requested_key]
             stored_key = requested_key
         else:
             # Check all permutations to find the stored version
             for perm in permutations(requested_key):
-                if perm in self.data:
-                    stored_data = self.data[perm]
+                if perm in self._data:
+                    stored_data = self._data[perm]
                     stored_key = perm
                     break
         
@@ -216,7 +216,7 @@ cdef class Result:
         cdef float total_cnt, I_abs, num
         cdef dict single_importances = {}
         
-        if self.data == {}:
+        if self._data == {}:
             raise ValueError("No data available. Please run the explain method first.")
         
         if self.n_classes == 1 and combine_classes:
@@ -231,7 +231,7 @@ cdef class Result:
             return I_abs
 
         # 1. Önce tüm tekli feature'ların önemini hesapla
-        for feat_key, class_data in self.data.items():
+        for feat_key, class_data in self._data.items():
             if len(feat_key) == 1:
                 feat_idx = feat_key[0]
                 
@@ -306,23 +306,17 @@ cdef class Result:
     
     def __len__(self):
         """Return number of feature interactions"""
-        return len(self.data)
+        return len(self._data)
     
     def __iter__(self):
         """Iterate over feature combinations"""
-        return iter(self.data.keys())
+        return iter(self._data.keys())
+
+    @property
+    def data(self):
+        """Return the internal data dictionary"""
+        return self._data
     
-    def keys(self):
-        """Return all feature combinations"""
-        return self.data.keys()
-    
-    def values(self):
-        """Return all statistics"""
-        return self.data.values()
-    
-    def items(self):
-        """Return feature combinations and their statistics"""
-        return self.data.items()
     
 cdef class Explainer:
     def __init__(self, object model):
