@@ -3,8 +3,6 @@ from Cython.Build import cythonize
 import numpy as np
 import sys
 
-from treemind import __version__
-
 if sys.platform == "win32":
     extra_compile_args = [
         "/O2",
@@ -122,7 +120,7 @@ extensions = [
 
 setup(
     name="treemind",
-    version=__version__,
+    version="0.2.0",
     description="treemind",
     packages=find_packages(include=["treemind", "treemind.*"]),
     ext_modules=cythonize(
