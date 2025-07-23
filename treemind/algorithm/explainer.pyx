@@ -569,7 +569,9 @@ cdef class Explainer:
 
         # Update trees with background data if provided
         if back_data is not None:
-            trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
+            raise ValueError("Background data is disabled in the current implementation. For now, please use the model's" ,
+                "training data to explain feature interactions. Next versions will support background data.")
+            #trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         # Set result metadata
         result.degree = degree
