@@ -34,8 +34,8 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     rule.len_col = len_col
     rule.tree_index = tree_index
     rule.leaf_index = leaf_index
-    rule.lbs = vector[double](len_col, -INFINITY)
-    rule.ubs = vector[double](len_col, INFINITY) 
+    rule.lbs = vector[float](len_col, -INFINITY)
+    rule.ubs = vector[float](len_col, INFINITY) 
     rule.value = np.nan
     rule.count = -1
     rule.cats = vector[vector[bint]]()
@@ -70,7 +70,7 @@ cdef void update_cats_for_rule(Rule* rule, const vector[vector[bint]]& cats):
                 break
         rule.cat_flags[i] = 0 if all_one else 1
 
-cdef void update_rule(Rule* rule, int index, double lb, double ub):
+cdef void update_rule(Rule* rule, int index, float lb, float ub):
     """
     Updates the lower and upper bounds for a feature at the specified index.
 
@@ -111,7 +111,7 @@ cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noex
             return 0
     return 1
 
-cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nogil:
+cdef inline bint check_value(const Rule* rule, int i, float value) noexcept nogil:
     """
     Checks if the given value lies within the bounds for the specified feature index.
 
@@ -121,7 +121,7 @@ cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nog
         The Rule struct to check.
     i : int
         The feature index to check.
-    value : double
+    value : float
         The value to check against the feature's bounds.
 
     Returns
@@ -137,7 +137,7 @@ cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
 
-cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
+cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col):
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
 
@@ -150,15 +150,15 @@ cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
 
     Returns
     -------
-    vector[double]
+    vector[float]
         A vector of unique split points for the specified column, excluding the smallest one.
     """
 
-    cdef vector[double] points
+    cdef vector[float] points
     cdef vector[Rule] tree
     cdef Rule rule
-    cdef vector[double].iterator it
-    cdef vector[double] result
+    cdef vector[float].iterator it
+    cdef vector[float] result
 
     for tree in trees:
         for rule in tree:
@@ -206,7 +206,7 @@ cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object 
         vector[Rule]* tree_ptr
 
         size_t tree_index, leaf_index
-        double leaf_counts
+        float leaf_counts
         dict node_counts
 
     if model_type == "xgboost":

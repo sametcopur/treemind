@@ -14,8 +14,9 @@ from collections import Counter
 from itertools import combinations
 import warnings
 from tqdm import tqdm
+import numpy as np
 
-cdef vector[pair[double, double]] feature_ranges
+cdef vector[pair[float, float]] feature_ranges
 
 cdef class Result:
     """Result class to hold feature interaction analysis statistics"""
@@ -413,10 +414,10 @@ cdef class Explainer:
     cdef object prepare_dataframe(self, vector[int] col_indices, 
                     int num_cols, 
                     list column_names,
-                    vector[vector[double]]& points,
-                    vector[double]& mean_values,
-                    vector[double]& ensemble_std,
-                    vector[double]& counts,
+                    vector[vector[float]]& points,
+                    vector[float]& mean_values,
+                    vector[float]& ensemble_std,
+                    vector[float]& counts,
                     object columns):
 
         cdef int idx, i, j, ub_index
@@ -424,7 +425,7 @@ cdef class Explainer:
     
         cdef str msg, col_ub
         cdef dict df_dict = {}
-        cdef vector[double] row
+        cdef vector[float] row
         cdef object df
         cdef list cats
         
@@ -450,7 +451,7 @@ cdef class Explainer:
             'count': counts
         })
         
-        df = pd.DataFrame(df_dict)
+        df = pd.DataFrame(df_dict,dtype=np.float32)
         
         # Center the values
         if df["count"].sum() == 0:
@@ -463,7 +464,7 @@ cdef class Explainer:
 
             warnings.warn(msg)
         else:
-            df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum()
+            df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum().astype(np.float32)
         
         # Add lower bounds for all columns
         for col_name in column_names:
@@ -494,8 +495,8 @@ cdef class Explainer:
             tuple feature_combo
             vector[int] col_indices
             int col
-            vector[vector[double]] points
-            vector[double] mean_values, ensemble_std, counts
+            vector[vector[float]] points
+            vector[float] mean_values, ensemble_std, counts
             int num_cols, class_idx
             list column_names
             object class_df

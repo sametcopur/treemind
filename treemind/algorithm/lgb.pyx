@@ -5,7 +5,7 @@ from libcpp.algorithm cimport sort
 
 from libcpp.pair cimport pair
 
-ctypedef pair[double, double] RangePair
+ctypedef pair[float, float] RangePair
 
 
 cdef void traverse_lightgbm_tree(
@@ -16,7 +16,7 @@ cdef void traverse_lightgbm_tree(
     vector[vector[bint]]& cat_mask  # <-- artık bool mask
 ):
     cdef int feature_index, i
-    cdef double threshold
+    cdef float threshold
     cdef list threshold_split
     cdef RangePair prev_range
     cdef vector[bint] prev_mask

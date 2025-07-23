@@ -30,8 +30,8 @@ cdef class Explainer:
     cdef object prepare_dataframe(self, vector[int] col_indices, 
                     int num_cols, 
                     list column_names,
-                    vector[vector[double]]& points,
-                    vector[double]& mean_values,
-                    vector[double]& ensemble_std,
-                    vector[double]& counts,
+                    vector[vector[float]]& points,
+                    vector[float]& mean_values,
+                    vector[float]& ensemble_std,
+                    vector[float]& counts,
                     object columns)

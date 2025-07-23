@@ -8,19 +8,19 @@ cimport numpy as cnp
 from pandas import Categorical
 
 
-cdef inline double cmax(double a, double b) noexcept nogil:
+cdef inline float cmax(float a, float b) noexcept nogil:
     return a if a > b else b
 
 
-cdef inline double cmin(double a, double b) noexcept nogil:
+cdef inline float cmin(float a, float b) noexcept nogil:
     return a if a < b else b
 
 
 cdef object replace_inf(object data, str column_name):
-    cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float64)
-    cdef cnp.ndarray[cnp.float64_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
-    cdef double max_main = unique_points.max()
-    cdef double difference_main = max_main - (unique_points[unique_points.size -2] if unique_points.size > 1 else max_main * 0.9)
+    cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float32)
+    cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
+    cdef float max_main = unique_points.max()
+    cdef float difference_main = max_main - (unique_points[unique_points.size -2] if unique_points.size > 1 else max_main * 0.9)
 
     data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main
 
@@ -31,8 +31,8 @@ cdef object replace_inf(object data, str column_name):
 cdef add_lower_bound(object data, int loc, str column):
     cdef:
         str column_ub = f"{column}_ub"
-        cnp.ndarray[cnp.float64_t, ndim=1] unique_values = np.sort(data.loc[:, column_ub].unique())
-        cnp.ndarray[cnp.float64_t, ndim=1] lower_bounds = np.empty_like(unique_values, dtype=np.float64)
+        cnp.ndarray[cnp.float32_t, ndim=1] unique_values = np.sort(data.loc[:, column_ub].unique())
+        cnp.ndarray[cnp.float32_t, ndim=1] lower_bounds = np.empty_like(unique_values, dtype=np.float32)
 
     lower_bounds[0] = -np.inf
     lower_bounds[1:] = unique_values[:unique_values.size - 1]
@@ -60,44 +60,44 @@ cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,
     return class_trees
 
 
-cdef tuple[vector[vector[double]],
-        vector[double],
-        vector[double],
-        vector[double]] _analyze_feature(const vector[vector[Rule]]& trees,
+cdef tuple[vector[vector[float]],
+        vector[float],
+        vector[float],
+        vector[float]] _analyze_feature(const vector[vector[Rule]]& trees,
                                                 const vector[int]& columns,
                                                 const vector[vector[int]]& cat_cols):
     cdef:
-        vector[vector[double]] split_points_list = vector[vector[double]]()
+        vector[vector[float]] split_points_list = vector[vector[float]]()
         size_t num_cols = columns.size()
         size_t max_size = 1
         size_t num_trees = trees.size()
         size_t i, j, k, idx, tree_idx, rule_idx
 
         # Statistics vectors
-        vector[double] average_counts
-        vector[double] mean_values
-        vector[double] ensemble_std
+        vector[float] average_counts
+        vector[float] mean_values
+        vector[float] ensemble_std
 
         # Per-tree temporary storage
-        vector[double] tree_count
-        vector[double] tree_sum
-        vector[double] tree_squared_sum
+        vector[float] tree_count
+        vector[float] tree_sum
+        vector[float] tree_squared_sum
 
         vector[vector[size_t]] valid_indices_per_col = vector[vector[size_t]](num_cols)
         vector[size_t] multi_index = vector[size_t](num_cols)
         vector[size_t] sizes = vector[size_t](num_cols)
 
-        double rule_value, rule_count, squared_value
-        double mean, variance, std, count
+        float rule_value, rule_count, squared_value
+        float mean, variance, std, count
         bint skip_rule
         const Rule* rule_ptr
         const vector[Rule]* tree_ptr
 
         cdef bint done
 
-        vector[vector[double]] combined_points
+        vector[vector[float]] combined_points
         size_t col_idx, remaining, point_idx, split_size
-        double val
+        float val
         int val_idx
         vector[vector[int]] cat_slice = vector[vector[int]]()
 
@@ -115,7 +115,7 @@ cdef tuple[vector[vector[double]],
         if not is_categorical[col_idx]:  # NUMERICAL
             split_points = get_split_point(trees, columns[col_idx])
         else:  # CATEGORICAL
-            split_points = vector[double]()
+            split_points = vector[float]()
             split_points.reserve(cat_slice[col_idx].size())  # Only for categorical
             for i in range(cat_slice[col_idx].size()):
                 split_points.push_back(cat_slice[col_idx][i])
@@ -128,14 +128,14 @@ cdef tuple[vector[vector[double]],
         valid_indices_per_col[col_idx].reserve(split_points.size())
 
     # Initialize result vectors
-    average_counts = vector[double](max_size, 0.0)
-    mean_values = vector[double](max_size, 0.0)
-    ensemble_std = vector[double](max_size, 0.0)
+    average_counts = vector[float](max_size, 0.0)
+    mean_values = vector[float](max_size, 0.0)
+    ensemble_std = vector[float](max_size, 0.0)
 
     # Initialize temporary vectors
-    tree_count = vector[double](max_size)
-    tree_sum = vector[double](max_size)
-    tree_squared_sum = vector[double](max_size)
+    tree_count = vector[float](max_size)
+    tree_sum = vector[float](max_size)
+    tree_squared_sum = vector[float](max_size)
 
     with nogil:
         # Process each tree
@@ -241,9 +241,9 @@ cdef tuple[vector[vector[double]],
         for idx in range(max_size):
             average_counts[idx] /= num_trees
 
-    combined_points = vector[vector[double]](max_size)
+    combined_points = vector[vector[float]](max_size)
     for idx in range(max_size):
-        combined_points[idx] = vector[double](num_cols)
+        combined_points[idx] = vector[float](num_cols)
         remaining = idx
         for k in range(num_cols - 1, -1, -1):
             point_idx = remaining % sizes[k]

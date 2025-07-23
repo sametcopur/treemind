@@ -4,20 +4,20 @@ from libcpp.algorithm cimport sort
 from libcpp.pair cimport pair
 from libcpp.vector cimport vector
 
-ctypedef pair[double, double] RangePair
+ctypedef pair[float, float] RangePair
 
 
-cdef double convert_sklearn_to_logit(double prob):
+cdef float convert_sklearn_to_logit(float prob):
     """Convert sklearn probability/proportion to logit space like LightGBM"""
-    cdef double epsilon = 1e-15
-    cdef double max_logit = 700.0
+    cdef float epsilon = 1e-15
+    cdef float max_logit = 700.0
     
     if prob <= epsilon:
         prob = epsilon
     elif prob >= (1.0 - epsilon):
         prob = 1.0 - epsilon
     
-    cdef double logit = log(prob / (1.0 - prob))
+    cdef float logit = log(prob / (1.0 - prob))
     
     if logit > max_logit:
         return max_logit
@@ -96,13 +96,13 @@ cdef void traverse_sklearn_tree(
     vector[RangePair]& feature_ranges,
     vector[Rule]& rules,
     int tree_index,
-    double scale_factor,
+    float scale_factor,
     bint is_classification,
     int n_classes,
     int class_idx
 ):
     cdef int feature_index, left_child, right_child, i
-    cdef double threshold, raw_value, prob, logit_value
+    cdef float threshold, raw_value, prob, logit_value
     cdef RangePair prev_range
     cdef Rule rule
 
@@ -180,7 +180,7 @@ cdef void traverse_histgb_tree(
     vector[RangePair]& feature_ranges,
     vector[Rule]& rules,
     int tree_index,
-    double scale_factor,
+    float scale_factor,
     vector[vector[bint]]& cat_mask,
     vector[bint]& is_categorical_features,
     vector[vector[bint]]& all_categories_mask,
@@ -189,7 +189,7 @@ cdef void traverse_histgb_tree(
 ):
     """HistGradientBoosting tree traversal"""
     cdef int bin_feature_idx, original_feature_idx, left_child, right_child, i, bitset_idx
-    cdef double threshold, raw_value
+    cdef float threshold, raw_value
     cdef RangePair prev_range
     cdef vector[bint] prev_mask, left_mask, right_mask
     cdef Rule rule
@@ -352,7 +352,7 @@ cdef void process_histgb_predictor(
     int tree_index,
     int class_idx,
     int n_classes,
-    double scale_factor,
+    float scale_factor,
     int len_col,
     vector[bint]& is_categorical_features,
     vector[vector[bint]]& all_categories_mask,
@@ -388,7 +388,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_sklea
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[vector[int]] cat_values = vector[vector[int]]()
     cdef vector[int] cat_indices = vector[int]()
-    cdef double scale_factor = 1.0
+    cdef float scale_factor = 1.0
     cdef bint is_classification = False
     cdef bint is_histgb = False
     cdef int tree_index, class_idx, i

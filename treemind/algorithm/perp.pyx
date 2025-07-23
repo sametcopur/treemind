@@ -6,7 +6,7 @@ from libcpp.algorithm cimport sort
 # Expose the Rule helpers you already have
 from .rule cimport Rule, create_rule, update_rule, compare_rules, update_cats_for_rule
 
-ctypedef pair[double, double] RangePair
+ctypedef pair[float, float] RangePair
 
 ############################################################
 # Helper utilities                                          #
@@ -35,7 +35,7 @@ cdef void traverse_perpetual_tree(dict nodes,
         return  # Safety check
     cdef dict node = nodes[node_key]
     cdef int feature_index, i, cat_idx
-    cdef double threshold
+    cdef float threshold
     cdef RangePair prev_range
     cdef vector[bint] prev_mask
     cdef Rule rule

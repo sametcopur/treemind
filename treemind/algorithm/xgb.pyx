@@ -4,7 +4,7 @@ from libcpp.algorithm cimport sort
 from libcpp.pair cimport pair
 from .rule cimport create_rule, update_rule, compare_rules, update_cats_for_rule
 
-ctypedef pair[double, double] RangePair
+ctypedef pair[float, float] RangePair
 
 import json
 import numpy as np
@@ -15,13 +15,13 @@ import importlib
 cdef class XGBNode:
     cdef int nodeid
     cdef str split
-    cdef double split_condition
+    cdef float split_condition
     cdef list categorical_condition  # kategorik koşullar için liste
     cdef int yes
     cdef int no
     cdef list children
-    cdef double leaf_value
-    cdef double cover
+    cdef float leaf_value
+    cdef float cover
     cdef bint is_categorical  # kategorik mi değil mi
 
 
@@ -147,11 +147,11 @@ cdef void traverse_xgboost(
 ):    
     cdef XGBNode node = node_dict[nodeid]
     cdef int feature_index
-    cdef double threshold
+    cdef float threshold
     cdef RangePair prev_range
     cdef vector[bint] prev_mask
     cdef Rule rule
-    cdef double lb, ub
+    cdef float lb, ub
     cdef int cat_val
     cdef size_t idx
 
