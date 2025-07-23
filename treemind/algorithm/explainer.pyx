@@ -11,7 +11,7 @@ from .sk cimport analyze_sklearn
 from .perp cimport analyze_perpetual
 
 from collections import Counter
-from itertools import combinations
+from itertools import combinations, permutations
 import warnings
 from tqdm import tqdm
 import numpy as np
@@ -88,7 +88,6 @@ cdef class Result:
             stored_key = requested_key
         else:
             # Check all permutations to find the stored version
-            from itertools import permutations
             for perm in permutations(requested_key):
                 if perm in self.data:
                     stored_data = self.data[perm]
@@ -203,62 +202,101 @@ cdef class Result:
         return df[new_columns]
 
 
-    # Result sınıfı içine ekleyin
+        # Result sınıfı içine ekleyin
     def importance(self, bint combine_classes=False):
+        """
+        Feature importance hesaplama - baskın feature problemini çözer
+        Etkileşimlerde tekli feature etkilerini çıkararak gerçek etkileşim gücünü hesaplar
+        """
         cdef list rows = []
         cdef tuple feat_key
         cdef dict class_data
         cdef int cls
         cdef object df
         cdef float total_cnt, I_abs, num
-
+        cdef dict single_importances = {}
+        
         if self.data == {}:
             raise ValueError("No data available. Please run the explain method first.")
-
+        
         if self.n_classes == 1 and combine_classes:
-            raise ValueError("Combined class importance is not supported for single-class models. Please use `combine_classes=False`.")
+            raise ValueError("Combined class importance is not supported for single-class models.")
 
+        def calc_I_abs(df):
+            total = df['count'].sum()
+            if total == 0:
+                return float('nan')
+            mu = (df['value'] * df['count']).sum() / total
+            I_abs = ((df['value'] - mu).abs() * df['count']).sum() / total
+            return I_abs
+
+        # 1. Önce tüm tekli feature'ların önemini hesapla
         for feat_key, class_data in self.data.items():
+            if len(feat_key) == 1:
+                feat_idx = feat_key[0]
+                
+                if self.n_classes == 1 or combine_classes:
+                    total_cnt = 0.0
+                    num = 0.0
+                    for cls, df in class_data.items():
+                        cnt = df['count'].sum()
+                        if cnt == 0:
+                            continue
+                        Ia = calc_I_abs(df)
+                        num += Ia * cnt
+                        total_cnt += cnt
+                    single_importances[feat_idx] = num / total_cnt if total_cnt else 0.0
+                else:
+                    single_importances[feat_idx] = {}
+                    for cls, df in class_data.items():
+                        single_importances[feat_idx][cls] = calc_I_abs(df)
 
-            def _calc_I_abs(df):
-                total = df['count'].sum()
-                if total == 0:
-                    return float('nan')
-                mu = (df['value'] * df['count']).sum() / total
-                I_abs = ((df['value'] - mu).abs() * df['count']).sum() / total
-                return I_abs
-
+        # 2. Tüm feature'ları işle ve etkileşimleri düzelt
+        for feat_key, class_data in self.data.items():
+            
             if self.n_classes == 1 or combine_classes:
-                # Tek sınıf veya birleştirilmiş çoklu sınıf
                 total_cnt = 0.0
                 num = 0.0
                 for cls, df in class_data.items():
                     cnt = df['count'].sum()
                     if cnt == 0:
                         continue
-                    Ia   = _calc_I_abs(df)
+                    Ia = calc_I_abs(df)
                     num += Ia * cnt
                     total_cnt += cnt
-                I_abs = num / total_cnt if total_cnt else float('nan')
-
-                row = {f'feature_{i}': self.feature_names[idx]
-                    for i, idx in enumerate(feat_key)}
+                raw_importance = num / total_cnt if total_cnt else 0.0
+                
+                # Etkileşimler için düzeltme yap
+                if len(feat_key) > 1:
+                    sum_single = sum([single_importances.get(idx, 0.0) for idx in feat_key])
+                    I_abs = max(0.0, raw_importance - sum_single)
+                else:
+                    I_abs = raw_importance
+                    
+                row = {f'feature_{i}': self.feature_names[idx] for i, idx in enumerate(feat_key)}
                 row['importance'] = I_abs
                 rows.append(row)
-
+                
             else:
-                # Sınıf bazlı detaylı çıktı
+                # Çoklu sınıf durumu
                 for cls, df in class_data.items():
-                    I_abs = _calc_I_abs(df)
-                    row = {f'feature_{i}': self.feature_names[idx]
-                        for i, idx in enumerate(feat_key)}
+                    raw_importance = calc_I_abs(df)
+                    
+                    if len(feat_key) > 1:
+                        # Bu sınıf için en güçlü tekli feature'ı bul
+                        sum_single = sum([single_importances.get(idx, 0.0) for idx in feat_key])
+                        I_abs = max(0.0, raw_importance - sum_single)
+                    else:
+                        I_abs = raw_importance
+                        
+                    row = {f'feature_{i}': self.feature_names[idx] for i, idx in enumerate(feat_key)}
                     row['importance'] = I_abs
                     row['class'] = cls
                     rows.append(row)
 
         return pd.DataFrame(rows).sort_values(by='importance', ascending=False).reset_index(drop=True)
 
-    
+
     def __contains__(self, key):
         """Check if a feature interaction exists in the results"""
         try:
