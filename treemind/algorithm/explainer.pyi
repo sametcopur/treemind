@@ -58,7 +58,6 @@ class Result:
         -------
         pandas.DataFrame or None
             * A DataFrame with the requested statistics.
-            * ``None`` if the combination was not analysed / is absent.
 
         Raises
         ------
@@ -67,7 +66,7 @@ class Result:
         TypeError
             If *key* is neither ``int`` nor a sequence of ``int``.
         """
-        
+
     def importance(self, combine_classes: bool = False) -> pd.DataFrame:
         """
         Compute the *mean absolute contribution* metric (``I_abs``) for
@@ -111,8 +110,7 @@ class Result:
         A larger ``importance`` indicates that fluctuations in this
         feature (or interaction) explain a greater share of variation in
         model predictions under the distribution represented by
-        *back-data*.  The metric is analogous to
-        ``mean(|SHAP|)`` for additive explanations.
+        *back-data*.
         """
         ...
 
@@ -125,8 +123,7 @@ class Result:
 
 class Explainer:
     """
-    Extracts human-readable structure from **GBDT** models
-    (*LightGBM*, *XGBoost* or *CatBoost*) and quantifies how individual
+    Extracts human-readable structure from tree models and quantifies how individual
     features—and their combinations—shape the ensemble’s predictions.
 
     Two complementary analysis pathways are available:
@@ -142,31 +139,21 @@ class Explainer:
     trees and cache internal state::
 
         explainer = Explainer()
-        explainer(lgbm_model)        # or xgb/cb model
+        explainer(tree_model)
 
     Thereafter any number of analyses can be executed without
     re-parsing the booster.
     """
 
-    def __init__(self) -> None: ...
-    def __repr__(self) -> str: ...
-    def __call__(self, model: Any) -> None:
+    def __init__(self, model: Any) -> None:
         """
-        Parse and cache the supplied GBDT model.
-
         Parameters
         ----------
-        model : lightgbm.Booster | xgboost.Booster | catboost.CatBoost
-            A **trained** gradient-boosting model.  Both scikit-learn
-            wrappers and native core objects are accepted.
-
-        Raises
-        ------
-        ValueError
-            If *model* is of an unsupported type or contains categorical
-            splits that cannot be fully reconstructed (CatBoost CTR).
+        model : A **trained** tree model.
         """
+        ...
 
+    def __repr__(self) -> str: ...
     def explain(
         self,
         degree: int,
@@ -230,45 +217,4 @@ class Explainer:
         ValueError
             If ``Explainer.__call__`` has not been invoked or *degree*
             is out of bounds.
-        """
-
-    def prepare_dataframe(
-        self,
-        col_indices: Sequence[int],
-        num_cols: int,
-        column_names: Sequence[str],
-        points: Sequence[Sequence[float]],
-        mean_values: Sequence[float],
-        ensemble_std: Sequence[float],
-        counts: Sequence[float],
-        columns: Union[int, Sequence[int]],
-    ) -> pd.DataFrame:
-        """
-        Assemble a tidy :class:`~pandas.DataFrame` for one feature
-        configuration.
-
-        The routine translates categorical indices to their string
-        labels (when available), centres values to a zero mean, and
-        appends lower/upper bounds for numerical variables.
-
-        Parameters
-        ----------
-        col_indices : Sequence[int]
-            Indices of features considered in the current interaction.
-        num_cols : int
-            Alias for ``len(col_indices)`` – repeated to match the
-            Cython signature.
-        column_names : Sequence[str]
-            Human-readable names corresponding to *col_indices*.
-        points, mean_values, ensemble_std, counts
-            Raw statistics returned by the cython layer.
-        columns : int or Sequence[int]
-            Original *degree* specification; used solely for warning
-            messages.
-
-        Returns
-        -------
-        pandas.DataFrame
-            One row per unique combination of split thresholds
-            encountered in the trees.
         """

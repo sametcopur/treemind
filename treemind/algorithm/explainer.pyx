@@ -58,8 +58,13 @@ cdef class Result:
         elif isinstance(key, (list, tuple)):
             if len(key) != self.degree:
                 raise ValueError(f"Index length ({len(key)}) must match result degree ({self.degree})")
+
             requested_key = tuple(key)
-        
+
+            # Additional validation: prevent same indices when degree >= 2
+            if self.degree >= 2 and len(set(requested_key)) == 1:
+                raise ValueError(f"All indices are the same ({requested_key}) and degree >= 2 is not allowed.")
+            
         else:
             raise TypeError("Index must be int, list, or tuple")
         
@@ -195,7 +200,10 @@ cdef class Result:
         cdef dict class_data
         cdef int cls
         cdef object df
-        cdef float total_cnt, mu, I_abs, num
+        cdef float total_cnt, I_abs, num
+
+        if self.n_classes == 1 and combine_classes:
+            raise ValueError("Combined class importance is not supported for single-class models. Please use `combine_classes=False`.")
 
         for feat_key, class_data in self.data.items():
 
@@ -266,7 +274,7 @@ cdef class Result:
         return self.data.items()
     
 cdef class Explainer:
-    def __init__(self):
+    def __init__(self, object model):
         self.trees = vector[vector[Rule]]()
         self.cat_cols = vector[vector[int]]()
         self.cat_indices = vector[int]()
@@ -277,12 +285,12 @@ cdef class Explainer:
         self.model_type = "none"
         self.n_classes = 0
 
+        self._extract_model(model)
+
     def __repr__(self) -> str:
         return f"Explainer(model={self.model_type})"
 
-    def __call__(self, model):
-        if not hasattr(model, '__module__'):
-            raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
+    def _extract_model(self, model):
 
         module_name = model.__module__
 
