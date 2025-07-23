@@ -13,7 +13,7 @@ from .. import Result
 
 def _validate_feature_plot_parameters(
     result: Result,
-    index: int,
+    col: int,
     figsize: Tuple[float, float],
     show_std: bool,
     show_range: bool,
@@ -34,7 +34,7 @@ def _validate_feature_plot_parameters(
     ----------
     result : Result
         The result object containing the data to plot.
-    index : int
+    col : int
         The index of the specific result to plot.
     figsize : tuple of int
         The figure size as a tuple of two positive integers.
@@ -66,11 +66,11 @@ def _validate_feature_plot_parameters(
     """
     if not isinstance(result, Result):
         raise TypeError("result must be an instance of Result.")
-    
-    if not isinstance(index, int) or index < 0:
-        raise ValueError("index must be a non-negative integer.")
 
-    df = result[index].copy()
+    if not isinstance(col, int) or col < 0:
+        raise ValueError("col must be a non-negative integer.")
+
+    df = result[col].copy()
 
     # Validate basic required columns
     required_columns = {"value", "std", "count"}
@@ -166,7 +166,7 @@ def _has_multiclass_data(df: pd.DataFrame) -> bool:
 
 def feature_plot(
     result: Result,
-    index: int,
+    col: int,
     figsize: Tuple[float, float] = (12.0, 8.0),
     show_std: bool = False,
     show_range: bool = False,
@@ -198,35 +198,12 @@ def feature_plot(
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Summary statistics for a *single* feature.  Two layout variants
-        are supported.
-
-        **Continuous layout**
-
-        ========  ========================================================
-        Column    Meaning
-        --------  --------------------------------------------------------
-        `<name>_lb`  Lower bound of the interval
-        `<name>_ub`  Upper bound of the interval
-        `value`      Mean impact inside the interval
-        `std`        Standard deviation of the impact
-        `count`      Row count in the interval
-        `class`      (Optional) Class identifier for multiclass problems
-        ========  ========================================================
-
-        **Categorical layout**
-
-        ========  ========================================================
-        Column    Meaning
-        --------  --------------------------------------------------------
-        `<name>`    Category identifier (first non-class column in *df*)
-        `value`     Mean impact for the category
-        `std`       Standard deviation of the impact
-        `count`     Row count for the category
-        `class`     (Optional) Class identifier for multiclass problems
-        ========  ========================================================
-
+    result : Result
+        The result object containing the feature data.
+        
+    col : int
+        The index of the feature to plot.
+        
     figsize : (float, float), default ``(12, 8)``
         Width × height of the figure (in inches).
 
@@ -276,7 +253,7 @@ def feature_plot(
 
     _validate_feature_plot_parameters(
         result=result,
-        index=index,
+        col=col,
         figsize=figsize,
         show_std=show_std,
         show_range=show_range,
@@ -290,7 +267,7 @@ def feature_plot(
         ylabel=ylabel,
     )
     
-    df = result[index].copy()
+    df = result[col].copy()
 
     # Check if this is multiclass data
     is_multiclass = _has_multiclass_data(df)

@@ -79,7 +79,7 @@ numpydoc_show_class_members = False
 
 templates_path = ["_templates"]
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 html_static_path = ["_static"]
 
 

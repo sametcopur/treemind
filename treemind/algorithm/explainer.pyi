@@ -15,103 +15,79 @@ from numpy.typing import ArrayLike
 class Result:
     """
     Container holding feature–interaction statistics produced by
-    :pymeth:`Explainer.explain`.  The object behaves like a mapping whose
-    **keys** are feature-index tuples and whose **values** are per-class
-    :class:`pandas.DataFrame` objects with the calculated metrics.
+    :meth:`Explainer.explain`. Acts like a mapping from feature-index tuples
+    to per-class :class:`pandas.DataFrame` objects with computed metrics.
 
-    In multi-class models the underlying dictionary is two-level:
+    For multi-class models, values are nested dictionaries:
 
-    ``result[(2, 5)]  ->  {0: df_class0, 1: df_class1, …}``
+        result[(2, 5)]  ->  {0: df_class0, 1: df_class1, …}
 
-    For convenience ``Result`` implements ``__getitem__`` so that
-    requesting a key returns a *single* DataFrame, concatenating the
-    class-wise frames and inserting a ``"class"`` column when necessary.
+    The ``__getitem__`` method simplifies this by returning a single DataFrame
+    merged across classes, with a ``"class"`` column when applicable.
 
     Notes
     -----
-    ``Result`` is read-only from a public API perspective; downstream
-    code should treat its content as immutable.
-
-    Examples
-    --------
-    >>> res = explainer.explain(degree=2)
-    >>> (2, 5) in res          # membership test
-    True
-    >>> res[2, 5].head()       # statistics for the interaction of feature 2 & 5
+    The content of ``Result`` is intended to be read-only.
     """
 
     def __init__(self) -> None: ...
     def __repr__(self) -> str: ...
-    def __getitem__(self, key: Union[int, Sequence[int]]) -> Optional[pd.DataFrame]:
+    def __getitem__(self, key: Union[int, Sequence[int]]) -> pd.DataFrame:
         """
         Retrieve interaction statistics for the given feature(s).
 
         Parameters
         ----------
         key : int or sequence of int
-            * **Degree = 1** – a single integer is interpreted as the
-              index of a *single* feature.
-            * **Degree ≥ 2** – a list/tuple whose length exactly matches
-              the degree of interactions stored in this ``Result``.
+            If ``degree == 1``, a single integer refers to one feature.
+            If ``degree >= 2``, a tuple/list must be passed with length equal
+            to the interaction degree.
 
         Returns
         -------
         pandas.DataFrame or None
-            * A DataFrame with the requested statistics.
+            Statistics for the specified feature(s), optionally including
+            a ``"class"`` column if multi-class.
 
         Raises
         ------
         ValueError
-            If the length of *key* does not match the stored degree.
+            If the key length does not match the interaction degree.
         TypeError
-            If *key* is neither ``int`` nor a sequence of ``int``.
+            If the key is not an int or sequence of ints.
         """
 
     def importance(self, combine_classes: bool = False) -> pd.DataFrame:
         """
-        Compute the *mean absolute contribution* metric (``I_abs``) for
-        every stored feature or feature-interaction group.
+        Calculate the mean absolute contribution metric (``I_abs``) for each
+        feature or interaction.
 
-        The score for a given group is defined as
+        The importance score for a group is:
 
         .. math::
 
-            I_{\\text{abs}} = \\frac{\\sum_i \\left| E[F\\mid i]-\\mu \\right|
-                               \\;\\cdot\\; \\text{count}_i}
-                              {\\sum_i \\text{count}_i}
-
-        where ``E[F|i]`` is the interval-conditioned expectation,
-        ``count_i`` the corresponding sample count and
-        :math:`\\mu = E[F]` the global expectation.
+            I_{\\text{abs}} = \\frac{\\sum_i \\left| E[F\\mid i]-\\mu \\right| \\cdot \\text{count}_i}{\\sum_i \\text{count}_i}
 
         Parameters
         ----------
-        combine_classes : bool, default ``True``
-            * **True** – for multi-class models, class-specific
-              ``I_abs`` values are aggregated into **one** number per
-              feature group, weighted by the sample count of each class.
-            * **False** – returns a separate row *per class*; the
-              resulting :class:`~pandas.DataFrame` includes an
-              additional ``"class"`` column.
+        combine_classes : bool, default=False
+            If True, aggregates per-class ``I_abs`` into a single weighted
+            value per group. If False, returns a row per class.
 
         Returns
         -------
         pandas.DataFrame
-            Sorted by descending importance.
+            Sorted by descending importance. Column structure:
 
-            * **Degree = 1** columns: ``"feature_0"``, ``"importance"``
-              plus optional ``"class"``.
-            * **Degree > 1** columns: ``"feature_0"``, …,
-              ``"feature_{degree-1}"``, ``"importance"``
-              (and optionally ``"class"``).
+            * Degree = 1: ``feature_0``, ``importance`` [+ ``class`` if multi-class]
+            * Degree > 1: ``feature_0``, ..., ``feature_{degree-1}``, ``importance`` [+ ``class`` if multi-class]
 
         Notes
         -----
-        A larger ``importance`` indicates that fluctuations in this
-        feature (or interaction) explain a greater share of variation in
-        model predictions under the distribution represented by
-        *back-data*.
+        Higher ``importance`` implies greater influence over model predictions,
+        based on fluctuations under the reference data distribution.
         """
+
         ...
 
     def __contains__(self, key: object) -> bool: ...
@@ -123,33 +99,30 @@ class Result:
 
 class Explainer:
     """
-    Extracts human-readable structure from tree models and quantifies how individual
-    features—and their combinations—shape the ensemble’s predictions.
+    Extracts interpretable structure from tree models, showing how
+    features and feature combinations influence predictions.
 
-    Two complementary analysis pathways are available:
+    Two main methods are provided:
 
-    * :pymeth:`explain` – enumerates every interaction of a given
-      *degree* (1 → marginal effects, 2 → pairwise, …) and returns a
-      :class:`Result` object with point estimates, uncertainty, and leaf
-      counts.
-    * :pymeth:`count_node` – counts how frequently specific features (or
-      feature groups) occur in tree split rules.
+    - :meth:`explain` — Computes metrics for all interactions of a given degree.
+    - :meth:`count_node` — Counts feature appearances in split conditions.
 
-    The class must be *called* first with a trained model to parse its
-    trees and cache internal state::
+    Usage
+    -----
+    After initializing, call the object with a trained model:
 
-        explainer = Explainer()
-        explainer(tree_model)
+    >>> explainer = Explainer()
+    >>> explainer(model)
 
-    Thereafter any number of analyses can be executed without
-    re-parsing the booster.
+    Then use ``explain`` or ``count_node`` as needed.
     """
 
     def __init__(self, model: Any) -> None:
         """
         Parameters
         ----------
-        model : A **trained** tree model.
+        model : object
+            A trained tree-based model to be analyzed.
         """
         ...
 
@@ -161,60 +134,53 @@ class Explainer:
         back_data: Optional[ArrayLike] = None,
     ) -> Result:
         """
-        Quantify the joint influence of *degree*-sized feature groups on
-        predicted outcomes.
+        Compute interaction metrics for feature groups of a specified degree.
 
         Parameters
         ----------
         degree : int
-            Interaction order to inspect.  ``degree=1`` yields
-            per-feature main effects; ``degree=2`` yields pairwise
-            interactions, etc.
-        back_data : ArrayLike, optional
-            Reference dataset used to *re-weight* leaf statistics.  When
-            supplied, each tree’s leaf counts are recomputed with
-            ``back_data`` before metrics are aggregated, enabling
-            conditional or baseline-specific explanations.
+            Interaction order: 1 for main effects, 2 for pairs, etc.
+        back_data : array-like, optional
+            Optional dataset used to re-weight statistics for baseline-specific
+            explanations.
 
         Returns
         -------
         Result
-            Mapping-like object whose keys are feature-index tuples of
-            length *degree*.
+            A mapping from feature index tuples to per-class DataFrames.
 
         Raises
         ------
         ValueError
-            If ``Explainer.__call__`` has not been invoked or *degree*
-            is out of bounds.
+            If the object has not been called with a model or the degree is invalid.
         """
 
     def count_node(self, degree: int = 2) -> pd.DataFrame:
         """
-        Enumerate how often features (or feature combinations) appear in
-        split conditions across **all** trees.
+        Count how often feature groups appear in tree split rules.
 
         Parameters
         ----------
         degree : int, default=2
-            Size of the feature group to count.
+            Number of features in each group to count.
 
         Returns
         -------
         pandas.DataFrame
-            Sorted table with columns
+            Table sorted by count, with the following columns:
 
-            ================  =========================================
-            ``column1_index``  Index of the **1st** feature in group
-            «…»
-            ``columnN_index``  Index of the **Nth** feature in group
-            ``count``          Number of split rules containing *all*
-                               listed features
-            ================  =========================================
+            +-------------------+--------------------------------------------+
+            | Column            | Description                                |
+            +===================+============================================+
+            | ``column1_index`` | Index of the first feature in the group    |
+            | ``...``           | ...                                        |
+            | ``columnN_index`` | Index of the Nth feature in the group      |
+            | ``count``         | Number of times this group appeared        |
+            +-------------------+--------------------------------------------+
 
         Raises
         ------
         ValueError
-            If ``Explainer.__call__`` has not been invoked or *degree*
-            is out of bounds.
+            If the explainer has not been initialized with a model, or if
+            the requested degree is invalid.
         """

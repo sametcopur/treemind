@@ -6,3 +6,4 @@
 
 .. autoclass:: treemind.Result
     :members:
+    :special-members: __getitem__
