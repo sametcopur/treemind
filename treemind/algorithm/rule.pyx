@@ -1,7 +1,7 @@
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort, unique
 from libc.math cimport INFINITY
-from cython cimport boundscheck, wraparound, initializedcheck, nonecheck, cdivision, overflowcheck, infer_types
+
 from .rule cimport Rule
 from .xgb cimport convert_d_matrix, xgb_leaf_correction
 
@@ -10,13 +10,6 @@ import numpy as np
 
 from collections import Counter
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     """
     Initializes a new Rule struct with the given parameters.
@@ -36,23 +29,48 @@ cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
         The initialized Rule struct.
     """
     cdef Rule rule
+    cdef int i
+
     rule.len_col = len_col
     rule.tree_index = tree_index
     rule.leaf_index = leaf_index
-    rule.lbs = vector[double](len_col, -INFINITY)
-    rule.ubs = vector[double](len_col, INFINITY)
+    rule.lbs = vector[float](len_col, -INFINITY)
+    rule.ubs = vector[float](len_col, INFINITY) 
     rule.value = np.nan
     rule.count = -1
+    rule.cats = vector[vector[bint]]()
+    rule.cat_flags = vector[bint]()
     return rule
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
-cdef void update_rule(Rule* rule, int index, double lb, double ub):
+cdef void update_cats_for_rule(Rule* rule, const vector[vector[bint]]& cats):
+    """
+    Copies the active categorical mask constraints into the Rule struct and
+    prints them (debug).
+
+    Parameters
+    ----------
+    rule : Rule*
+        The Rule struct being constructed for a leaf node.
+    cats : vector[vector[bint]]&
+        Temporary categorical mask collected during tree traversal.
+        Each cats[i] is a boolean mask indicating allowed category values for feature i.
+    """
+    cdef size_t i, j
+    cdef bint all_one
+    rule.cats.resize(cats.size())
+    rule.cat_flags.resize(cats.size(), 0)
+
+    for i in range(cats.size()):
+        rule.cats[i] = cats[i]
+
+        all_one = True
+        for j in range(cats[i].size()):
+            if cats[i][j] == 0:
+                all_one = False
+                break
+        rule.cat_flags[i] = 0 if all_one else 1
+
+cdef void update_rule(Rule* rule, int index, float lb, float ub):
     """
     Updates the lower and upper bounds for a feature at the specified index.
 
@@ -70,13 +88,7 @@ cdef void update_rule(Rule* rule, int index, double lb, double ub):
     rule.lbs[index] = max(rule.lbs[index], lb)
     rule.ubs[index] = min(rule.ubs[index], ub)
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noexcept nogil:
     """
     Checks whether the rule has been fully defined for the given feature indices.
@@ -99,14 +111,7 @@ cdef inline bint check_rule(const Rule* rule, vector[int] feature_indices)  noex
             return 0
     return 1
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
-cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nogil:
+cdef inline bint check_value(const Rule* rule, int i, float value) noexcept nogil:
     """
     Checks if the given value lies within the bounds for the specified feature index.
 
@@ -116,7 +121,7 @@ cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nog
         The Rule struct to check.
     i : int
         The feature index to check.
-    value : double
+    value : float
         The value to check against the feature's bounds.
 
     Returns
@@ -127,23 +132,12 @@ cdef inline bint check_value(const Rule* rule, int i, double value) noexcept nog
     return rule.lbs[i] < value <= rule.ubs[i]
 
 
-@boundscheck(False)
-@nonecheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
+
 cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
-cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
+
+cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col):
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
 
@@ -156,15 +150,15 @@ cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
 
     Returns
     -------
-    vector[double]
+    vector[float]
         A vector of unique split points for the specified column, excluding the smallest one.
     """
 
-    cdef vector[double] points
+    cdef vector[float] points
     cdef vector[Rule] tree
     cdef Rule rule
-    cdef vector[double].iterator it
-    cdef vector[double] result
+    cdef vector[float].iterator it
+    cdef vector[float] result
 
     for tree in trees:
         for rule in tree:
@@ -181,12 +175,6 @@ cdef vector[double] get_split_point(vector[vector[Rule]] trees, int col):
         
     return points
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
     cdef Py_ssize_t num_trees = array.shape[1]
     cdef Py_ssize_t num_rows = array.shape[0]
@@ -205,12 +193,6 @@ cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
     return results
 
 
-@boundscheck(False)
-@wraparound(False)
-@initializedcheck(False)
-@cdivision(True)
-@overflowcheck(False)
-@infer_types(True)
 cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object model, object back_data, str model_type):
     cdef:
         cnp.ndarray[cnp.int32_t, ndim=2] back_data_
@@ -224,7 +206,7 @@ cdef vector[vector[Rule]] update_leaf_counts(vector[vector[Rule]] trees, object 
         vector[Rule]* tree_ptr
 
         size_t tree_index, leaf_index
-        double leaf_counts
+        float leaf_counts
         dict node_counts
 
     if model_type == "xgboost":

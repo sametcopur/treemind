@@ -3,5 +3,7 @@
 
 .. autoclass:: treemind.Explainer
     :members:
-    :special-members: __call__
-    
+
+.. autoclass:: treemind.Result
+    :members:
+    :special-members: __getitem__

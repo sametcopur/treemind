@@ -1,86 +1,131 @@
+from typing import (
+    Any,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Dict,
+    Union,
+)
+
 import pandas as pd
 from numpy.typing import ArrayLike
-import numpy as np
-from typing import List, Any, Optional, Union
+
+class Result:
+    """
+    Container holding feature–interaction statistics produced by
+    :meth:`Explainer.explain`. Acts like a mapping from feature-index tuples
+    to per-class :class:`pandas.DataFrame` objects with computed metrics.
+
+    The ``__getitem__`` method simplifies this by returning a single DataFrame
+    merged across classes, with a ``"class"`` column when applicable.
+
+    Notes
+    -----
+    The content of ``Result`` is intended to be read-only.
+    """
+
+    degree: int
+    n_classes: int
+    feature_names: list[str]
+    model_type: str
+
+    def __init__(self) -> None: ...
+    def __repr__(self) -> str: ...
+    
+    def __getitem__(self, key: Union[int, Sequence[int]]) -> pd.DataFrame: ...
+    def __contains__(self, key: object) -> bool: ...
+    def __len__(self) -> int: ...
+    def __iter__(self) -> Iterator[Tuple[int, ...]]: ...
+
+    @property
+    def data(self) -> Dict[Tuple[int, ...], Dict[int, pd.DataFrame]]:
+        """
+        Internal dictionary mapping feature-index tuples to per-class DataFrames.
+
+        Returns
+        -------
+        dict
+            The full internal representation of interaction data.
+        """
+        ...
+
+    def importance(self, combine_classes: bool = False) -> pd.DataFrame:
+        """
+        Calculate the mean absolute contribution metric (``I_abs``) for each
+        feature or interaction.
+
+        The importance score for a group is:
+
+        .. math::
+
+            I_{\\text{abs}} = \\frac{\\sum_i \\left| E[F\\mid i]-\\mu \\right| \\cdot \\text{count}_i}{\\sum_i \\text{count}_i}
+
+        Parameters
+        ----------
+        combine_classes : bool, default=False
+            If True, aggregates per-class ``I_abs`` into a single weighted
+            value per group. If False, returns a row per class.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame listing feature or interaction importances (``I_abs``),
+            sorted by descending importance.
+        """
+        ...
 
 class Explainer:
     """
-    The Explainer class provides methods to analyze and interpret a trained model by examining
-    feature dependencies, split points, interaction effects, and predicted values. This class
-    enables detailed inspection of how individual features and their interactions impact model
-    predictions, allowing for a clearer understanding of the model's decision-making process.
+    Extracts interpretable structure from tree models, showing how
+    features and feature combinations influence predictions.
     """
 
-    def __call__(self, model: Any) -> None:
+    def __init__(self, model: Any) -> None:
         """
-        The Explainer class provides methods to analyze and interpret trained models by examining
-        feature dependencies, split points, interaction effects, and predicted values. This class
-        enables detailed inspection of how individual features and their interactions impact model
-        predictions, offering insights into the model's decision-making process.
-
         Parameters
         ----------
-        model : Any
-            A trained model instance.
-
-        Returns
-        -------
-        None
-        """
-        ...
-    def analyze_feature(
-        self, columns: Union[int, List[int]], back_data: Optional[ArrayLike] = None
-    ) -> pd.DataFrame:
-        """
-        Analyzes feature interactions based on the model's decision rules and computes metrics
-        that quantify their combined influence on predictions.
-
-        Parameters
-        ----------
-        columns : int or list[int]
-            The index or list of indices of the features to analyze for interactions. Each index
-            corresponds to a feature in the input data.
-
-        back_data : Optional[ArrayLike], default=None
-            Optional data for updating the tree's leaf counts dynamically. This data allows for
-            re-calculating interaction metrics based on new or baseline data.
-
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing the interaction analysis results with the following columns:
-            
-            - `feature_X_lower_bound`, `feature_X_upper_bound` (float): Lower and upper bounds
-              for each analyzed feature.
-            - `interaction_value` (float): The calculated metric representing the combined influence
-              of the features.
-            - `std_dev` (float): The standard deviation of the interaction value.
-            - `average_leaf_count` (float): The average count of data points across relevant tree leaves.
+        model : object
+            A trained tree-based model to be analyzed.
         """
         ...
 
-    def count_node(self, order: int = 2) -> pd.DataFrame:
+    def __repr__(self) -> str: ...
+    def explain(
+        self,
+        degree: int,
+        *,
+        back_data: Optional[ArrayLike] = None,
+    ) -> Result:
         """
-        Counts the frequency of feature combinations used in decision splits across all trees
-        in the model.
+        Compute interaction metrics for feature groups of a specified degree.
 
         Parameters
         ----------
-        order : int, default=2
-            The number of features in each combination to count:
-            
-            - `order=1`: Counts how often individual features are used in splits.
-            - `order=2`: Counts how often pairs of features appear together in splits.
-            - `order=N`: Counts combinations of `N` features.
+        degree : int
+            Interaction order: 1 for main effects, 2 for pairs, etc.
+        back_data : array-like, optional
+            Optional dataset used to re-weight statistics for baseline-specific
+            explanations.
 
         Returns
         -------
-        pd.DataFrame
-            A DataFrame containing the following columns:
-            
-            - `feature_1_index`, `feature_2_index`, ..., `feature_N_index` (int): Indices of the
-              features in the combination, where `N` equals the `order` parameter.
-            - `count` (int): The number of times this feature combination appears in the splits
-              across all trees.
+        Result
+            A mapping from feature index tuples to per-class DataFrames.
         """
-        ...
+
+    def count_node(self, degree: int = 2) -> pd.DataFrame:
+        """
+        Count how often feature groups appear in tree split rules.
+
+        Parameters
+        ----------
+        degree : int, default=2
+            Number of features in each group to count.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame listing feature groups of the given degree and how
+            often they appear in tree split rules, sorted by descending count.
+        """

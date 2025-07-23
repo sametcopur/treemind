@@ -1,3 +1,3 @@
-from .explainer import Explainer
+from .explainer import Explainer, Result
 
-__all__ = ["Explainer"]
+__all__ = ["Explainer", "Result"]

@@ -3,9 +3,11 @@ from Cython.Build import cythonize
 import numpy as np
 import sys
 
+from treemind import __version__
+
 if sys.platform == "win32":
     extra_compile_args = [
-        "/O2",  
+        "/O2",
         "/fp:fast",
         "/Ot",
         "/Ox",
@@ -25,10 +27,13 @@ elif sys.platform == "linux":
     ]
     extra_link_args = []
 
-elif sys.platform == "darwin":  # macOS
+elif sys.platform == "darwin":
     extra_compile_args = [
+        "-Wall",
         "-O3",
-        "-ffast-math",
+        "-fno-math-errno",       
+        "-fno-signed-zeros",    
+        "-fno-trapping-math", 
         "-funroll-loops",
         "-ftree-vectorize",
         "-fstrict-aliasing",
@@ -69,8 +74,26 @@ extensions = [
         define_macros=define_macros,
     ),
     Extension(
+        name="treemind.algorithm.perp",
+        sources=["treemind/algorithm/perp.pyx"],
+        include_dirs=[np.get_include(), "treemind/algorithm"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros,
+    ),
+    Extension(
         name="treemind.algorithm.lgb",
         sources=["treemind/algorithm/lgb.pyx"],
+        include_dirs=[np.get_include(), "treemind/algorithm"],
+        language="c++",
+        extra_compile_args=extra_compile_args,
+        extra_link_args=extra_link_args,
+        define_macros=define_macros,
+    ),
+    Extension(
+        name="treemind.algorithm.sk",
+        sources=["treemind/algorithm/sk.pyx"],
         include_dirs=[np.get_include(), "treemind/algorithm"],
         language="c++",
         extra_compile_args=extra_compile_args,
@@ -99,8 +122,21 @@ extensions = [
 
 setup(
     name="treemind",
-    version="0.0.1",
+    version=__version__,
     description="treemind",
     packages=find_packages(include=["treemind", "treemind.*"]),
-    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={
+            "language_level": 3,
+            "boundscheck": False,
+            "wraparound": False,
+            "initializedcheck": False,
+            "cdivision": True,
+            "nonecheck": False,
+            "overflowcheck": False,
+            "infer_types": True,
+        },
+    ),
 )
+
