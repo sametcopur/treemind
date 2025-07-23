@@ -15,7 +15,7 @@ from numpy.typing import ArrayLike
 class Result:
     """
     Container holding feature–interaction statistics produced by
-    :pymeth:`Explainer.analyze`.  The object behaves like a mapping whose
+    :pymeth:`Explainer.explain`.  The object behaves like a mapping whose
     **keys** are feature-index tuples and whose **values** are per-class
     :class:`pandas.DataFrame` objects with the calculated metrics.
 
@@ -34,7 +34,7 @@ class Result:
 
     Examples
     --------
-    >>> res = explainer.analyze(degree=2)
+    >>> res = explainer.explain(degree=2)
     >>> (2, 5) in res          # membership test
     True
     >>> res[2, 5].head()       # statistics for the interaction of feature 2 & 5
@@ -131,7 +131,7 @@ class Explainer:
 
     Two complementary analysis pathways are available:
 
-    * :pymeth:`analyze` – enumerates every interaction of a given
+    * :pymeth:`explain` – enumerates every interaction of a given
       *degree* (1 → marginal effects, 2 → pairwise, …) and returns a
       :class:`Result` object with point estimates, uncertainty, and leaf
       counts.
@@ -167,7 +167,7 @@ class Explainer:
             splits that cannot be fully reconstructed (CatBoost CTR).
         """
 
-    def analyze(
+    def explain(
         self,
         degree: int,
         *,

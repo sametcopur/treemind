@@ -13,6 +13,7 @@ from .perp cimport analyze_perpetual
 from collections import Counter
 from itertools import combinations
 import warnings
+from tqdm import tqdm
 
 cdef vector[pair[double, double]] feature_ranges
 
@@ -474,7 +475,7 @@ cdef class Explainer:
         
         return df
     
-    def analyze(self, int degree, *, back_data=None):
+    def explain(self, int degree, *, back_data=None):
 
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
@@ -517,7 +518,7 @@ cdef class Explainer:
         result.model_type = self.model_type
 
         # Analyze each feature combination
-        for feature_combo in feature_combinations:
+        for feature_combo in tqdm(feature_combinations, desc="Analyzing features"):
             # Convert feature combination to vector[int]
             col_indices.clear()
             for col in feature_combo:
