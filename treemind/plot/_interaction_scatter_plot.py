@@ -1,16 +1,16 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
+from ..algorithm import Result
 
 
 def _validate_interaction_scatter_plot_parameters(
     X: np.ndarray,
-    df: pd.DataFrame,
-    col_1: int,
-    col_2: int,
+    result: Result,
+    cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float],
     ticks_fontsize: Tuple[int, float],
     title_fontsize: Tuple[int, float],
@@ -25,17 +25,16 @@ def _validate_interaction_scatter_plot_parameters(
         raise TypeError("`X` must be a two-dimensional NumPy array.")
 
     # Feature indices
-    if not isinstance(col_1, int) or not isinstance(col_2, int):
-        raise TypeError("`col_1` and `col_2` must be integers.")
-    if col_1 < 0 or col_2 < 0 or col_1 >= X.shape[1] or col_2 >= X.shape[1]:
-        raise ValueError("`col_1` and `col_2` must be valid indices in `X`.")
+    if not all(isinstance(c, int) for c in cols) or len(cols) != 2:
+        raise TypeError("`cols` must be a tuple or list of exactly two integers.")
+    if any(c < 0 or c >= X.shape[1] for c in cols):
+        raise ValueError("`cols` must refer to valid column indices in `X`.")
 
-    # df type check
-    if not isinstance(df, pd.DataFrame):
-        raise TypeError("`df` must be a pandas DataFrame.")
+    # result type check
+    if not isinstance(result, Result):
+        raise TypeError("`result` must be a Result object.")
 
-    if df.shape[0] <= 2:
-        raise ValueError("There is no interaction between features to plot.")
+    df = result[cols].copy()
 
     # Detect class column (if exists) and drop it temporarily for validation
     df_check = df.drop(columns=["class"]) if "class" in df.columns else df.copy()
@@ -145,9 +144,8 @@ def _lookup_values(
 
 def interaction_scatter_plot(
     X: pd.DataFrame | np.ndarray,
-    df: pd.DataFrame,
-    col_1: int,
-    col_2: int,
+    result: Result,
+    cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float] = (10.0, 8.0),
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
@@ -165,15 +163,10 @@ def interaction_scatter_plot(
     ----------
     X : pd.DataFrame
         Input data containing feature values
-    df : pd.DataFrame
-        A DataFrame containing interaction data with columns `_lb`, `_ub`, `_lb`, `_ub`, and `value`.
-        The first four columns represent intervals for two features, where each pair (_lb, _ub) defines
-        the bounds of one feature. The last column, `value`, contains the interaction values for each pair.
-        Optionally contains a 'class' column for creating separate plots per class.
-    col_1 : int
-        Index of first feature in X
-    col_2 : int
-        Index of second feature in X
+    result : Result
+        Result object containing interaction statistics.
+    cols : tuple of int or list of int
+        Indices of the two features to plot.
     figsize : tuple of float, default (10.0, 8.0)
         Width and height of the plot in inches.
     ticks_fontsize : float, default 10.0
@@ -201,9 +194,8 @@ def interaction_scatter_plot(
 
     _validate_interaction_scatter_plot_parameters(
         X=X,
-        df=df,
-        col_1=col_1,
-        col_2=col_2,
+        result=result,
+        cols=cols,
         figsize=figsize,
         ticks_fontsize=ticks_fontsize,
         title_fontsize=title_fontsize,
@@ -214,25 +206,27 @@ def interaction_scatter_plot(
         color_bar_label=color_bar_label,
     )
 
-    x_vals = X[:, col_1].astype(float)
-    y_vals = X[:, col_2].astype(float)
+    x_vals = X[:, cols[0]].astype(float)
+    y_vals = X[:, cols[1]].astype(float)
+
+    df = result[cols].copy()
 
     # Check if 'class' column exists
-    has_class_column = 'class' in df.columns
-    
+    has_class_column = "class" in df.columns
+
     if has_class_column:
         # Get unique classes
-        unique_classes = df['class'].unique()
-        
+        unique_classes = df["class"].unique()
+
         # Create separate plot for each class
         for class_value in unique_classes:
             # Filter dataframe for current class
-            df_class = df[df['class'] == class_value].copy()
-            
+            df_class = df[df["class"] == class_value].copy()
+
             # Skip if no data for this class
             if df_class.empty:
                 continue
-            
+
             # Build lookup grid for this class
             x_edges, y_edges, grid = _build_lookup(df_class)
             values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
@@ -279,7 +273,7 @@ def interaction_scatter_plot(
 
             plt.tight_layout()
             plt.show()
-    
+
     else:
         # Original behavior when no class column exists
         x_edges, y_edges, grid = _build_lookup(df)
@@ -321,7 +315,9 @@ def interaction_scatter_plot(
 
         # Title
         ax.set_title(
-            title if title is not None else f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()}",
+            title
+            if title is not None
+            else f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()}",
             fontsize=title_fontsize,
         )
 

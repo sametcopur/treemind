@@ -47,13 +47,19 @@ cdef class Result:
             DataFrame with feature interaction statistics. 
             For multi-class models, includes 'class' column indicating the class.
         """
+        if self.data == {}:
+            raise ValueError("No data available. Please run the explain method first.")
+
         # Handle single integer (individual feature)
         if isinstance(key, int):
             if self.degree == 1:
                 requested_key = (key,)
             else:
                 raise ValueError(f"Single index only valid for degree=1, current degree={self.degree}")
-        
+
+            if key < 0 or key >= len(self.feature_names):
+                raise IndexError(f"Index {key} out of bounds. Must be between 0 and {len(self.feature_names) - 1}.")
+
         # Handle list or tuple (feature interactions)
         elif isinstance(key, (list, tuple)):
             if len(key) != self.degree:
@@ -64,7 +70,11 @@ cdef class Result:
             # Additional validation: prevent same indices when degree >= 2
             if self.degree >= 2 and len(set(requested_key)) == 1:
                 raise ValueError(f"All indices are the same ({requested_key}) and degree >= 2 is not allowed.")
-            
+
+            for idx in requested_key:
+                if idx < 0 or idx >= len(self.feature_names):
+                    raise IndexError(f"Index {idx} out of bounds. Must be between 0 and {len(self.feature_names) - 1}.")
+
         else:
             raise TypeError("Index must be int, list, or tuple")
         
@@ -201,6 +211,9 @@ cdef class Result:
         cdef int cls
         cdef object df
         cdef float total_cnt, I_abs, num
+
+        if self.data == {}:
+            raise ValueError("No data available. Please run the explain method first.")
 
         if self.n_classes == 1 and combine_classes:
             raise ValueError("Combined class importance is not supported for single-class models. Please use `combine_classes=False`.")
@@ -454,13 +467,12 @@ cdef class Explainer:
         
         # Add statistics columns
         df_dict.update({
-            'value': mean_values,
-            'std': ensemble_std,
-            'count': counts
+            'value': np.asarray(mean_values, dtype=np.float32),
+            'std': np.asarray(ensemble_std, dtype=np.float32),
+            'count': np.asarray(counts, dtype=np.float32)
         })
-        
-        df = pd.DataFrame(df_dict,dtype=np.float32)
-        
+        df = pd.DataFrame(df_dict, dtype=np.float32)
+
         # Center the values
         if df["count"].sum() == 0:
             df.loc[:, "std"] = df["value"]
@@ -472,7 +484,8 @@ cdef class Explainer:
 
             warnings.warn(msg)
         else:
-            df.loc[:, "value"] -= (df["value"] * df["count"]).sum() / df["count"].sum().astype(np.float32)
+            adjustment = (df["value"] * df["count"]).sum() / df["count"].sum()
+            df.loc[:, "value"] = (df["value"] - adjustment).astype(np.float32)
         
         # Add lower bounds for all columns
         for col_name in column_names:

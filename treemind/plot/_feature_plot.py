@@ -8,10 +8,12 @@ from .plot_utils import (
     _replace_infinity,
     _find_tick_decimal,
 )
+from ..algorithm import Result
 
 
 def _validate_feature_plot_parameters(
-    df: pd.DataFrame,
+    result: Result,
+    index: int,
     figsize: Tuple[float, float],
     show_std: bool,
     show_range: bool,
@@ -60,6 +62,14 @@ def _validate_feature_plot_parameters(
     ValueError
         If any parameter is invalid.
     """
+    if not isinstance(result, Result):
+        raise TypeError("result must be an instance of Result.")
+    
+    if not isinstance(index, int) or index < 0:
+        raise ValueError("index must be a non-negative integer.")
+
+    df = result[index].copy()
+
     # Validate basic required columns
     required_columns = {"value", "std", "count"}
     if not required_columns.issubset(df.columns):
@@ -83,7 +93,7 @@ def _validate_feature_plot_parameters(
     else:
         # For categorical data, we expect the first column to be the category identifier
         # (but excluding 'class' column if it exists)
-        non_class_cols = [col for col in df.columns if col != 'class']
+        non_class_cols = [col for col in df.columns if col != "class"]
         if len(non_class_cols) < 4:  # category, value, std, count (minimum)
             raise ValueError(
                 "For categorical data, the DataFrame must have at least 4 columns: category identifier, value, std, count."
@@ -146,14 +156,15 @@ def _is_categorical_data(df: pd.DataFrame) -> bool:
 def _has_multiclass_data(df: pd.DataFrame) -> bool:
     """
     Determines if the DataFrame contains multiclass data (has 'class' column).
-    
+
     Returns True if multiclass, False otherwise.
     """
-    return 'class' in df.columns
+    return "class" in df.columns
 
 
 def feature_plot(
-    df: pd.DataFrame,
+    result: Result,
+    index: int,
     figsize: Tuple[float, float] = (12.0, 8.0),
     show_std: bool = False,
     show_range: bool = False,
@@ -260,9 +271,10 @@ def feature_plot(
     * **Multiclass data** generates separate plots for each class, with class
       information appended to the plot title.
     """
-    # Parameter validation
+
     _validate_feature_plot_parameters(
-        df=df,
+        result=result,
+        index=index,
         figsize=figsize,
         show_std=show_std,
         show_range=show_range,
@@ -275,22 +287,22 @@ def feature_plot(
         xlabel=xlabel,
         ylabel=ylabel,
     )
+    
+    df = result[index].copy()
 
     # Check if this is multiclass data
     is_multiclass = _has_multiclass_data(df)
-    
+
     if is_multiclass:
         # Get unique classes and plot for each
-        unique_classes = sorted(df['class'].unique())
-        
-        for class_idx in unique_classes:
+        unique_classes = sorted(df["class"].unique())
 
-            
+        for class_idx in unique_classes:
             # Filter data for current class
-            class_df = df[df['class'] == class_idx].copy()
+            class_df = df[df["class"] == class_idx].copy()
             # Remove the class column for plotting
-            class_df = class_df.drop('class', axis=1)
-            
+            class_df = class_df.drop("class", axis=1)
+
             # Create class-specific title
             if title is None:
                 # Determine feature name for auto title
@@ -298,13 +310,15 @@ def feature_plot(
                 if is_categorical:
                     feature_name = class_df.columns[0].replace("_", " ").title()
                 else:
-                    ub_columns = [col for col in class_df.columns if col.endswith("_ub")]
+                    ub_columns = [
+                        col for col in class_df.columns if col.endswith("_ub")
+                    ]
                     feature_name = ub_columns[0][:-3] if ub_columns else "Feature"
-                
+
                 class_title = f"Contribution of {feature_name} - Class {class_idx}"
             else:
                 class_title = f"{title} - Class {class_idx}"
-            
+
             # Plot for this class
             _plot_single_class(
                 class_df,

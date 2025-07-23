@@ -1,18 +1,31 @@
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from matplotlib.colors import TwoSlopeNorm
 from typing import Optional, Tuple, Iterable
+import re
+from ..algorithm.explainer import Result
+
+
+def natural_sort_key(text):
+    """
+    Natural sorting key function for strings containing numbers.
+    Converts "Column_11" vs "Column_2" to proper numeric comparison.
+    """
+
+    def convert(text_part):
+        return int(text_part) if text_part.isdigit() else text_part.lower()
+
+    return [convert(c) for c in re.split("([0-9]+)", str(text))]
 
 
 def importance_plot(
-    df: pd.DataFrame,
+    result: Result,
+    combine_classes: bool = False,
     figsize: Tuple[float, float] = (10.0, 6.0),
     ticks_fontsize: float = 10.0,
     title_fontsize: float = 16.0,
     label_fontsize: float = 14.0,
-    cmap: str = "coolwarm",
+    cmap: str = "Reds",
     *,
     title: Optional[str] = None,
 ) -> None:
@@ -36,6 +49,15 @@ def importance_plot(
         multiclass). If *None*, an automatic title is generated.
     """
     # ---------------------------- validation -----------------------------
+
+    if not isinstance(result, Result):
+        raise TypeError("result must be an instance of Result.")
+
+    if not isinstance(combine_classes, bool):
+        raise TypeError("combine_classes must be a boolean value.")
+
+    df = result.importance(combine_classes=combine_classes)
+
     required = {"feature_0", "importance"}
     if not required.issubset(df.columns):
         raise ValueError(f"DataFrame must contain {required} columns.")
@@ -96,25 +118,24 @@ def importance_plot(
 
         else:
             # ------------------------- HEAT-MAP -----------------------
-            pivot = (
-                sub.pivot(index="feature_0", columns="feature_1", values="importance")
-                .fillna(0.0)
+            pivot = sub.pivot(
+                index="feature_0", columns="feature_1", values="importance"
             )
-            # Ensure square ordering ------------------------------------------------
-            feat_order = sorted(set(pivot.index).union(pivot.columns), key=str)
-            pivot = pivot.reindex(index=feat_order, columns=feat_order).fillna(0.0)
 
-            vmax = pivot.values.max()
-            vmin = pivot.values.min()
-            abs_max = max(abs(vmax), abs(vmin)) or 1e-8
-            norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0.0, vmax=abs_max)
+            # Ensure square ordering with natural/numeric sorting --------
+            feat_order = sorted(
+                set(pivot.index).union(pivot.columns), key=natural_sort_key
+            )
+            pivot = pivot.reindex(index=feat_order, columns=feat_order)
+
+            vmax = np.nanmax(pivot.values)
 
             fig, ax = plt.subplots(figsize=figsize)
             sns.heatmap(
                 pivot,
                 cmap=cmap,
-                norm=norm,
-                center=0.0,
+                vmin=0,  # 0'dan başlasın
+                vmax=vmax,  # Max değerde bitsin
                 square=True,
                 linewidths=0.5,
                 linecolor="white",
@@ -124,8 +145,12 @@ def importance_plot(
 
             ax.set_xlabel("Feature", fontsize=label_fontsize)
             ax.set_ylabel("Feature", fontsize=label_fontsize)
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=ticks_fontsize)
-            ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=ticks_fontsize)
+            ax.set_xticklabels(
+                ax.get_xticklabels(), rotation=45, ha="right", fontsize=ticks_fontsize
+            )
+            ax.set_yticklabels(
+                ax.get_yticklabels(), rotation=0, fontsize=ticks_fontsize
+            )
 
             cls_txt = f" – Class {cls}" if cls is not None else ""
             auto_title = f"Feature interaction importance{cls_txt}"

@@ -53,7 +53,7 @@ def _replace_infinity(
                 max_value * 0.1
             )  # Use 10% of max_value if only one unique point
         # Replace positive infinity values
-        data.loc[np.isposinf(data[column_name]), column_name] = max_value + difference
+        data.loc[np.isposinf(data[column_name]), column_name] = np.float32(max_value + difference)
 
     elif infinity_type == "negative":
         # Handle negative infinity
@@ -66,7 +66,7 @@ def _replace_infinity(
                 abs(min_value) * 0.1
             )  # Use 10% of min_value if only one unique point
         # Replace negative infinity values
-        data.loc[np.isneginf(data[column_name]), column_name] = min_value - difference
+        data.loc[np.isneginf(data[column_name]), column_name] = np.float32(min_value - difference)
 
     else:
         raise ValueError("infinity_type must be 'positive' or 'negative'")

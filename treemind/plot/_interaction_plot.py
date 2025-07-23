@@ -6,11 +6,12 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import TwoSlopeNorm
 from typing import Tuple, Union, Optional, List
 
-from treemind.plot.plot_utils import _replace_infinity, _find_tick_decimal
-
+from .plot_utils import _replace_infinity, _find_tick_decimal
+from ..algorithm import Result
 
 def _validate_interaction_plot_parameters(
-    df: pd.DataFrame,
+    result: Result,
+    cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float],
     axis_ticks_n: int,
     ticks_fontsize: Union[int, float],
@@ -55,8 +56,12 @@ def _validate_interaction_plot_parameters(
         logical features, or has fewer than three rows.
     """
     # basic DataFrame sanity checks ------------------------------------------------
-    if not isinstance(df, pd.DataFrame):
-        raise TypeError("`df` must be a pandas DataFrame.")
+    # result type check
+    if not isinstance(result, Result):
+        raise TypeError("`result` must be a Result object.")
+
+    df = result[cols].copy()
+    
     if df.shape[0] <= 2:
         raise ValueError("There is no interaction between features to plot.")
 
@@ -306,7 +311,7 @@ def _plot_single_class(
     if title:
         full_title = f"{title} - {'Class ' if class_name else ''}{class_name}"
     else:
-        full_title = f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()} - {'Class ' if class_name else ''}{class_name}"
+        full_title = f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()}{' - Class ' if class_name else ''}{class_name}"
 
     ax.set_title(full_title, fontsize=title_fontsize)
 
@@ -320,7 +325,8 @@ def _plot_single_class(
 
 
 def interaction_plot(
-    df: pd.DataFrame,
+    result: Result,
+    cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float] = (10.0, 8.0),
     axis_ticks_n: int = 10,
     ticks_fontsize: Union[int, float] = 10,
@@ -343,8 +349,10 @@ def interaction_plot(
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Interaction summary table (see above).
+    result : Result
+        Result object containing interaction statistics.
+    cols : tuple of int or list of int
+        Indices of the two features to plot.
     figsize : (float, float), default (10, 8)
         Width × height of the figure.
     axis_ticks_n : int, default 10
@@ -372,7 +380,8 @@ def interaction_plot(
 
     # validate all inputs ----------------------------------------------------------
     _validate_interaction_plot_parameters(
-        df,
+        result,
+        cols,
         figsize,
         axis_ticks_n,
         ticks_fontsize,
@@ -383,6 +392,8 @@ def interaction_plot(
         ylabel,
         color_bar_label,
     )
+    
+    df = result[cols]
 
     # Check if class column exists for multi-class plotting
     if "class" in df.columns:

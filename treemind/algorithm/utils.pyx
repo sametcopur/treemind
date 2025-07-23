@@ -27,7 +27,6 @@ cdef object replace_inf(object data, str column_name):
     return data
 
 
-
 cdef add_lower_bound(object data, int loc, str column):
     cdef:
         str column_ub = f"{column}_ub"
@@ -198,6 +197,30 @@ cdef tuple[vector[vector[float]],
                             tree_sum[idx] += rule_value * rule_count
                             tree_squared_sum[idx] += squared_value * rule_count
                             tree_count[idx] += rule_count
+
+                elif num_cols == 3:
+                    # Özel 3 sütun optimizasyonu - nested loop'lar
+                    for i in range(valid_indices_per_col[0].size()):
+                        for j in range(valid_indices_per_col[1].size()):
+                            for k in range(valid_indices_per_col[2].size()):
+                                idx = (valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]) * sizes[2] + valid_indices_per_col[2][k]
+                                
+                                tree_sum[idx] += rule_value * rule_count
+                                tree_squared_sum[idx] += squared_value * rule_count
+                                tree_count[idx] += rule_count
+
+                elif num_cols == 4:
+                    # Özel 4 sütun optimizasyonu
+                    for i in range(valid_indices_per_col[0].size()):
+                        for j in range(valid_indices_per_col[1].size()):
+                            for k in range(valid_indices_per_col[2].size()):
+                                for l in range(valid_indices_per_col[3].size()):
+                                    idx = ((valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]) * sizes[2] + valid_indices_per_col[2][k]) * sizes[3] + valid_indices_per_col[3][l]
+
+                                    tree_sum[idx] += rule_value * rule_count
+                                    tree_squared_sum[idx] += squared_value * rule_count
+                                    tree_count[idx] += rule_count
+
                 else:
                     # General case - optimized multi-index iteration
                     multi_index.assign(num_cols, 0)
