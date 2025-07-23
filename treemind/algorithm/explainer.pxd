@@ -5,7 +5,7 @@ cimport numpy as cnp
 
 cdef class Result:
     cdef dict _data
-    cdef public int degree
+    cdef public int degree 
     cdef public int n_classes
     cdef public list feature_names
     cdef public str model_type

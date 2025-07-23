@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 import numpy as np
 import sys
 
-__version__ = "0.1.1"  # Update this to match your package version
+from treemind import __version__
 
 if sys.platform == "win32":
     extra_compile_args = [
