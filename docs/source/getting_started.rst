@@ -2,7 +2,7 @@ Getting Started with treemind
 =============================
 
 ``treemind`` is a model interpretation library designed for analyzing decision tree-based models, including both standalone decision trees and ensemble methods like gradient boosting.  
-It helps you understand how features influence predictions—both individually and in combination—by analyzing decision boundaries and feature intervals.
+It helps you understand how features influence predictions, both individually and in combination, by analyzing decision boundaries and feature intervals.
 
 Installation
 ------------
