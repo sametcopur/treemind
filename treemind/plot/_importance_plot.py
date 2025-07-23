@@ -34,10 +34,11 @@ def importance_plot(
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Output of ``Result.importance(...)``. Must contain at least
-        ``feature_0`` and ``importance``; ``feature_1`` triggers a
-        heat-map; an optional ``class`` column creates one figure per class.
+    result : Result
+        The result object containing the feature importance data.
+    combine_classes : bool, default False
+        If True, combines class-wise importances into a single DataFrame.
+        Only applicable for multi-class models.
     figsize : (float, float), default ``(10, 6)``
         Figure size in inches.
     ticks_fontsize, title_fontsize, label_fontsize : float

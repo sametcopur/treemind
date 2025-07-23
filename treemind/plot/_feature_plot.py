@@ -32,8 +32,10 @@ def _validate_feature_plot_parameters(
 
     Parameters
     ----------
-    df : pd.DataFrame
-        The input DataFrame to validate.
+    result : Result
+        The result object containing the data to plot.
+    index : int
+        The index of the specific result to plot.
     figsize : tuple of int
         The figure size as a tuple of two positive integers.
     show_std : bool
