@@ -8,7 +8,6 @@ from .xgb cimport convert_d_matrix, xgb_leaf_correction
 cimport numpy as cnp
 import numpy as np
 
-from collections import Counter
 
 cdef Rule create_rule(int len_col, int tree_index, int leaf_index):
     """
@@ -181,15 +180,19 @@ cdef dict count_tree_indices(cnp.ndarray[cnp.int32_t, ndim=2] array):
     cdef dict results = {}
     cdef dict tree_results
     cdef Py_ssize_t tree_idx, row_idx
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] column_values
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] valid_values
-    
+    cdef int val
+
     for tree_idx in range(num_trees):
-        column_values = array[:, tree_idx]
-        valid_values = column_values[column_values != 0]
-        tree_results = dict(Counter(valid_values))
+        tree_results = {}
+        for row_idx in range(num_rows):
+            val = array[row_idx, tree_idx]
+            if val != 0:
+                if val in tree_results:
+                    tree_results[val] = tree_results[val] + 1
+                else:
+                    tree_results[val] = 1
         results[tree_idx] = tree_results
-    
+
     return results
 
 

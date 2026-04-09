@@ -28,7 +28,7 @@ cdef float convert_sklearn_to_logit(float prob):
 
 
 cdef vector[bint] bitset_to_categorical_mask(object bitset_row, int max_categories):
-    """Bitset'i kategorik mask'e çevir"""
+    """Convert a bitset row to a categorical boolean mask."""
     cdef vector[bint] mask = vector[bint](max_categories, 0)
     cdef int word_idx, bit_idx, cat_id
     cdef unsigned int bitset_value
@@ -48,7 +48,7 @@ cdef vector[bint] bitset_to_categorical_mask(object bitset_row, int max_categori
 
 
 cdef vector[bint] get_right_categories_mask(vector[bint]& left_mask, vector[bint]& all_categories_mask):
-    """Sol kategorilerden sağ kategorileri çıkar"""
+    """Derive right-branch categories by excluding left-branch categories."""
     cdef vector[bint] right_mask = vector[bint](all_categories_mask.size(), 0)
     cdef int i
     
@@ -60,17 +60,17 @@ cdef vector[bint] get_right_categories_mask(vector[bint]& left_mask, vector[bint
 
 
 cdef vector[int] create_bin_to_original_mapping(object model, int len_col):
-    """Bin mapper feature index'ini orijinal feature index'ine çeviren mapping oluştur"""
+    """Create mapping from bin mapper feature indices to original feature indices."""
     cdef vector[int] bin_to_original = vector[int]()
     cdef int i
     
     if not hasattr(model, 'is_categorical_') or not hasattr(model, '_bin_mapper') or model.is_categorical_ is None:
-        # Mapping yok - 1:1 mapping varsay
+        # No mapping available - assume 1:1 mapping
         for i in range(len_col):
             bin_to_original.push_back(i)
         return bin_to_original
     
-    # Orijinal feature'lardaki kategorik ve numerik indeksleri bul
+    # Find categorical and numerical indices in original features
     cdef list original_categorical_indices = []
     cdef list original_numeric_indices = []
     
@@ -80,7 +80,7 @@ cdef vector[int] create_bin_to_original_mapping(object model, int len_col):
         else:
             original_numeric_indices.append(i)
     
-    # Bin mapper sırası: önce kategorik, sonra numerik
+    # Bin mapper order: categorical first, then numerical
     for cat_idx in original_categorical_indices:
         bin_to_original.push_back(cat_idx)
     
@@ -170,7 +170,7 @@ cdef void traverse_sklearn_tree(
 
 
 cdef bint has_valid_categories(vector[bint]& mask):
-    """Kategorik mask'in geçerli kategorileri olup olmadığını kontrol et"""
+    """Check whether a categorical mask has any valid (enabled) categories."""
     cdef int i
     for i in range(mask.size()):
         if mask[i] == 1:
@@ -308,7 +308,7 @@ cdef void initialize_categorical_info(
     vector[vector[int]]& cat_values,
     vector[int]& cat_indices
 ):
-    """Kategorik bilgileri initialize et"""
+    """Initialize categorical feature information."""
     cdef int i, bitset_idx, cat_val, original_feature_idx
     cdef list original_categorical_indices
     
@@ -319,7 +319,7 @@ cdef void initialize_categorical_info(
     if not (hasattr(model, 'is_categorical_') and model.is_categorical_ is not None):
         return
     
-    # Kategorik feature'ları belirle
+    # Identify categorical features
     original_categorical_indices = []
     for i in range(min(len(model.is_categorical_), len_col)):
         if model.is_categorical_[i]:
@@ -327,7 +327,7 @@ cdef void initialize_categorical_info(
             cat_indices.push_back(i)
             original_categorical_indices.append(i)
     
-    # Bitset bilgilerini al
+    # Get bitset information
     if not (hasattr(model, '_bin_mapper') and 
             hasattr(model._bin_mapper, 'make_known_categories_bitsets') and 
             callable(getattr(model._bin_mapper, 'make_known_categories_bitsets'))):
@@ -346,7 +346,7 @@ cdef void initialize_categorical_info(
                 bitset_data, max_possible_categories
             )
             
-            # cat_values güncelle
+            # Update cat_values
             for cat_val in range(all_categories_mask[original_feature_idx].size()):
                 if all_categories_mask[original_feature_idx][cat_val] == 1:
                     cat_values[original_feature_idx].push_back(cat_val)
@@ -364,7 +364,7 @@ cdef void process_histgb_predictor(
     vector[int]& bin_to_original_mapping,
     vector[vector[Rule]]& trees
 ):
-    """HistGB predictor'ı işle"""
+    """Process a single HistGradientBoosting predictor."""
     cdef vector[RangePair] feature_ranges = vector[RangePair](len_col)
     cdef vector[vector[bint]] cat_mask
     cdef vector[Rule] rules
@@ -397,7 +397,7 @@ cdef void process_standard_sklearn_trees(
     int len_col,
     vector[vector[Rule]]& trees
 ):
-    """Standard sklearn tree'leri işle (RandomForest, GradientBoosting, etc.)"""
+    """Process standard sklearn trees (RandomForest, GradientBoosting, etc.)."""
     cdef int tree_index, class_idx, i, effective_tree_index
     cdef vector[RangePair] feature_ranges
     cdef vector[Rule] rules

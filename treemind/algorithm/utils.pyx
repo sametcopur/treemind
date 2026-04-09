@@ -8,14 +8,6 @@ cimport numpy as cnp
 from pandas import Categorical
 
 
-cdef inline float cmax(float a, float b) noexcept nogil:
-    return a if a > b else b
-
-
-cdef inline float cmin(float a, float b) noexcept nogil:
-    return a if a < b else b
-
-
 cdef object replace_inf(object data, str column_name):
     cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float32)
     cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
@@ -49,7 +41,7 @@ cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,
     cdef size_t i
     cdef int tree_idx
 
-    # Her sınıfa ait ağaç sayısı = toplam ağaç / sınıf sayısı
+    # Number of trees per class = total trees / number of classes
     class_trees.resize(trees.size() // n_classes)
 
     for i in range(class_trees.size()):
@@ -96,6 +88,7 @@ cdef tuple[vector[vector[float]],
 
         vector[vector[float]] combined_points
         size_t col_idx, remaining, point_idx, split_size
+        int col_k
         float val
         int val_idx
         vector[vector[int]] cat_slice = vector[vector[int]]()
@@ -159,20 +152,21 @@ cdef tuple[vector[vector[float]],
                 for k in range(num_cols):
                     valid_indices_per_col[k].clear()
                     split_size = split_points_list[k].size()
-                    
+                    col_k = columns[k]  # cache vector lookup
+
                     # Adaptive capacity - only grow if needed
                     if valid_indices_per_col[k].capacity() < split_size:
                         valid_indices_per_col[k].reserve(split_size)
-                    
+
                     if not is_categorical[k]:  # NUMERICAL - optimized branch
                         for i in range(split_size):
                             val = split_points_list[k][i]
-                            if check_value(rule_ptr, columns[k], val):
+                            if check_value(rule_ptr, col_k, val):
                                 valid_indices_per_col[k].push_back(i)
                     else:  # CATEGORICAL - optimized branch
                         for i in range(split_size):
                             val_idx = <int>split_points_list[k][i]
-                            if rule_ptr.cats[columns[k]][val_idx]:
+                            if rule_ptr.cats[col_k][val_idx]:
                                 valid_indices_per_col[k].push_back(i)
 
                     if valid_indices_per_col[k].empty():
@@ -199,7 +193,7 @@ cdef tuple[vector[vector[float]],
                             tree_count[idx] += rule_count
 
                 elif num_cols == 3:
-                    # Özel 3 sütun optimizasyonu - nested loop'lar
+                    # Optimized 3-column case - nested loops
                     for i in range(valid_indices_per_col[0].size()):
                         for j in range(valid_indices_per_col[1].size()):
                             for k in range(valid_indices_per_col[2].size()):
@@ -210,7 +204,7 @@ cdef tuple[vector[vector[float]],
                                 tree_count[idx] += rule_count
 
                 elif num_cols == 4:
-                    # Özel 4 sütun optimizasyonu
+                    # Optimized 4-column case
                     for i in range(valid_indices_per_col[0].size()):
                         for j in range(valid_indices_per_col[1].size()):
                             for k in range(valid_indices_per_col[2].size()):

@@ -6,7 +6,7 @@ from matplotlib.collections import PatchCollection
 from matplotlib.colors import TwoSlopeNorm
 from typing import Tuple, Union, Optional, List
 
-from .plot_utils import _replace_infinity, _find_tick_decimal
+from .plot_utils import _replace_infinity, _find_tick_decimal, _classify_features
 from .. import Result
 
 def _validate_interaction_plot_parameters(
@@ -78,18 +78,9 @@ def _validate_interaction_plot_parameters(
     feature_cols = [c for c in df.columns if c not in required_meta]
 
     # discover logical features ----------------------------------------------------
-    cont_pairs, cat_cols, visited = {}, [], set()
-    for col in feature_cols:
-        if col in visited:
-            continue
-        if col.endswith("_lb") and f"{col[:-3]}_ub" in df.columns:
-            cont_pairs[col[:-3]] = (col, f"{col[:-3]}_ub")
-            visited.update(cont_pairs[col[:-3]])
-        elif col.endswith("_ub"):
-            continue  # handled by its _lb partner
-        else:
-            cat_cols.append(col)
-            visited.add(col)
+    features = _classify_features(df)
+    cont_pairs = {name: (cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"}
+    cat_cols = [name for name, ftype, _ in features if ftype == "categorical"]
 
     if len(cont_pairs) + len(cat_cols) != 2:
         raise ValueError(
@@ -164,39 +155,21 @@ def _plot_single_class(
 
     df_class = df_class.copy()
 
-    cont_pairs, used = {}, set()
-    cat_cols: List[str] = []
-    for col in feature_cols:
-        if col in used:
-            continue
-        if col.endswith("_lb") and (ub := f"{col[:-3]}_ub") in df_class.columns:
-            cont_pairs[col[:-3]] = (col, ub)
-            used.update({col, ub})
-        elif col.endswith("_ub"):
-            continue
-        else:
-            cat_cols.append(col)
-            used.add(col)
-
-    ordered: List[Tuple[str, str]] = []
-    for col in feature_cols:
-        if col not in used:
-            continue
-        if col.endswith("_lb") and (name := col[:-3]) not in [f[0] for f in ordered]:
-            ordered.append((name, "continuous"))
-        elif not col.endswith("_ub"):
-            ordered.append((col, "categorical"))
+    features = _classify_features(df_class)
+    cont_pairs = {name: (cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"}
+    cat_cols = [name for name, ftype, _ in features if ftype == "categorical"]
+    ordered = [(name, ftype) for name, ftype, _ in features]
 
     if len(ordered) != 2:
         raise ValueError("Exactly two logical features are required.")
 
     (feat1, type1), (feat2, type2) = ordered
 
-    # --------------------------- 2. Kenar Dizileri/Kodlama
+    # --------------------------- 2. Edge Arrays/Encoding
     if type1 == "continuous":
         lb1, ub1 = cont_pairs[feat1]
 
-        # Infinity değerlerini değiştir
+        # Replace infinity values
         df_class = _replace_infinity(df_class, lb1, "negative")
         df_class = _replace_infinity(df_class, ub1, "positive")
 
@@ -212,7 +185,7 @@ def _plot_single_class(
     if type2 == "continuous":
         lb2, ub2 = cont_pairs[feat2]
 
-        # Infinity değerlerini değiştir
+        # Replace infinity values
         df_class = _replace_infinity(df_class, lb2, "negative")
         df_class = _replace_infinity(df_class, ub2, "positive")
 
@@ -225,7 +198,7 @@ def _plot_single_class(
         y_bottom, y_top = codes2, codes2 + 1
         cats2_labels = cats2.cat.categories.tolist()
 
-    # --------------------------- 3. Renkler
+    # --------------------------- 3. Colors
     values = df_class["value"].to_numpy()
     vmax, vmin = values.max(), values.min()
     abs_max = max(abs(vmax), abs(vmin))
@@ -235,11 +208,11 @@ def _plot_single_class(
     cmap = plt.get_cmap("coolwarm")
     norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0.0, vmax=abs_max)
 
-    # --------------------------- 4. Çizim
+    # --------------------------- 4. Drawing
     fig, ax = plt.subplots(figsize=figsize)
 
     if type1 == type2 == "continuous":
-        # Continuous-continuous case için pcolormesh kullan
+        # Use pcolormesh for continuous-continuous case
         x_edges = np.sort(np.unique(np.concatenate([x_left, x_right])))
         y_edges = np.sort(np.unique(np.concatenate([y_bottom, y_top])))
 
@@ -247,7 +220,7 @@ def _plot_single_class(
         ix = np.searchsorted(x_edges, x_left, side="left")
         iy = np.searchsorted(y_edges, y_bottom, side="left")
 
-        # Index bounds kontrolü
+        # Index bounds check
         ix = np.clip(ix, 0, len(x_edges) - 2)
         iy = np.clip(iy, 0, len(y_edges) - 2)
 
@@ -260,7 +233,7 @@ def _plot_single_class(
         )
         cbar = fig.colorbar(mesh, ax=ax, spacing="proportional")
     else:
-        # Mixed case için rectangles kullan
+        # Use rectangles for mixed case
         rects = [
             Rectangle((lx, ly), w, h)
             for lx, ly, w, h in zip(
@@ -274,12 +247,12 @@ def _plot_single_class(
         ax.set_xlim(x_left.min(), x_right.max())
         ax.set_ylim(y_bottom.min(), y_top.max())
 
-    # --------------------------- 5. Eksen Tick'leri (Orijinal kodla uyumlu)
+    # --------------------------- 5. Axis Ticks (compatible with original code)
     if type1 == "continuous":
         ticks = np.linspace(x_left.min(), x_right.max(), axis_ticks_n)
         dec = _find_tick_decimal(ticks, axis_ticks_n)
         ax.set_xticks(ticks)
-        # Orijinal kodla aynı tick labeling mantığı
+        # Same tick labeling logic as original code
         ax.set_xticklabels(
             ["-∞"] + [f"{t:.{dec}f}" for t in ticks[1:-1]] + ["+∞"],
             fontsize=ticks_fontsize,
@@ -294,7 +267,7 @@ def _plot_single_class(
         ticks = np.linspace(y_bottom.min(), y_top.max(), axis_ticks_n)
         dec = _find_tick_decimal(ticks, axis_ticks_n)
         ax.set_yticks(ticks)
-        # Orijinal kodla aynı tick labeling mantığı
+        # Same tick labeling logic as original code
         ax.set_yticklabels(
             ["-∞"] + [f"{t:.{dec}f}" for t in ticks[1:-1]] + ["+∞"],
             fontsize=ticks_fontsize,
@@ -303,11 +276,11 @@ def _plot_single_class(
         ax.set_yticks(np.arange(len(cats2_labels)) + 0.5)
         ax.set_yticklabels(cats2_labels, fontsize=ticks_fontsize)
 
-    # --------------------------- 6. Başlık & Etiketler
+    # --------------------------- 6. Title & Labels
     ax.set_xlabel(xlabel or feat1, fontsize=label_fontsizes)
     ax.set_ylabel(ylabel or feat2, fontsize=label_fontsizes)
 
-    # Title'a class bilgisini ekle
+    # Add class information to title
     if title:
         full_title = f"{title} - {'Class ' if class_name else ''}{class_name}"
     else:
@@ -315,7 +288,7 @@ def _plot_single_class(
 
     ax.set_title(full_title, fontsize=title_fontsize)
 
-    # Color bar ayarları (orijinal kodla uyumlu)
+    # Color bar settings (compatible with original code)
     cbar.ax.set_ylim(vmin, vmax)
     cbar.ax.tick_params(labelsize=ticks_fontsize)
     cbar.set_label(color_bar_label or "Impact", fontsize=label_fontsizes)

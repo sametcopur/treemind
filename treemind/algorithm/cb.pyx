@@ -70,7 +70,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
     cdef vector[vector[Rule]] trees = vector[vector[Rule]]()
     cdef vector[Rule] rules
 
-    # --- Kategorik yer tutucular (boş) -----------------------------------
+    # --- Categorical placeholders (empty) ---------------------------------
     cdef vector[vector[int]] cat_values = vector[vector[int]]()
     cdef vector[int]        cat_indices = vector[int]()
     cat_values.resize(len_col)
@@ -102,7 +102,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
             leaf_count = leaf['leaf_count']
 
             if isinstance(leaf_value, list):
-                # Multi-class: Her sınıf için ayrı rule
+                # Multi-class: separate rule for each class
                 for class_index in range(len(leaf_value)):
                     rules = vector[Rule]()
                     rule = create_rule(len_col, tree_index * num_classes + class_index, leaf_index)
@@ -121,7 +121,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
                     sort(rules.begin(), rules.end(), compare_rules)
                     trees.push_back(rules)
             else:
-                # Binary: Tek değerli leaf
+                # Binary: single-valued leaf
                 rules = vector[Rule]()
                 rule = create_rule(len_col, tree_index, leaf_index)
 

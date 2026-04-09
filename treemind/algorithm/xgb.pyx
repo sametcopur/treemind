@@ -16,13 +16,13 @@ cdef class XGBNode:
     cdef int nodeid
     cdef str split
     cdef float split_condition
-    cdef list categorical_condition  # kategorik koşullar için liste
+    cdef list categorical_condition  # list for categorical conditions
     cdef int yes
     cdef int no
     cdef list children
     cdef float leaf_value
     cdef float cover
-    cdef bint is_categorical  # kategorik mi değil mi
+    cdef bint is_categorical  # whether this is a categorical split
 
 
 cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_xgboost(object model, int len_col):
@@ -61,7 +61,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
                 feat = node.get("split", None)
 
                 if isinstance(cond, list) and feat is not None:
-                    # sadece -1 olmayan kategorileri dikkate al
+                    # only consider categories that are not -1
                     cats = [cat for cat in cond if cat != -1]
                     if cats:
                         max_cat = max(cats)
@@ -74,7 +74,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
 
         for i, j in enumerate(model.feature_names):
             if j in cat_max.keys():
-                for cat in range(cat_max[j] + 1):  # +1 eklendi
+                for cat in range(cat_max[j] + 1):  # +1 to include max value
                     cat_values[i].push_back(cat)
 
     n_classes = len(dumps) // model.num_boosted_rounds()
@@ -91,10 +91,10 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int], int] analyze_
 
         rules = vector[Rule]()
 
-        # Kategorik mask'i başlat
+        # Initialize categorical mask
         cat_mask.resize(len_col)
         for i in range(len_col):
-            cat_mask[i] = vector[bint](cat_values[i].size(), 1)  # hepsini 1 ile başlat
+            cat_mask[i] = vector[bint](cat_values[i].size(), 1)  # initialize all allowed
 
         traverse_xgboost(node_dict, 0, feature_ranges, rules, tree_index, column_dict, cat_mask, cat_values)
 
@@ -112,12 +112,12 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
     node.nodeid = node_json['nodeid']
     node.split = node_json.get('split', '')
     
-    # Kategorik mi kontrol et
+    # Check if categorical
     split_condition = node_json.get('split_condition', 0.0)
     if isinstance(split_condition, list):
         node.is_categorical = True
         node.categorical_condition = split_condition
-        node.split_condition = 0.0  # dummy değer
+        node.split_condition = 0.0  # dummy value
     else:
         node.is_categorical = False
         node.split_condition = float(split_condition)
@@ -165,7 +165,7 @@ cdef void traverse_xgboost(
             if lb != -INFINITY or ub != INFINITY:
                 update_rule(&rule, feature_index, lb, ub)
 
-        # Kategorik maskleri güncelle
+        # Update categorical masks
         update_cats_for_rule(&rule, cat_mask)
 
         rule.value = node.leaf_value
@@ -181,33 +181,33 @@ cdef void traverse_xgboost(
         feature_index = column_dict[node.split]
 
     if node.is_categorical:
-        # Kategorik split işlemi
-        
-        # Mevcut maskeyi yedekle
+        # Categorical split
+
+        # Backup current mask
         prev_mask = cat_mask[feature_index]
 
-        # === YES BRANCH (kategorik değerler listede) ===
-        # Hepsini 0'a çek
+        # === YES BRANCH (categorical values in list) ===
+        # Zero out all categories
         for j in range(cat_mask[feature_index].size()):
             cat_mask[feature_index][j] = 0
         
-        # Kategorik condition'daki değerleri 1 yap
+        # Enable categories from the condition
         for cat_val in node.categorical_condition:
-            if cat_val == -1:  # -1 genelde missing value anlamına gelir
+            if cat_val == -1:  # -1 indicates missing value
                 continue
-            # cat_values içinde bu değerin indeksini bul
+            # Find the index of this value in cat_values
             for idx in range(cat_values[feature_index].size()):
                 if cat_values[feature_index][idx] == cat_val and prev_mask[idx]:
                     cat_mask[feature_index][idx] = 1
                     break
 
-        # Yes branch'i traverse et
+        # Traverse yes branch
         traverse_xgboost(node_dict, node.yes, feature_ranges, rules, tree_index, column_dict, cat_mask, cat_values)
 
-        # === NO BRANCH (kategorik değerler listede değil) ===
-        cat_mask[feature_index] = prev_mask  # Yedeği geri koy
-        
-        # Kategorik condition'daki değerleri 0 yap
+        # === NO BRANCH (categorical values not in list) ===
+        cat_mask[feature_index] = prev_mask  # Restore backup
+
+        # Disable categories from the condition
         for cat_val in node.categorical_condition:
             if cat_val == -1:
                 continue
@@ -216,14 +216,14 @@ cdef void traverse_xgboost(
                     cat_mask[feature_index][idx] = 0
                     break
 
-        # No branch'i traverse et
+        # Traverse no branch
         traverse_xgboost(node_dict, node.no, feature_ranges, rules, tree_index, column_dict, cat_mask, cat_values)
 
-        # Maskeyi geri al
+        # Restore mask
         cat_mask[feature_index] = prev_mask
 
     else:
-        # Numerik split işlemi (eski kod)
+        # Numerical split
         threshold = node.split_condition
         prev_range = feature_ranges[feature_index]
 

@@ -13,7 +13,7 @@ cdef void traverse_lightgbm_tree(
     vector[RangePair]& feature_ranges,
     vector[Rule]& rules,
     int tree_index,
-    vector[vector[bint]]& cat_mask  # <-- artık bool mask
+    vector[vector[bint]]& cat_mask
 ):
     cdef int feature_index, i
     cdef float threshold
@@ -28,32 +28,32 @@ cdef void traverse_lightgbm_tree(
         leaf_index = int(node["leaf_index"])
         rule = create_rule(len(feature_ranges), tree_index, leaf_index)
 
-        # Range koşullarını aktar
+        # Transfer range constraints
         for feature_index in range(len(feature_ranges)):
             if feature_ranges[feature_index].first != -INFINITY or feature_ranges[feature_index].second != INFINITY:
                 update_rule(&rule, feature_index, feature_ranges[feature_index].first, feature_ranges[feature_index].second)
 
-        update_cats_for_rule(&rule, cat_mask)  # artık cat_mask aktarılıyor
+        update_cats_for_rule(&rule, cat_mask)
         rule.value = node["leaf_value"]
         rule.count = node["leaf_count"]
         rules.push_back(rule)
         return
 
-    # Split düğümü
+    # Split node
     feature_index = int(node["split_feature"])
     is_categorical = node["decision_type"] == "=="
 
     if is_categorical:
         threshold_split = node["threshold"].split("||")
 
-        # --- mevcut maskeyi yedekle
-        prev_mask = cat_mask[feature_index]        # sadece 1 kopya
+        # Backup current mask
+        prev_mask = cat_mask[feature_index]
 
-        # === SOL DAL =========================================================
-        # hepsini 0’a çek
+        # === LEFT BRANCH =====================================================
+        # Zero out all categories
         for j in range(cat_mask[feature_index].size()):
             cat_mask[feature_index][j] = 0
-        # threshold setindekileri 1 yap
+        # Enable categories in threshold set
         for idx_str in threshold_split:
             idx = int(idx_str)
             if 0 <= idx < prev_mask.size() and prev_mask[idx]:
@@ -63,9 +63,9 @@ cdef void traverse_lightgbm_tree(
                                 feature_ranges, rules,
                                 tree_index, cat_mask)
 
-        # === SAĞ DAL =========================================================
-        cat_mask[feature_index] = prev_mask        # yedeği geri koy
-        for idx_str in threshold_split:            # eşleşenleri kapat
+        # === RIGHT BRANCH ====================================================
+        cat_mask[feature_index] = prev_mask        # restore backup
+        for idx_str in threshold_split:            # disable matched categories
             idx = int(idx_str)
             if 0 <= idx < cat_mask[feature_index].size():
                 cat_mask[feature_index][idx] = 0
@@ -74,7 +74,7 @@ cdef void traverse_lightgbm_tree(
                                 feature_ranges, rules,
                                 tree_index, cat_mask)
 
-        # geri al
+        # Restore
         cat_mask[feature_index] = prev_mask
 
 
@@ -82,11 +82,11 @@ cdef void traverse_lightgbm_tree(
         threshold = node["threshold"]
         prev_range = feature_ranges[feature_index]
 
-        # Sol: < threshold
+        # Left: < threshold
         feature_ranges[feature_index] = (prev_range.first, threshold)
         traverse_lightgbm_tree(node["left_child"], feature_ranges, rules, tree_index, cat_mask)
 
-        # Sağ: >= threshold
+        # Right: >= threshold
         feature_ranges[feature_index] = (threshold, prev_range.second)
         traverse_lightgbm_tree(node["right_child"], feature_ranges, rules, tree_index, cat_mask)
 
@@ -133,7 +133,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_light
 
         cat_mask.resize(len_col)
         for i in range(len_col):
-            cat_mask[i] = vector[bint](cat_values[i].size(), 1)  # boş başlat
+            cat_mask[i] = vector[bint](cat_values[i].size(), 1)  # initialize all allowed
 
         # Traverse the tree structure
         traverse_lightgbm_tree(node, feature_ranges, rules, tree_index, cat_mask)

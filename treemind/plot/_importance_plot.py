@@ -4,6 +4,7 @@ import seaborn as sns
 from typing import Optional, Tuple, Iterable
 import re
 from .. import Result
+from .plot_utils import COLOR_PRIMARY
 
 
 def natural_sort_key(text):
@@ -88,7 +89,7 @@ def importance_plot(
             ax.bar(
                 x,
                 imps,
-                color="#3A5894",  # same blue as other helpers
+                color=COLOR_PRIMARY,
                 edgecolor="white",
                 width=0.7,
                 zorder=3,
@@ -135,8 +136,8 @@ def importance_plot(
             sns.heatmap(
                 pivot,
                 cmap=cmap,
-                vmin=0,  # 0'dan başlasın
-                vmax=vmax,  # Max değerde bitsin
+                vmin=0,  # Start from 0
+                vmax=vmax,  # End at max value
                 square=True,
                 linewidths=0.5,
                 linecolor="white",

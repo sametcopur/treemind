@@ -1,6 +1,58 @@
 import pandas as pd
 import numpy as np
 
+# ---- Visual constants ----
+COLOR_PRIMARY = "#3A5894"
+COLOR_DISTRIBUTION = "#4C72B0"
+COLOR_STD = "gray"
+
+HSPACE_STACKED = -0.1
+EXTEND_RATIO = 0.05
+INFINITY_FALLBACK_FRACTION = 0.1
+
+
+def _classify_features(df, meta_cols=frozenset({"value", "std", "count", "class"})):
+    """
+    Identify features in a DataFrame and classify as 'continuous' or 'categorical'.
+
+    Returns list of (feature_name, feature_type, column_tuple) in column order.
+    Continuous features have <name>_lb and <name>_ub columns; all others are categorical.
+    """
+    features = []
+    visited = set()
+
+    for col in df.columns:
+        if col in meta_cols or col in visited:
+            continue
+
+        if col.endswith("_lb"):
+            base = col[:-3]
+            ub_col = f"{base}_ub"
+            if ub_col in df.columns:
+                features.append((base, "continuous", (col, ub_col)))
+                visited.update((col, ub_col))
+                continue
+
+        if col.endswith("_ub"):
+            base = col[:-3]
+            lb_col = f"{base}_lb"
+            if lb_col in df.columns:
+                # Already handled via _lb branch
+                continue
+
+        features.append((col, "categorical", (col,)))
+        visited.add(col)
+
+    return features
+
+
+def _extract_feature_name(df, meta_cols=frozenset({"value", "std", "count", "class"})):
+    """Extract a human-readable feature name from a result DataFrame."""
+    features = _classify_features(df, meta_cols)
+    if not features:
+        return "Feature"
+    return features[0][0]
+
 
 def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
     tick_min, tick_max = np.min(ticks), np.max(ticks)
@@ -49,9 +101,7 @@ def _replace_infinity(
             second_max = finite_values_sorted[-2]
             difference = max_value - second_max
         else:
-            difference = (
-                max_value * 0.1
-            )  # Use 10% of max_value if only one unique point
+            difference = max_value * INFINITY_FALLBACK_FRACTION
         # Replace positive infinity values
         data.loc[np.isposinf(data[column_name]), column_name] = np.float32(max_value + difference)
 
@@ -62,9 +112,7 @@ def _replace_infinity(
             second_min = finite_values_sorted[1]
             difference = second_min - min_value
         else:
-            difference = (
-                abs(min_value) * 0.1
-            )  # Use 10% of min_value if only one unique point
+            difference = abs(min_value) * INFINITY_FALLBACK_FRACTION
         # Replace negative infinity values
         data.loc[np.isneginf(data[column_name]), column_name] = np.float32(min_value - difference)
 

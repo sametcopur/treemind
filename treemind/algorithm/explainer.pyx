@@ -1,4 +1,5 @@
 from libcpp.vector cimport vector
+from libcpp.unordered_set cimport unordered_set
 from libc.math cimport INFINITY
 import pandas as pd
 from libcpp.pair cimport pair
@@ -202,99 +203,111 @@ cdef class Result:
         return df[new_columns]
 
 
-        # Result sınıfı içine ekleyin
     def importance(self, bint combine_classes=False):
         """
-        Feature importance hesaplama - baskın feature problemini çözer
-        Etkileşimlerde tekli feature etkilerini çıkararak gerçek etkileşim gücünü hesaplar
+        Calculate feature importance with interaction correction.
+        Subtracts single-feature effects from interactions to isolate true interaction strength.
         """
-        cdef list rows = []
-        cdef tuple feat_key
-        cdef dict class_data
-        cdef int cls
-        cdef object df
-        cdef float total_cnt, I_abs, num
-        cdef dict single_importances = {}
-        
         if self._data == {}:
             raise ValueError("No data available. Please run the explain method first.")
-        
+
         if self.n_classes == 1 and combine_classes:
             raise ValueError("Combined class importance is not supported for single-class models.")
 
-        def calc_I_abs(df):
-            total = df['count'].sum()
-            if total == 0:
-                return float('nan')
-            mu = (df['value'] * df['count']).sum() / total
-            I_abs = ((df['value'] - mu).abs() * df['count']).sum() / total
-            return I_abs
+        single_importances = self._compute_single_importances(combine_classes)
+        rows = self._compute_importance_rows(single_importances, combine_classes)
+        return pd.DataFrame(rows).sort_values(by='importance', ascending=False).reset_index(drop=True)
 
-        # 1. Önce tüm tekli feature'ların önemini hesapla
+    @staticmethod
+    def _calc_abs_importance(df):
+        """Compute mean absolute deviation weighted by count."""
+        total = df['count'].sum()
+        if total == 0:
+            return float('nan')
+        mu = (df['value'] * df['count']).sum() / total
+        return ((df['value'] - mu).abs() * df['count']).sum() / total
+
+    def _compute_single_importances(self, bint combine_classes):
+        """Compute importance scores for all single (degree-1) features."""
+        cdef dict single_importances = {}
+        cdef tuple feat_key
+        cdef dict class_data
+        cdef int cls, feat_idx
+        cdef float total_cnt, weighted_sum, abs_importance
+
         for feat_key, class_data in self._data.items():
-            if len(feat_key) == 1:
-                feat_idx = feat_key[0]
-                
-                if self.n_classes == 1 or combine_classes:
-                    total_cnt = 0.0
-                    num = 0.0
-                    for cls, df in class_data.items():
-                        cnt = df['count'].sum()
-                        if cnt == 0:
-                            continue
-                        Ia = calc_I_abs(df)
-                        num += Ia * cnt
-                        total_cnt += cnt
-                    single_importances[feat_idx] = num / total_cnt if total_cnt else 0.0
-                else:
-                    single_importances[feat_idx] = {}
-                    for cls, df in class_data.items():
-                        single_importances[feat_idx][cls] = calc_I_abs(df)
+            if len(feat_key) != 1:
+                continue
+            feat_idx = feat_key[0]
 
-        # 2. Tüm feature'ları işle ve etkileşimleri düzelt
-        for feat_key, class_data in self.data.items():
-            
             if self.n_classes == 1 or combine_classes:
                 total_cnt = 0.0
-                num = 0.0
+                weighted_sum = 0.0
                 for cls, df in class_data.items():
                     cnt = df['count'].sum()
                     if cnt == 0:
                         continue
-                    Ia = calc_I_abs(df)
-                    num += Ia * cnt
+                    abs_importance = self._calc_abs_importance(df)
+                    weighted_sum += abs_importance * cnt
                     total_cnt += cnt
-                raw_importance = num / total_cnt if total_cnt else 0.0
-                
-                # Etkileşimler için düzeltme yap
+                single_importances[feat_idx] = weighted_sum / total_cnt if total_cnt else 0.0
+            else:
+                single_importances[feat_idx] = {}
+                for cls, df in class_data.items():
+                    single_importances[feat_idx][cls] = self._calc_abs_importance(df)
+
+        return single_importances
+
+    def _compute_importance_rows(self, dict single_importances, bint combine_classes):
+        """Build importance rows with interaction correction applied."""
+        cdef list rows = []
+        cdef tuple feat_key
+        cdef dict class_data
+        cdef int cls
+        cdef float total_cnt, weighted_sum, raw_importance, abs_importance, sum_single
+
+        for feat_key, class_data in self._data.items():
+            if self.n_classes == 1 or combine_classes:
+                total_cnt = 0.0
+                weighted_sum = 0.0
+                for cls, df in class_data.items():
+                    cnt = df['count'].sum()
+                    if cnt == 0:
+                        continue
+                    abs_importance = self._calc_abs_importance(df)
+                    weighted_sum += abs_importance * cnt
+                    total_cnt += cnt
+                raw_importance = weighted_sum / total_cnt if total_cnt else 0.0
+
+                # Apply correction for interactions
                 if len(feat_key) > 1:
                     sum_single = sum([single_importances.get(idx, 0.0) for idx in feat_key])
-                    I_abs = max(0.0, raw_importance - sum_single)
+                    abs_importance = max(0.0, raw_importance - sum_single)
                 else:
-                    I_abs = raw_importance
-                    
+                    abs_importance = raw_importance
+
                 row = {f'feature_{i}': self.feature_names[idx] for i, idx in enumerate(feat_key)}
-                row['importance'] = I_abs
+                row['importance'] = abs_importance
                 rows.append(row)
-                
+
             else:
-                # Çoklu sınıf durumu
+                # Multi-class case
                 for cls, df in class_data.items():
-                    raw_importance = calc_I_abs(df)
-                    
+                    raw_importance = self._calc_abs_importance(df)
+
                     if len(feat_key) > 1:
-                        # Bu sınıf için en güçlü tekli feature'ı bul
-                        sum_single = sum([single_importances.get(idx, 0.0) for idx in feat_key])
-                        I_abs = max(0.0, raw_importance - sum_single)
+                        # Subtract single-feature effects for this class
+                        sum_single = sum([single_importances.get(idx, {}).get(cls, 0.0) for idx in feat_key])
+                        abs_importance = max(0.0, raw_importance - sum_single)
                     else:
-                        I_abs = raw_importance
-                        
+                        abs_importance = raw_importance
+
                     row = {f'feature_{i}': self.feature_names[idx] for i, idx in enumerate(feat_key)}
-                    row['importance'] = I_abs
+                    row['importance'] = abs_importance
                     row['class'] = cls
                     rows.append(row)
 
-        return pd.DataFrame(rows).sort_values(by='importance', ascending=False).reset_index(drop=True)
+        return rows
 
 
     def __contains__(self, key):
@@ -336,133 +349,140 @@ cdef class Explainer:
         return f"Explainer(model={self.model_type})"
 
     def _extract_model(self, model):
-
+        """Dispatch model to the appropriate initialization method."""
         module_name = model.__module__
 
-        # Handle lightgbm models
-        if "lightgbm" in module_name: 
-            if "basic" not in module_name:
-                self.model = model.booster_
-            else:
-                self.model = model
-
-            self.n_classes = self.model._Booster__num_class
-            self.columns = self.model.feature_name()
-            self.len_col = len(self.columns)
-            self.model_type = "lightgbm"
-            self.categorical = self.model.pandas_categorical
-            self.trees, self.cat_cols, self.cat_indices = analyze_lightgbm(self.model, self.len_col)
-
+        if "lightgbm" in module_name:
+            self._init_lightgbm(model)
         elif "sklearn" in module_name:
-            self.model = model
-            self.categorical = None
-
-            model_class = model.__class__.__name__
-            is_histgb = "HistGradientBoosting" in model_class
-
-            # Feature length
-            if hasattr(model, 'n_features_in_'):
-                self.len_col = model.n_features_in_
-            elif hasattr(model, 'n_features_'):
-                self.len_col = model.n_features_
-            elif is_histgb and hasattr(model, '_predictors'):
-                # For HistGradientBoosting, infer from the nodes structure
-                if isinstance(model._predictors[0], list):
-                    self.len_col = max(p.nodes['feature_idx'].max() for p in model._predictors[0]) + 1
-                else:
-                    self.len_col = model._predictors[0].nodes['feature_idx'].max() + 1
-            else:
-                # Fallback: try to get from tree structure
-                if hasattr(model, 'tree_'):
-                    self.len_col = model.tree_.n_features
-                elif hasattr(model, 'estimators_'):
-                    model_class_name = model.__class__.__name__
-                    if 'GradientBoosting' in model_class_name:
-                        first_estimator = model.estimators_[0, 0]
-                        self.len_col = (
-                            first_estimator.tree_.n_features
-                            if hasattr(first_estimator, 'tree_')
-                            else first_estimator.n_features_
-                        )
-                    else:
-                        if hasattr(model.estimators_[0], 'tree_'):
-                            self.len_col = model.estimators_[0].tree_.n_features
-                        else:
-                            self.len_col = model.estimators_[0].n_features_
-                else:
-                    raise ValueError("Could not determine number of features from sklearn model")
-
-            # Feature names
-            if hasattr(model, 'feature_names_in_'):
-                self.columns = list(model.feature_names_in_)
-            else:
-                self.columns = [f"Feature_{i}" for i in range(self.len_col)]
-
-            # Class count
-            if hasattr(model, 'n_classes_'):
-                self.n_classes = 1 if model.n_classes_ == 2 else model.n_classes_
-            elif is_histgb and hasattr(model, 'classes_'):
-                self.n_classes = 1 if len(model.classes_) <= 2 else len(model.classes_)
-            else:
-                self.n_classes = 1  # Regression or binary classification
-
-            self.model_type = "sklearn"
-            self.trees, self.cat_cols, self.cat_indices = analyze_sklearn(self.model, self.len_col, self.n_classes)
-
+            self._init_sklearn(model)
         elif "perpetual" in module_name:
-            self.model = model
-            self.len_col = model.n_features_
-            self.columns = model.feature_names_in_
-            self.model_type = "perpetual"
-            self.categorical = list(model.cat_mapping.values())
-            self.n_classes = 1 if len(model.classes_) <= 2 else len(model.classes_)
-
-            self.trees, self.cat_cols, self.cat_indices = analyze_perpetual(self.model)
-
-        # Handle xgboost models
+            self._init_perpetual(model)
         elif "xgboost" in module_name:
-            if "core" not in module_name:
-                self.model = model.get_booster()
-            else:
-                self.model = model
-
-            self.len_col = self.model.num_features()
-
-            if self.model.feature_names is None:
-                self.columns = [f"Feature_{i}" for i in range(self.len_col)]
-            else:
-                self.columns = self.model.feature_names
-
-            self.model_type = "xgboost"
-            self.categorical = None
-            self.trees, self.cat_cols, self.cat_indices, self.n_classes = analyze_xgboost(self.model, self.len_col)
-
-            if self.cat_indices.size() > 0:
-                warnings.warn(
-                    "XGBoost models store categorical variables as indices, "
-                    "making it impossible to retrieve their original category names.\n"
-                    "If a categorical feature or its values are not used in any split, "
-                    "they may not appear in the extracted results.\n"
-                    "To map indices back to category names, you need to provide the original "
-                    "categorical mappings from the training data and include them in the output of analyze_feature."
-                )
-
+            self._init_xgboost(model)
         elif "catboost" in module_name:
-            self.model = model
-            if len(self.model.get_cat_feature_indices()) > 0:
-                raise ValueError(
-                    "Obtaining which category and prior a CTR split belongs to from a catboost model dump is not possible.\n"
-                    "For more details, please refer to: https://github.com/catboost/catboost/issues/2414"
-                )
-            self.categorical = None
-            self.len_col = self.model.n_features_in_
-            self.columns = model.feature_names_
-            self.trees, self.cat_cols, self.cat_indices, self.n_classes = analyze_catboost(self.model, self.len_col)
-            self.model_type = "catboost"
-
-        # Raise an error if the model is not lightgbm or xgboost
+            self._init_catboost(model)
         else:
-            raise ValueError("The provided model isn't a lightgbm, xgboost or catboost model. Please provide a supported model type.")
+            raise ValueError(
+                "The provided model isn't a supported model type. "
+                "Please provide a lightgbm, xgboost, catboost, sklearn, or perpetual model."
+            )
+
+    def _init_lightgbm(self, model):
+        if "basic" not in model.__module__:
+            self.model = model.booster_
+        else:
+            self.model = model
+
+        self.n_classes = self.model._Booster__num_class
+        self.columns = self.model.feature_name()
+        self.len_col = len(self.columns)
+        self.model_type = "lightgbm"
+        self.categorical = self.model.pandas_categorical
+        self.trees, self.cat_cols, self.cat_indices = analyze_lightgbm(self.model, self.len_col)
+
+    def _init_sklearn(self, model):
+        self.model = model
+        self.categorical = None
+
+        model_class = model.__class__.__name__
+        is_histgb = "HistGradientBoosting" in model_class
+
+        # Feature length
+        if hasattr(model, 'n_features_in_'):
+            self.len_col = model.n_features_in_
+        elif hasattr(model, 'n_features_'):
+            self.len_col = model.n_features_
+        elif is_histgb and hasattr(model, '_predictors'):
+            if isinstance(model._predictors[0], list):
+                self.len_col = max(p.nodes['feature_idx'].max() for p in model._predictors[0]) + 1
+            else:
+                self.len_col = model._predictors[0].nodes['feature_idx'].max() + 1
+        else:
+            if hasattr(model, 'tree_'):
+                self.len_col = model.tree_.n_features
+            elif hasattr(model, 'estimators_'):
+                model_class_name = model.__class__.__name__
+                if 'GradientBoosting' in model_class_name:
+                    first_estimator = model.estimators_[0, 0]
+                    self.len_col = (
+                        first_estimator.tree_.n_features
+                        if hasattr(first_estimator, 'tree_')
+                        else first_estimator.n_features_
+                    )
+                else:
+                    if hasattr(model.estimators_[0], 'tree_'):
+                        self.len_col = model.estimators_[0].tree_.n_features
+                    else:
+                        self.len_col = model.estimators_[0].n_features_
+            else:
+                raise ValueError("Could not determine number of features from sklearn model")
+
+        # Feature names
+        if hasattr(model, 'feature_names_in_'):
+            self.columns = list(model.feature_names_in_)
+        else:
+            self.columns = [f"Feature_{i}" for i in range(self.len_col)]
+
+        # Class count
+        if hasattr(model, 'n_classes_'):
+            self.n_classes = 1 if model.n_classes_ == 2 else model.n_classes_
+        elif is_histgb and hasattr(model, 'classes_'):
+            self.n_classes = 1 if len(model.classes_) <= 2 else len(model.classes_)
+        else:
+            self.n_classes = 1
+
+        self.model_type = "sklearn"
+        self.trees, self.cat_cols, self.cat_indices = analyze_sklearn(self.model, self.len_col, self.n_classes)
+
+    def _init_perpetual(self, model):
+        self.model = model
+        self.len_col = model.n_features_
+        self.columns = model.feature_names_in_
+        self.model_type = "perpetual"
+        self.categorical = list(model.cat_mapping.values())
+        self.n_classes = 1 if len(model.classes_) <= 2 else len(model.classes_)
+        self.trees, self.cat_cols, self.cat_indices = analyze_perpetual(self.model)
+
+    def _init_xgboost(self, model):
+        if "core" not in model.__module__:
+            self.model = model.get_booster()
+        else:
+            self.model = model
+
+        self.len_col = self.model.num_features()
+
+        if self.model.feature_names is None:
+            self.columns = [f"Feature_{i}" for i in range(self.len_col)]
+        else:
+            self.columns = self.model.feature_names
+
+        self.model_type = "xgboost"
+        self.categorical = None
+        self.trees, self.cat_cols, self.cat_indices, self.n_classes = analyze_xgboost(self.model, self.len_col)
+
+        if self.cat_indices.size() > 0:
+            warnings.warn(
+                "XGBoost models store categorical variables as indices, "
+                "making it impossible to retrieve their original category names.\n"
+                "If a categorical feature or its values are not used in any split, "
+                "they may not appear in the extracted results.\n"
+                "To map indices back to category names, you need to provide the original "
+                "categorical mappings from the training data and include them in the output of analyze_feature."
+            )
+
+    def _init_catboost(self, model):
+        self.model = model
+        if len(self.model.get_cat_feature_indices()) > 0:
+            raise ValueError(
+                "Obtaining which category and prior a CTR split belongs to from a catboost model dump is not possible.\n"
+                "For more details, please refer to: https://github.com/catboost/catboost/issues/2414"
+            )
+        self.categorical = None
+        self.len_col = self.model.n_features_in_
+        self.columns = model.feature_names_
+        self.trees, self.cat_cols, self.cat_indices, self.n_classes = analyze_catboost(self.model, self.len_col)
+        self.model_type = "catboost"
 
     cdef object prepare_dataframe(self, vector[int] col_indices, 
                     int num_cols, 
@@ -474,27 +494,31 @@ cdef class Explainer:
                     object columns):
 
         cdef int idx, i, j, ub_index
-        cdef bint check
-    
+        cdef bint is_numerical
+
         cdef str msg, col_ub
         cdef dict df_dict = {}
         cdef vector[float] row
         cdef object df
         cdef list cats
-        
+
+        # Build O(1) lookup for categorical indices
+        cdef unordered_set[int] cat_set
+        cdef dict cat_position = {}
+        for j in range(self.cat_indices.size()):
+            cat_set.insert(self.cat_indices[j])
+            cat_position[self.cat_indices[j]] = j
+
         # Add points columns
         for i in range(num_cols):
-            check = True
-            for j in range(self.cat_indices.size()):
-                if col_indices[i] == self.cat_indices[j]:
-                    if self.categorical is not None:
-                        cats = self.categorical[j]
-                        df_dict[f"{column_names[i]}"] = [cats[int(row[i])] for row in points]
-                    else:
-                        df_dict[f"{column_names[i]}"] = [int(row[i]) for row in points]
-                    check = False
-
-            if check:
+            if cat_set.count(col_indices[i]) > 0:
+                j = cat_position[col_indices[i]]
+                if self.categorical is not None:
+                    cats = self.categorical[j]
+                    df_dict[f"{column_names[i]}"] = [cats[int(row[i])] for row in points]
+                else:
+                    df_dict[f"{column_names[i]}"] = [int(row[i]) for row in points]
+            else:
                 df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
         
         # Add statistics columns
@@ -563,8 +587,10 @@ cdef class Explainer:
 
         # Update trees with background data if provided
         if back_data is not None:
-            raise ValueError("Background data is disabled in the current implementation. For now, please use the model's" ,
-                "training data to explain feature interactions. Next versions will support background data.")
+            raise ValueError(
+                "Background data is disabled in the current implementation. For now, please use the model's "
+                "training data to explain feature interactions. Next versions will support background data."
+            )
             #trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         # Set result metadata
@@ -599,7 +625,7 @@ cdef class Explainer:
                 class_stats[class_idx] = class_df
             
             # Store in result
-            result.data[feature_combo] = class_stats
+            result._data[feature_combo] = class_stats
 
         return result
 

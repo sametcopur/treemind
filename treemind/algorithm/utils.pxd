@@ -5,10 +5,6 @@ cimport numpy as cnp
 
 ctypedef unsigned long size_t
 
-cdef float cmax(float a, float b) noexcept nogil
-
-cdef float cmin(float a, float b) noexcept nogil
-
 cdef object replace_inf(object data, str column_name)
 
 cdef add_lower_bound(object data, int loc, str column)

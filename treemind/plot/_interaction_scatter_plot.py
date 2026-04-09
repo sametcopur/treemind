@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
 from .. import Result
+from .plot_utils import _classify_features, _extract_feature_name
 
 
 def _validate_interaction_scatter_plot_parameters(
@@ -12,9 +13,9 @@ def _validate_interaction_scatter_plot_parameters(
     result: Result,
     cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float],
-    ticks_fontsize: Tuple[int, float],
-    title_fontsize: Tuple[int, float],
-    label_fontsizes: Tuple[int, float],
+    ticks_fontsize: Union[int, float],
+    title_fontsize: Union[int, float],
+    label_fontsizes: Union[int, float],
     title: Optional[str],
     xlabel: Optional[str],
     ylabel: Optional[str],
@@ -40,13 +41,8 @@ def _validate_interaction_scatter_plot_parameters(
     df_check = df.drop(columns=["class"]) if "class" in df.columns else df.copy()
 
     # Identify logical features: continuous features must come in (_lb, _ub) pairs
-    bound_pairs = []
-    columns = df_check.columns
-
-    for i in range(len(columns) - 1):
-        col1, col2 = columns[i], columns[i + 1]
-        if col1.endswith("_lb") and col2 == col1.replace("_lb", "_ub"):
-            bound_pairs.append((col1, col2))
+    features = _classify_features(df_check)
+    bound_pairs = [(cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"]
 
     if len(bound_pairs) != 2:
         raise ValueError(
@@ -91,14 +87,14 @@ def _build_lookup(df: pd.DataFrame):
     Same purpose as before, but tolerates extra columns.
     Looks for the first four columns as bounds + a column named 'value'.
     """
-    # ---- 1) Kolonları belirle ------------------------------------------
-    bound_cols = df.columns[:4]  # ilk 4 → sınırlar
+    # ---- 1) Identify columns --------------------------------------------
+    bound_cols = df.columns[:4]  # first 4 → bounds
     value_col = "value" if "value" in df.columns else df.columns[4]
 
-    # Sadece gereken beş kolonu çek
+    # Extract only the required five columns
     sub = df[list(bound_cols) + [value_col]]
 
-    # ---- 2) Kenar dizileri ---------------------------------------------
+    # ---- 2) Edge arrays -------------------------------------------------
     x_edges = np.unique(np.r_[sub.iloc[:, 0].values, sub.iloc[:, 1].values])
     y_edges = np.unique(np.r_[sub.iloc[:, 2].values, sub.iloc[:, 3].values])
 
@@ -108,11 +104,18 @@ def _build_lookup(df: pd.DataFrame):
         dtype=sub[value_col].dtype,
     )
 
-    # ---- 3) Izgarayı doldur --------------------------------------------
-    for lb_x, ub_x, lb_y, ub_y, v in sub.itertuples(index=False, name=None):
-        ix = np.searchsorted(x_edges, lb_x, side="left")
-        iy = np.searchsorted(y_edges, lb_y, side="left")
-        grid[ix, iy] = v
+    # ---- 3) Fill the grid (vectorized) ------------------------------------
+    lb_x_vals = sub.iloc[:, 0].values
+    lb_y_vals = sub.iloc[:, 2].values
+    v_vals = sub[value_col].values
+
+    ix = np.searchsorted(x_edges, lb_x_vals, side="left")
+    iy = np.searchsorted(y_edges, lb_y_vals, side="left")
+
+    ix = np.clip(ix, 0, grid.shape[0] - 1)
+    iy = np.clip(iy, 0, grid.shape[1] - 1)
+
+    grid[ix, iy] = v_vals
 
     return x_edges, y_edges, grid
 
@@ -140,6 +143,32 @@ def _lookup_values(
     values[valid] = grid[ix[valid], iy[valid]]
 
     return values
+
+
+def _render_scatter(
+    x_vals, y_vals, values, figsize, xlabel, ylabel,
+    color_bar_label, plot_title, ticks_fontsize, title_fontsize, label_fontsizes,
+):
+    """Render a single scatter plot with symmetric colorbar."""
+    fig, ax = plt.subplots(figsize=figsize)
+
+    max_abs = float(np.nanmax(np.abs(values))) or 1.0
+    norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
+
+    scatter = ax.scatter(
+        x_vals, y_vals, c=values, cmap="coolwarm", norm=norm, edgecolors="black",
+    )
+
+    ax.set_xlabel(xlabel, fontsize=label_fontsizes)
+    ax.set_ylabel(ylabel, fontsize=label_fontsizes)
+
+    cbar = plt.colorbar(scatter)
+    cbar.ax.tick_params(labelsize=ticks_fontsize)
+    cbar.set_label(color_bar_label, fontsize=label_fontsizes)
+
+    ax.set_title(plot_title, fontsize=title_fontsize)
+    plt.tight_layout()
+    plt.show()
 
 
 def interaction_scatter_plot(
@@ -211,115 +240,41 @@ def interaction_scatter_plot(
 
     df = result[cols].copy()
 
+    # Extract feature names once using robust detection
+    features = _classify_features(df)
+    feat1_name = features[0][0] if len(features) > 0 else "Feature 1"
+    feat2_name = features[1][0] if len(features) > 1 else "Feature 2"
+    resolved_xlabel = xlabel if xlabel is not None else feat1_name
+    resolved_ylabel = ylabel if ylabel is not None else feat2_name
+    resolved_cbar = color_bar_label if color_bar_label is not None else "Impact"
+
     # Check if 'class' column exists
     has_class_column = "class" in df.columns
 
     if has_class_column:
-        # Get unique classes
-        unique_classes = df["class"].unique()
-
-        # Create separate plot for each class
-        for class_value in unique_classes:
-            # Filter dataframe for current class
+        for class_value in df["class"].unique():
             df_class = df[df["class"] == class_value].copy()
-
-            # Skip if no data for this class
             if df_class.empty:
                 continue
 
-            # Build lookup grid for this class
             x_edges, y_edges, grid = _build_lookup(df_class)
             values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
 
-            # Create plot for this class
-            fig, ax = plt.subplots(figsize=figsize)
-
-            # Symmetric normalisation around 0
-            max_abs = float(np.nanmax(np.abs(values))) or 1.0
-            norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
-
-            scatter = ax.scatter(
-                x_vals,
-                y_vals,
-                c=values,
-                cmap="coolwarm",
-                norm=norm,
-                edgecolors="black",
+            plot_title = (
+                f"{title} - Class {class_value}" if title
+                else f"Contribution of {resolved_xlabel} and {resolved_ylabel} - Class {class_value}"
             )
-
-            # Axis labels
-            ax.set_xlabel(
-                xlabel if xlabel is not None else df.columns[0][:-3],
-                fontsize=label_fontsizes,
+            _render_scatter(
+                x_vals, y_vals, values, figsize, resolved_xlabel, resolved_ylabel,
+                resolved_cbar, plot_title, ticks_fontsize, title_fontsize, label_fontsizes,
             )
-            ax.set_ylabel(
-                ylabel if ylabel is not None else df.columns[2][:-3],
-                fontsize=label_fontsizes,
-            )
-
-            # Colour-bar
-            cbar = plt.colorbar(scatter)
-            cbar.ax.tick_params(labelsize=ticks_fontsize)
-            cbar.set_label(
-                color_bar_label if color_bar_label is not None else "Impact",
-                fontsize=label_fontsizes,
-            )
-            if title:
-                plot_title = f"{title} - Class {class_value}"
-            else:
-                plot_title = f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()} - Class {class_value}"
-
-            ax.set_title(plot_title, fontsize=title_fontsize)
-
-            plt.tight_layout()
-            plt.show()
 
     else:
-        # Original behavior when no class column exists
         x_edges, y_edges, grid = _build_lookup(df)
         values = _lookup_values(x_vals, y_vals, x_edges, y_edges, grid)
 
-        # Create single plot
-        fig, ax = plt.subplots(figsize=figsize)
-
-        # Symmetric normalisation around 0
-        max_abs = float(np.nanmax(np.abs(values))) or 1.0
-        norm = TwoSlopeNorm(vmin=-max_abs, vcenter=0.0, vmax=max_abs)
-
-        scatter = ax.scatter(
-            x_vals,
-            y_vals,
-            c=values,
-            cmap="coolwarm",
-            norm=norm,
-            edgecolors="black",
+        plot_title = title if title else f"Contribution of {resolved_xlabel} and {resolved_ylabel}"
+        _render_scatter(
+            x_vals, y_vals, values, figsize, resolved_xlabel, resolved_ylabel,
+            resolved_cbar, plot_title, ticks_fontsize, title_fontsize, label_fontsizes,
         )
-
-        # Axis labels
-        ax.set_xlabel(
-            xlabel if xlabel is not None else df.columns[0][:-3],
-            fontsize=label_fontsizes,
-        )
-        ax.set_ylabel(
-            ylabel if ylabel is not None else df.columns[2][:-3],
-            fontsize=label_fontsizes,
-        )
-
-        # Colour-bar
-        cbar = plt.colorbar(scatter)
-        cbar.ax.tick_params(labelsize=ticks_fontsize)
-        cbar.set_label(
-            color_bar_label if color_bar_label is not None else "Impact",
-            fontsize=label_fontsizes,
-        )
-
-        # Title
-        ax.set_title(
-            title
-            if title is not None
-            else f"Contribution of {ax.get_xlabel()} and {ax.get_ylabel()}",
-            fontsize=title_fontsize,
-        )
-
-        plt.tight_layout()
-        plt.show()

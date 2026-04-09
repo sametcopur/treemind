@@ -7,6 +7,13 @@ from typing import Tuple, Union, Optional
 from .plot_utils import (
     _replace_infinity,
     _find_tick_decimal,
+    _classify_features,
+    _extract_feature_name,
+    COLOR_PRIMARY,
+    COLOR_DISTRIBUTION,
+    COLOR_STD,
+    HSPACE_STACKED,
+    EXTEND_RATIO,
 )
 from .. import Result
 
@@ -70,7 +77,7 @@ def _validate_feature_plot_parameters(
     if not isinstance(col, int) or col < 0:
         raise ValueError("col must be a non-negative integer.")
 
-    df = result[col].copy()
+    df = result[col]
 
     # Validate basic required columns
     required_columns = {"value", "std", "count"}
@@ -149,10 +156,10 @@ def _is_categorical_data(df: pd.DataFrame) -> bool:
 
     Returns True if categorical, False if continuous (range-based).
     """
-    lb_columns = [col for col in df.columns if col.endswith("_lb")]
-    ub_columns = [col for col in df.columns if col.endswith("_ub")]
-
-    return len(lb_columns) == 0 or len(ub_columns) == 0
+    features = _classify_features(df)
+    if not features:
+        return True
+    return features[0][1] == "categorical"
 
 
 def _has_multiclass_data(df: pd.DataFrame) -> bool:
@@ -284,16 +291,7 @@ def feature_plot(
 
             # Create class-specific title
             if title is None:
-                # Determine feature name for auto title
-                is_categorical = _is_categorical_data(class_df)
-                if is_categorical:
-                    feature_name = class_df.columns[0].replace("_", " ").title()
-                else:
-                    ub_columns = [
-                        col for col in class_df.columns if col.endswith("_ub")
-                    ]
-                    feature_name = ub_columns[0][:-3] if ub_columns else "Feature"
-
+                feature_name = _extract_feature_name(class_df)
                 class_title = f"Contribution of {feature_name} - Class {class_idx}"
             else:
                 class_title = f"{title} - Class {class_idx}"
@@ -413,16 +411,16 @@ def _plot_categorical_feature(
         fig, (ax_dist, ax_main) = plt.subplots(
             2, 1, figsize=figsize, gridspec_kw={"height_ratios": [1, 4]}, sharex=True
         )
-        plt.subplots_adjust(hspace=-0.1)
+        plt.subplots_adjust(hspace=HSPACE_STACKED)
     else:
         fig, ax_main = plt.subplots(figsize=figsize)
 
-    # Colors - aynı continuous ile
-    bar_color = "#3A5894"
-    std_color = "gray"
-    dist_color = "#4C72B0"
+    # Colors - same as continuous
+    bar_color = COLOR_PRIMARY
+    std_color = COLOR_STD
+    dist_color = COLOR_DISTRIBUTION
 
-    # === 1. Üstteki Distribution - Line Plot ===
+    # === 1. Top Distribution - Line Plot ===
     if show_range:
         # Simple line plot with markers
         ax_dist.plot(
@@ -439,7 +437,7 @@ def _plot_categorical_feature(
         # Fill area under the line
         ax_dist.fill_between(x, counts, color=dist_color, alpha=0.3, zorder=2)
 
-        # Stil - continuous ile aynı
+        # Style - same as continuous
         ax_dist.set_ylabel("")
         ax_dist.set_yticklabels([])
         ax_dist.tick_params(left=False, labelleft=False, bottom=False)
@@ -450,7 +448,7 @@ def _plot_categorical_feature(
         ax_dist.spines["bottom"].set_color("black")
         ax_dist.spines["bottom"].set_linewidth(2)
 
-        # Başlık - continuous ile aynı format
+        # Title - same format as continuous
         if title is None:
             ax_dist.set_title(
                 f"Contribution of {xlabel}",
@@ -460,7 +458,7 @@ def _plot_categorical_feature(
         else:
             ax_dist.set_title(title, fontsize=title_fontsize, fontweight="bold")
 
-    # === 2. Ana Değer Grafiği ===
+    # === 2. Main Value Chart ===
     ax_main.bar(x, values, color=bar_color, edgecolor="white", width=0.7, zorder=3)
 
     # Error bars
@@ -475,10 +473,10 @@ def _plot_categorical_feature(
             zorder=2,
         )
 
-    # 0 referans çizgisi
+    # Zero reference line
     ax_main.axhline(y=0, color="black", linestyle="--", linewidth=1, zorder=1)
 
-    # Başlık - continuous ile aynı format (sadece show_range False ise)
+    # Title - same format as continuous (only if show_range is False)
     if not show_range:
         if title is None:
             ax_main.set_title(
@@ -487,7 +485,7 @@ def _plot_categorical_feature(
         else:
             ax_main.set_title(title, fontsize=title_fontsize, fontweight="bold")
 
-    # Stil - continuous ile aynı
+    # Style - same as continuous
     ax_main.set_facecolor("whitesmoke")
     ax_main.set_xticks(x)
     ax_main.set_xticklabels(categories, fontsize=ticks_fontsize)
@@ -510,7 +508,7 @@ def _plot_categorical_feature(
         [f"{y:.{y_decimal}f}" for y in y_ticks], fontsize=ticks_fontsize
     )
 
-    # Grid & spines - continuous ile aynı
+    # Grid & spines - same as continuous
     ax_main.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
     ax_main.spines["right"].set_visible(False)
     ax_main.spines["top"].set_visible(False)
@@ -553,7 +551,7 @@ def _plot_continuous_feature(
     df = _replace_infinity(df, column_name=column_name)
     df = _replace_infinity(df, column_name=lb_column_name, infinity_type="negative")
 
-    extend_ratio = 0.05 * (df[column_name].max() - df[column_name].min())
+    extend_ratio = EXTEND_RATIO * (df[column_name].max() - df[column_name].min())
 
     min_row = df.iloc[df[column_name].argmin()].copy()
     min_row[column_name] -= extend_ratio
@@ -585,8 +583,8 @@ def _plot_continuous_feature(
         x_range = np.linspace(min_value, max_value, 200)
         kde_values = kde(x_range)
 
-        ax1.plot(x_range, kde_values, color="#4C72B0", lw=2, alpha=0.7)
-        ax1.fill_between(x_range, kde_values, color="#4C72B0", alpha=0.3)
+        ax1.plot(x_range, kde_values, color=COLOR_DISTRIBUTION, lw=2, alpha=0.7)
+        ax1.fill_between(x_range, kde_values, color=COLOR_DISTRIBUTION, alpha=0.3)
 
         ax1.set_ylabel("")
         ax1.set_yticklabels([])
@@ -612,7 +610,7 @@ def _plot_continuous_feature(
         data=df,
         x=column_name,
         y="value",
-        color="#3A5894",
+        color=COLOR_PRIMARY,
         linewidth=2,
         drawstyle="steps-pre",
         ax=main_ax,
@@ -624,7 +622,7 @@ def _plot_continuous_feature(
             df[column_name],
             df["value"] - np.abs(df["std"]),
             df["value"] + np.abs(df["std"]),
-            color="gray",
+            color=COLOR_STD,
             alpha=0.3,
             label="Standard Deviation",
             step="pre",
@@ -684,7 +682,7 @@ def _plot_continuous_feature(
 
     # Tight layout
     if show_range:
-        plt.subplots_adjust(hspace=-0.1)
+        plt.subplots_adjust(hspace=HSPACE_STACKED)
 
     plt.tight_layout()
     plt.show()

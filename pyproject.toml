@@ -14,10 +14,10 @@ authors = [
 ]
 description = "feature and feature interaction analyzer for gradient boosting"
 readme = "README.md"
-license = {text = "BSD 3-Clause License"}
+license = {text = "MIT License"}
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 keywords = [
