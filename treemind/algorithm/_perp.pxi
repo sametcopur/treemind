@@ -1,17 +1,3 @@
-from libcpp.vector cimport vector
-from libcpp.pair cimport pair
-from libc.math cimport INFINITY
-from libcpp.algorithm cimport sort
-
-# Expose the Rule helpers you already have
-from .rule cimport Rule, create_rule, update_rule, compare_rules, update_cats_for_rule
-
-ctypedef pair[float, float] RangePair
-
-############################################################
-# Helper utilities                                          #
-############################################################
-
 cdef inline bint _is_categorical_node(dict node):
     """Return True if *node* performs a categorical split."""
     return (("left_cats" in node and node["left_cats"]) or
@@ -28,7 +14,7 @@ cdef void traverse_perpetual_tree(dict nodes,
                                   vector[Rule]& rules,
                                   int tree_index,
                                   vector[vector[bint]]& cat_mask):
-    """Depth‑first traversal that converts a Perpetual tree into Rule objects."""
+    """Depth-first traversal that converts a Perpetual tree into Rule objects."""
 
     cdef str node_key = str(node_id)
     if node_key not in nodes:
@@ -39,9 +25,9 @@ cdef void traverse_perpetual_tree(dict nodes,
     cdef RangePair prev_range
     cdef vector[bint] prev_mask
     cdef Rule rule
-    cdef list left_cats 
+    cdef list left_cats
     # -------------------------------------------------------
-    # Leaf node                                             
+    # Leaf node
     # -------------------------------------------------------
     if node.get("is_leaf", False):
         rule = create_rule(len(feature_ranges), tree_index, node_id)
@@ -63,7 +49,7 @@ cdef void traverse_perpetual_tree(dict nodes,
         return
 
     # -------------------------------------------------------
-    # Split node                                            
+    # Split node
     # -------------------------------------------------------
     if "split_feature" not in node:
         return  # Safety check
@@ -71,11 +57,11 @@ cdef void traverse_perpetual_tree(dict nodes,
 
     if _is_categorical_node(node):
         # ---------------------------------------------------
-        # Categorical split – categories listed in left_cats
+        # Categorical split - categories listed in left_cats
         # ---------------------------------------------------
         left_cats = node.get("left_cats", [])
 
-        # ‑‑ backup current mask
+        # -- backup current mask
         prev_mask = cat_mask[feature_index]
 
         # LEFT branch: keep only categories in *left_cats*
@@ -105,7 +91,7 @@ cdef void traverse_perpetual_tree(dict nodes,
 
     else:
         # ---------------------------------------------------
-        # Numerical split                                   
+        # Numerical split
         # ---------------------------------------------------
         if "split_value" not in node:
             return  # Safety check
@@ -135,22 +121,20 @@ cdef void traverse_perpetual_tree(dict nodes,
 
 cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpetual(object model):
     """
-    Convert a *Perpetual* gradient‑boosted decision‑tree model to a rule list.
+    Convert a *Perpetual* gradient-boosted decision-tree model to a rule list.
 
     Works for all objectives:
-    * Regression / binary classification → top‑level key ``"trees"``
-    * Multiclass classification          → top‑level key ``"boosters"`` where
+    * Regression / binary classification -> top-level key ``"trees"``
+    * Multiclass classification          -> top-level key ``"boosters"`` where
       each booster corresponds to one class and owns its own ``"trees"`` list.
 
     Returns
     -------
     (all_trees, cat_values, cat_indices)
-        all_trees   : vector[vector[Rule]]  – rules grouped per tree
-        cat_values  : vector[vector[int]]   – allowed category ids per feature
-        cat_indices : vector[int]           – indices of categorical features
+        all_trees   : vector[vector[Rule]]  - rules grouped per tree
+        cat_values  : vector[vector[int]]   - allowed category ids per feature
+        cat_indices : vector[int]           - indices of categorical features
     """
-
-    import json
 
     cdef dict dump = (model if isinstance(model, dict)
                       else json.loads(model.json_dump()))
@@ -158,7 +142,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
 
     cdef list feature_names = json.loads(meta.get("feature_names_in_", "[]"))
     cdef dict cat_mapping = json.loads(meta.get("cat_mapping", "{}"))
-    
+
     # Fix the type casting issue
     cdef int n_features
     try:
@@ -169,12 +153,12 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
             n_features = <int>n_features_str
     except (ValueError, TypeError):
         n_features = len(feature_names)
-    
+
     if n_features == 0:
         n_features = len(feature_names)
 
     # -------------------------------------------------------
-    # Build categorical helpers                             
+    # Build categorical helpers
     # -------------------------------------------------------
     cdef vector[vector[int]] cat_values = vector[vector[int]]()
     cdef vector[int]        cat_indices = vector[int]()
@@ -194,7 +178,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
         template_mask[i] = vector[bint](cat_values[i].size(), 1)
 
     # -------------------------------------------------------
-    # Iterate over every tree in the model                  
+    # Iterate over every tree in the model
     # -------------------------------------------------------
     cdef vector[vector[Rule]] all_trees = vector[vector[Rule]]()
     cdef vector[RangePair] feature_ranges
@@ -202,7 +186,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
     cdef int tree_idx = 0
     cdef vector[vector[bint]] cat_mask
     cdef int root_id
-    
+
     def _tree_iter():
         if "boosters" in dump:              # multiclass
             for booster in dump["boosters"]:
@@ -224,13 +208,13 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
         for i in range(n_features):
             feature_ranges[i] = (-INFINITY, INFINITY)
 
-        # deep‑copy template mask for this tree
+        # deep-copy template mask for this tree
         cat_mask.resize(n_features)
         for i in range(n_features):
             cat_mask[i] = vector[bint](template_mask[i])
 
         rules = vector[Rule]()
-        
+
         # Find root node (could be "0" or have node_type="Root")
         root_id = 0
         if "0" not in nodes:
@@ -239,7 +223,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_perpe
                 if node_data.get("node_type") == "Root":
                     root_id = int(node_key)
                     break
-        
+
         traverse_perpetual_tree(nodes, root_id,
                                 feature_ranges, rules,
                                 tree_idx, cat_mask)

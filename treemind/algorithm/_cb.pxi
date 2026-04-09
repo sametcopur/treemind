@@ -1,15 +1,3 @@
-from libcpp.vector cimport vector
-from .rule cimport create_rule, update_rule, compare_rules, update_cats_for_rule
-from libc.math cimport INFINITY
-from libcpp.algorithm cimport sort
-from libcpp.pair cimport pair
-
-ctypedef pair[double, double] RangePair
-
-import json
-import tempfile
-import os
-
 cdef extract_leaf_paths_with_counts(dict model_dict):
     cdef list trees = model_dict['oblivious_trees']
     cdef dict feature_info = model_dict['features_info']

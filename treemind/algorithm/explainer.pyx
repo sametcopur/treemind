@@ -1,23 +1,36 @@
+# Standard library cimports
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
-from libc.math cimport INFINITY
-import pandas as pd
+from libcpp.algorithm cimport sort, unique
 from libcpp.pair cimport pair
-from .rule cimport update_leaf_counts
-from .utils cimport add_lower_bound, _analyze_feature, filter_class_trees
-from .lgb cimport analyze_lightgbm
-from .xgb cimport analyze_xgboost
-from .cb cimport analyze_catboost
-from .sk cimport analyze_sklearn
-from .perp cimport analyze_perpetual
+from libc.math cimport INFINITY, sqrt, log, exp
 
+cimport numpy as cnp
+import numpy as np
+import pandas as pd
+from pandas import Categorical
+import json
+import tempfile
+import os
+import importlib
 from collections import Counter
 from itertools import combinations, permutations
 import warnings
 from tqdm import tqdm
-import numpy as np
 
-cdef vector[pair[float, float]] feature_ranges
+# Shared typedefs
+ctypedef pair[float, float] RangePair
+ctypedef pair[double, double] RangePairD
+
+# Include all internal modules (ORDER MATTERS)
+include "_rule.pxi"
+include "_utils.pxi"
+include "_lgb.pxi"
+include "_xgb.pxi"
+include "_rule_leaf.pxi"
+include "_cb.pxi"
+include "_sk.pxi"
+include "_perp.pxi"
 
 cdef class Result:
     """Result class to hold feature interaction analysis statistics"""

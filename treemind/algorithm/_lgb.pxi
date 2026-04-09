@@ -1,13 +1,3 @@
-from libcpp.vector cimport vector
-from .rule cimport create_rule, update_rule, compare_rules, update_cats_for_rule
-from libc.math cimport INFINITY
-from libcpp.algorithm cimport sort
-
-from libcpp.pair cimport pair
-
-ctypedef pair[float, float] RangePair
-
-
 cdef void traverse_lightgbm_tree(
     dict node,
     vector[RangePair]& feature_ranges,
@@ -119,7 +109,7 @@ cdef tuple[vector[vector[Rule]], vector[vector[int]], vector[int]] analyze_light
             if cat == -1:
                 continue
             cat_values[i].push_back(cat)
-    
+
     for tree_index in range(len(tree_list)):
         node = tree_list[tree_index]["tree_structure"]
 

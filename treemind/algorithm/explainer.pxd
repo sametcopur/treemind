@@ -1,7 +1,17 @@
 from libcpp.vector cimport vector
-from .rule cimport Rule
 
 cimport numpy as cnp
+
+cdef struct Rule:
+    float value
+    float count
+    vector[float] lbs
+    vector[float] ubs
+    vector[vector[bint]] cats
+    int len_col
+    int tree_index
+    int leaf_index
+    vector[bint] cat_flags
 
 cdef class Result:
     cdef dict _data

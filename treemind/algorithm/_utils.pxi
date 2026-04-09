@@ -1,13 +1,3 @@
-from libcpp.vector cimport vector
-from .rule cimport get_split_point, check_value
-
-from libc.math cimport sqrt
-
-import numpy as np
-cimport numpy as cnp
-from pandas import Categorical
-
-
 cdef object replace_inf(object data, str column_name):
     cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float32)
     cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
@@ -33,8 +23,8 @@ cdef add_lower_bound(object data, int loc, str column):
     data.insert(loc, f"{column}_lb", lower_bounds[categories.codes])
 
 
-cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,  
-                                              const int n_classes, 
+cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,
+                                              const int n_classes,
                                               const int class_idx):
     cdef vector[vector[Rule]] class_trees = vector[vector[Rule]]()
     cdef vector[Rule] class_tree
@@ -94,7 +84,7 @@ cdef tuple[vector[vector[float]],
         vector[vector[int]] cat_slice = vector[vector[int]]()
 
         vector[bint] is_categorical = vector[bint](num_cols)
-        
+
         size_t total_split_points = 0
 
     # Pre-compute categorical flags and prepare data
@@ -116,7 +106,7 @@ cdef tuple[vector[vector[float]],
         sizes[col_idx] = split_points.size()
         total_split_points += split_points.size()
         max_size *= sizes[col_idx]
-        
+
         valid_indices_per_col[col_idx].reserve(split_points.size())
 
     # Initialize result vectors
@@ -133,13 +123,13 @@ cdef tuple[vector[vector[float]],
         # Process each tree
         for tree_idx in range(num_trees):
             tree_ptr = &trees[tree_idx]
-            
+
             # Reset per-tree accumulators (more efficient than assign)
             for idx in range(max_size):
                 tree_sum[idx] = 0.0
                 tree_squared_sum[idx] = 0.0
                 tree_count[idx] = 0.0
-            
+
             # Process each rule in the current tree
             for rule_idx in range(tree_ptr.size()):
                 rule_ptr = &(tree_ptr[0][rule_idx])
@@ -148,7 +138,7 @@ cdef tuple[vector[vector[float]],
                 squared_value = rule_value * rule_value
 
                 skip_rule = False
-                
+
                 for k in range(num_cols):
                     valid_indices_per_col[k].clear()
                     split_size = split_points_list[k].size()
@@ -172,7 +162,7 @@ cdef tuple[vector[vector[float]],
                     if valid_indices_per_col[k].empty():
                         skip_rule = True
                         break
-                        
+
                 if skip_rule:
                     continue
 
@@ -198,7 +188,7 @@ cdef tuple[vector[vector[float]],
                         for j in range(valid_indices_per_col[1].size()):
                             for k in range(valid_indices_per_col[2].size()):
                                 idx = (valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]) * sizes[2] + valid_indices_per_col[2][k]
-                                
+
                                 tree_sum[idx] += rule_value * rule_count
                                 tree_squared_sum[idx] += squared_value * rule_count
                                 tree_count[idx] += rule_count
@@ -223,7 +213,7 @@ cdef tuple[vector[vector[float]],
                         idx = valid_indices_per_col[0][multi_index[0]]
                         for k in range(1, num_cols):
                             idx = idx * sizes[k] + valid_indices_per_col[k][multi_index[k]]
-        
+
                         # Update statistics
                         tree_sum[idx] += rule_value * rule_count
                         tree_squared_sum[idx] += squared_value * rule_count
@@ -244,13 +234,13 @@ cdef tuple[vector[vector[float]],
                 if count > 0:
                     average_counts[idx] += count
                     mean = tree_sum[idx] / count
-                    
+
                     # More numerically stable variance calculation
                     variance = (tree_squared_sum[idx] - tree_sum[idx] * mean) / count
                     if variance < 0.0:
                         variance = 0.0
                     std = sqrt(variance)
-                    
+
                     ensemble_std[idx] += std
                     mean_values[idx] += mean
 

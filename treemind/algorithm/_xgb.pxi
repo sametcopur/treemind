@@ -1,17 +1,3 @@
-from libcpp.vector cimport vector
-from libc.math cimport INFINITY
-from libcpp.algorithm cimport sort
-from libcpp.pair cimport pair
-from .rule cimport create_rule, update_rule, compare_rules, update_cats_for_rule
-
-ctypedef pair[float, float] RangePair
-
-import json
-import numpy as np
-cimport numpy as cnp
-
-import importlib
-
 cdef class XGBNode:
     cdef int nodeid
     cdef str split
@@ -111,7 +97,7 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
 
     node.nodeid = node_json['nodeid']
     node.split = node_json.get('split', '')
-    
+
     # Check if categorical
     split_condition = node_json.get('split_condition', 0.0)
     if isinstance(split_condition, list):
@@ -136,15 +122,15 @@ cdef void parse_xgboost_node(dict node_json, dict node_dict):
 
 
 cdef void traverse_xgboost(
-    dict node_dict, 
-    int nodeid, 
-    vector[RangePair]& feature_ranges, 
-    vector[Rule]& rules, 
-    int tree_index, 
+    dict node_dict,
+    int nodeid,
+    vector[RangePair]& feature_ranges,
+    vector[Rule]& rules,
+    int tree_index,
     dict column_dict,
     vector[vector[bint]]& cat_mask,
     vector[vector[int]]& cat_values
-):    
+):
     cdef XGBNode node = node_dict[nodeid]
     cdef int feature_index
     cdef float threshold
@@ -170,7 +156,7 @@ cdef void traverse_xgboost(
 
         rule.value = node.leaf_value
         rule.count = node.cover
-        
+
         rules.push_back(rule)
         return
 
@@ -190,7 +176,7 @@ cdef void traverse_xgboost(
         # Zero out all categories
         for j in range(cat_mask[feature_index].size()):
             cat_mask[feature_index][j] = 0
-        
+
         # Enable categories from the condition
         for cat_val in node.categorical_condition:
             if cat_val == -1:  # -1 indicates missing value
@@ -251,15 +237,15 @@ cdef cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] xgb_leaf_correction(vector[vecto
         cnp.ndarray[cnp.int32_t, ndim=2, mode="c"] leafs_arr = np.asarray(leafs)
         cnp.ndarray[cnp.int32_t, ndim=1, mode="c"] key, values, mapping_array
         cnp.ndarray[cnp.npy_bool, ndim=1, mode="c"] mask
-        
+
     for tree in trees:
         leaf_indices = [rule.leaf_index for rule in tree]
         max_index = max(leaf_indices)
         mapping_array = np.full(max_index + 1, -1, dtype=np.int32)
-        
+
         for i, rule in enumerate(tree):
             mapping_array[rule.leaf_index] = i
-        
+
         mappings.append(mapping_array)
         max_indices.append(max_index)
 
