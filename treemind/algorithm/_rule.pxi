@@ -125,7 +125,22 @@ cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
 
-cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col) noexcept nogil:
+cdef inline size_t _upper_bound_float(const vector[float]& arr, float val) noexcept nogil:
+    cdef size_t lo = 0
+    cdef size_t hi = arr.size()
+    cdef size_t mid
+
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if arr[mid] <= val:
+            lo = mid + 1
+        else:
+            hi = mid
+
+    return lo
+
+
+cdef vector[float] get_split_point(const vector[vector[Rule]]& trees, int col) noexcept nogil:
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
 
@@ -143,15 +158,14 @@ cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col) noexcept
     """
 
     cdef vector[float] points
-    cdef vector[Rule] tree
-    cdef Rule rule
+    cdef size_t tree_idx
+    cdef size_t rule_idx
     cdef vector[float].iterator it
-    cdef vector[float] result
 
-    for tree in trees:
-        for rule in tree:
-            points.push_back(rule.ubs[col])
-            points.push_back(rule.lbs[col])
+    for tree_idx in range(trees.size()):
+        for rule_idx in range(trees[tree_idx].size()):
+            points.push_back(trees[tree_idx][rule_idx].ubs[col])
+            points.push_back(trees[tree_idx][rule_idx].lbs[col])
 
     sort(points.begin(), points.end())
     it = unique(points.begin(), points.end())

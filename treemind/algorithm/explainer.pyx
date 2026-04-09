@@ -523,7 +523,7 @@ cdef class Explainer:
         cdef int n_combos = <int>len(feature_combinations)
         cdef int n_classes = self.n_classes
         cdef int n_tasks = n_combos * n_classes
-        cdef int task_idx, combo_idx, cls_idx, col, i
+        cdef int task_idx, combo_idx, cls_idx, col, i, feat_idx
 
         # Pre-compute col_indices for all combinations
         cdef vector[vector[int]] all_col_indices = vector[vector[int]](n_combos)
@@ -537,6 +537,19 @@ cdef class Explainer:
             all_class_trees.resize(n_classes)
             for class_idx in range(n_classes):
                 all_class_trees[class_idx] = filter_class_trees(trees, n_classes, class_idx)
+
+        cdef vector[vector[float]] split_cache
+        cdef vector[vector[vector[float]]] class_split_caches
+        if n_classes == 1:
+            split_cache = vector[vector[float]](self.len_col)
+            for feat_idx in range(self.len_col):
+                split_cache[feat_idx] = get_split_point(trees, feat_idx)
+        else:
+            class_split_caches.resize(n_classes)
+            for class_idx in range(n_classes):
+                class_split_caches[class_idx] = vector[vector[float]](self.len_col)
+                for feat_idx in range(self.len_col):
+                    class_split_caches[class_idx][feat_idx] = get_split_point(all_class_trees[class_idx], feat_idx)
 
         # Cache self attributes for nogil access
         cdef vector[vector[int]] cat_cols_local = self.cat_cols
@@ -569,12 +582,12 @@ cdef class Explainer:
 
                     if n_classes == 1:
                         _analyze_feature_nogil(
-                            trees, all_col_indices[combo_idx], cat_cols_local,
+                            trees, all_col_indices[combo_idx], cat_cols_local, split_cache,
                             batch_points[local_idx], batch_means[local_idx],
                             batch_stds[local_idx], batch_counts[local_idx])
                     else:
                         _analyze_feature_nogil(
-                            all_class_trees[cls_idx], all_col_indices[combo_idx], cat_cols_local,
+                            all_class_trees[cls_idx], all_col_indices[combo_idx], cat_cols_local, class_split_caches[cls_idx],
                             batch_points[local_idx], batch_means[local_idx],
                             batch_stds[local_idx], batch_counts[local_idx])
 
