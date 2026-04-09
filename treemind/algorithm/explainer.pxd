@@ -15,14 +15,14 @@ cdef struct Rule:
 
 cdef class Result:
     cdef dict _data
-    cdef public int degree 
+    cdef public int degree
     cdef public int n_classes
     cdef public list feature_names
     cdef public str model_type
+    cdef vector[int] cat_indices
+    cdef object categorical
 
-    cdef _reorder_dataframes(self, dict class_data, tuple stored_key, tuple requested_key)
-    cdef _reorder_single_dataframe(self, object df, tuple stored_key, tuple requested_key, list reorder_mapping)
-    cdef _combine_class_dataframes(self, dict class_data)
+    cdef _build_dataframe(self, dict class_data, tuple feature_key)
 
 cdef class Explainer:
     cdef vector[vector[Rule]] trees
@@ -36,12 +36,3 @@ cdef class Explainer:
     cdef int n_classes
 
     cpdef object count_node(self, int degree=?)
-
-    cdef object prepare_dataframe(self, vector[int] col_indices, 
-                    int num_cols, 
-                    list column_names,
-                    vector[vector[float]]& points,
-                    vector[float]& mean_values,
-                    vector[float]& ensemble_std,
-                    vector[float]& counts,
-                    object columns)
