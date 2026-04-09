@@ -1,33 +1,7 @@
-cdef object replace_inf(object data, str column_name):
-    cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points_ = np.asarray(data[column_name].unique(), dtype=np.float32)
-    cdef cnp.ndarray[cnp.float32_t, ndim=1] unique_points = np.sort(unique_points_[np.logical_not(np.isinf(unique_points_))])
-    cdef float max_main = unique_points.max()
-    cdef float difference_main = max_main - (unique_points[unique_points.size -2] if unique_points.size > 1 else max_main * 0.9)
-
-    data.loc[np.isinf(data[column_name]), column_name] = max_main + difference_main
-
-    return data
-
-
-cdef add_lower_bound(object data, int loc, str column):
-    cdef:
-        str column_ub = f"{column}_ub"
-        cnp.ndarray[cnp.float32_t, ndim=1] unique_values = np.sort(data.loc[:, column_ub].unique())
-        cnp.ndarray[cnp.float32_t, ndim=1] lower_bounds = np.empty_like(unique_values, dtype=np.float32)
-
-    lower_bounds[0] = -np.inf
-    lower_bounds[1:] = unique_values[:unique_values.size - 1]
-
-    categories = Categorical(data[column_ub], categories=unique_values, ordered=True)
-
-    data.insert(loc, f"{column}_lb", lower_bounds[categories.codes])
-
-
 cdef vector[vector[Rule]] filter_class_trees(const vector[vector[Rule]]& trees,
                                               const int n_classes,
-                                              const int class_idx):
+                                              const int class_idx) noexcept nogil:
     cdef vector[vector[Rule]] class_trees = vector[vector[Rule]]()
-    cdef vector[Rule] class_tree
     cdef size_t i
     cdef int tree_idx
 
@@ -258,3 +232,198 @@ cdef tuple[vector[vector[float]],
             combined_points[idx][k] = split_points_list[k][point_idx]
 
     return combined_points, mean_values, ensemble_std, average_counts
+
+
+cdef void _analyze_feature_nogil(
+    const vector[vector[Rule]]& trees,
+    const vector[int]& columns,
+    const vector[vector[int]]& cat_cols,
+    vector[vector[float]]& out_points,
+    vector[float]& out_means,
+    vector[float]& out_stds,
+    vector[float]& out_counts
+) noexcept nogil:
+    """Fully nogil version of _analyze_feature — writes to output references."""
+    cdef:
+        vector[vector[float]] split_points_list = vector[vector[float]]()
+        size_t num_cols = columns.size()
+        size_t max_size = 1
+        size_t num_trees = trees.size()
+        size_t i, j, k, idx, tree_idx, rule_idx
+
+        vector[float] average_counts
+        vector[float] mean_values
+        vector[float] ensemble_std
+
+        vector[float] tree_count
+        vector[float] tree_sum
+        vector[float] tree_squared_sum
+
+        vector[vector[size_t]] valid_indices_per_col = vector[vector[size_t]](num_cols)
+        vector[size_t] multi_index = vector[size_t](num_cols)
+        vector[size_t] sizes = vector[size_t](num_cols)
+
+        float rule_value, rule_count, squared_value
+        float mean, variance, std, count
+        bint skip_rule
+        const Rule* rule_ptr
+        const vector[Rule]* tree_ptr
+        bint done
+
+        size_t col_idx, remaining, point_idx, split_size
+        int col_k
+        float val
+        int val_idx
+        vector[vector[int]] cat_slice = vector[vector[int]]()
+        vector[bint] is_categorical = vector[bint](num_cols)
+        vector[float] split_points
+
+    # Pre-compute categorical flags and split points
+    for i in range(num_cols):
+        col_idx = columns[i]
+        cat_slice.push_back(cat_cols[col_idx])
+        is_categorical[i] = (cat_slice[i].size() > 0)
+
+    for col_idx in range(num_cols):
+        if not is_categorical[col_idx]:
+            split_points = get_split_point(trees, columns[col_idx])
+        else:
+            split_points = vector[float]()
+            split_points.reserve(cat_slice[col_idx].size())
+            for i in range(cat_slice[col_idx].size()):
+                split_points.push_back(cat_slice[col_idx][i])
+
+        split_points_list.push_back(split_points)
+        sizes[col_idx] = split_points.size()
+        max_size *= sizes[col_idx]
+        valid_indices_per_col[col_idx].reserve(split_points.size())
+
+    # Initialize statistics vectors
+    average_counts = vector[float](max_size, 0.0)
+    mean_values = vector[float](max_size, 0.0)
+    ensemble_std = vector[float](max_size, 0.0)
+    tree_count = vector[float](max_size)
+    tree_sum = vector[float](max_size)
+    tree_squared_sum = vector[float](max_size)
+
+    # Process each tree
+    for tree_idx in range(num_trees):
+        tree_ptr = &trees[tree_idx]
+
+        for idx in range(max_size):
+            tree_sum[idx] = 0.0
+            tree_squared_sum[idx] = 0.0
+            tree_count[idx] = 0.0
+
+        for rule_idx in range(tree_ptr.size()):
+            rule_ptr = &(tree_ptr[0][rule_idx])
+            rule_value = rule_ptr.value
+            rule_count = rule_ptr.count
+            squared_value = rule_value * rule_value
+
+            skip_rule = False
+
+            for k in range(num_cols):
+                valid_indices_per_col[k].clear()
+                split_size = split_points_list[k].size()
+                col_k = columns[k]
+
+                if valid_indices_per_col[k].capacity() < split_size:
+                    valid_indices_per_col[k].reserve(split_size)
+
+                if not is_categorical[k]:
+                    for i in range(split_size):
+                        val = split_points_list[k][i]
+                        if check_value(rule_ptr, col_k, val):
+                            valid_indices_per_col[k].push_back(i)
+                else:
+                    for i in range(split_size):
+                        val_idx = <int>split_points_list[k][i]
+                        if rule_ptr.cats[col_k][val_idx]:
+                            valid_indices_per_col[k].push_back(i)
+
+                if valid_indices_per_col[k].empty():
+                    skip_rule = True
+                    break
+
+            if skip_rule:
+                continue
+
+            if num_cols == 1:
+                for i in range(valid_indices_per_col[0].size()):
+                    idx = valid_indices_per_col[0][i]
+                    tree_sum[idx] += rule_value * rule_count
+                    tree_squared_sum[idx] += squared_value * rule_count
+                    tree_count[idx] += rule_count
+            elif num_cols == 2:
+                for i in range(valid_indices_per_col[0].size()):
+                    for j in range(valid_indices_per_col[1].size()):
+                        idx = valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]
+                        tree_sum[idx] += rule_value * rule_count
+                        tree_squared_sum[idx] += squared_value * rule_count
+                        tree_count[idx] += rule_count
+            elif num_cols == 3:
+                for i in range(valid_indices_per_col[0].size()):
+                    for j in range(valid_indices_per_col[1].size()):
+                        for k in range(valid_indices_per_col[2].size()):
+                            idx = (valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]) * sizes[2] + valid_indices_per_col[2][k]
+                            tree_sum[idx] += rule_value * rule_count
+                            tree_squared_sum[idx] += squared_value * rule_count
+                            tree_count[idx] += rule_count
+            elif num_cols == 4:
+                for i in range(valid_indices_per_col[0].size()):
+                    for j in range(valid_indices_per_col[1].size()):
+                        for k in range(valid_indices_per_col[2].size()):
+                            for l in range(valid_indices_per_col[3].size()):
+                                idx = ((valid_indices_per_col[0][i] * sizes[1] + valid_indices_per_col[1][j]) * sizes[2] + valid_indices_per_col[2][k]) * sizes[3] + valid_indices_per_col[3][l]
+                                tree_sum[idx] += rule_value * rule_count
+                                tree_squared_sum[idx] += squared_value * rule_count
+                                tree_count[idx] += rule_count
+            else:
+                multi_index.assign(num_cols, 0)
+                done = False
+                while not done:
+                    idx = valid_indices_per_col[0][multi_index[0]]
+                    for k in range(1, num_cols):
+                        idx = idx * sizes[k] + valid_indices_per_col[k][multi_index[k]]
+                    tree_sum[idx] += rule_value * rule_count
+                    tree_squared_sum[idx] += squared_value * rule_count
+                    tree_count[idx] += rule_count
+                    k = num_cols - 1
+                    while k >= 0:
+                        multi_index[k] += 1
+                        if multi_index[k] < valid_indices_per_col[k].size():
+                            break
+                        multi_index[k] = 0
+                        k -= 1
+                    if k < 0:
+                        done = True
+
+        for idx in range(max_size):
+            count = tree_count[idx]
+            if count > 0:
+                average_counts[idx] += count
+                mean = tree_sum[idx] / count
+                variance = (tree_squared_sum[idx] - tree_sum[idx] * mean) / count
+                if variance < 0.0:
+                    variance = 0.0
+                std = sqrt(variance)
+                ensemble_std[idx] += std
+                mean_values[idx] += mean
+
+    for idx in range(max_size):
+        average_counts[idx] /= num_trees
+
+    # Build combined points and write to output
+    out_points = vector[vector[float]](max_size)
+    for idx in range(max_size):
+        out_points[idx] = vector[float](num_cols)
+        remaining = idx
+        for k in range(num_cols - 1, -1, -1):
+            point_idx = remaining % sizes[k]
+            remaining //= sizes[k]
+            out_points[idx][k] = split_points_list[k][point_idx]
+
+    out_means = mean_values
+    out_stds = ensemble_std
+    out_counts = average_counts

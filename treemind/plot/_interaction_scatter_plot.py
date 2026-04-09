@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, Union, List
 
 import numpy as np
-import pandas as pd
+import polars as pl
 import matplotlib.pyplot as plt
 from matplotlib.colors import TwoSlopeNorm
 from .. import Result
@@ -35,14 +35,14 @@ def _validate_interaction_scatter_plot_parameters(
     if not isinstance(result, Result):
         raise TypeError("`result` must be a Result object.")
 
-    df = result[cols].copy()
+    df = result[cols].clone()
 
     # Detect class column (if exists) and drop it temporarily for validation
-    df_check = df.drop(columns=["class"]) if "class" in df.columns else df.copy()
+    df_check = df.drop("class") if "class" in df.columns else df.clone()
 
     # Identify logical features: continuous features must come in (_lb, _ub) pairs
     features = _classify_features(df_check)
-    bound_pairs = [(cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"]
+    bound_pairs = [(cols_pair[0], cols_pair[1]) for name, ftype, cols_pair in features if ftype == "continuous"]
 
     if len(bound_pairs) != 2:
         raise ValueError(
@@ -51,7 +51,9 @@ def _validate_interaction_scatter_plot_parameters(
 
     # Check for fully infinite bounds in any feature
     for lb_col, ub_col in bound_pairs:
-        if np.isinf(df_check[lb_col]).all() or np.isinf(df_check[ub_col]).all():
+        lb_arr = df_check[lb_col].to_numpy()
+        ub_arr = df_check[ub_col].to_numpy()
+        if np.isinf(lb_arr).all() or np.isinf(ub_arr).all():
             raise ValueError(
                 "No interaction found between the two features - one of them contains only infinite values."
             )
@@ -82,7 +84,7 @@ def _validate_interaction_scatter_plot_parameters(
             raise TypeError(f"`{name}` must be a string if provided.")
 
 
-def _build_lookup(df: pd.DataFrame):
+def _build_lookup(df: pl.DataFrame):
     """
     Same purpose as before, but tolerates extra columns.
     Looks for the first four columns as bounds + a column named 'value'.
@@ -92,22 +94,27 @@ def _build_lookup(df: pd.DataFrame):
     value_col = "value" if "value" in df.columns else df.columns[4]
 
     # Extract only the required five columns
-    sub = df[list(bound_cols) + [value_col]]
+    sub = df.select(bound_cols + [value_col])
 
     # ---- 2) Edge arrays -------------------------------------------------
-    x_edges = np.unique(np.r_[sub.iloc[:, 0].values, sub.iloc[:, 1].values])
-    y_edges = np.unique(np.r_[sub.iloc[:, 2].values, sub.iloc[:, 3].values])
+    col0 = sub[:, sub.columns[0]].to_numpy()
+    col1 = sub[:, sub.columns[1]].to_numpy()
+    col2 = sub[:, sub.columns[2]].to_numpy()
+    col3 = sub[:, sub.columns[3]].to_numpy()
+    v_vals = sub[value_col].to_numpy()
+
+    x_edges = np.unique(np.r_[col0, col1])
+    y_edges = np.unique(np.r_[col2, col3])
 
     grid = np.full(
         (x_edges.size - 1, y_edges.size - 1),
         np.nan,
-        dtype=sub[value_col].dtype,
+        dtype=v_vals.dtype,
     )
 
     # ---- 3) Fill the grid (vectorized) ------------------------------------
-    lb_x_vals = sub.iloc[:, 0].values
-    lb_y_vals = sub.iloc[:, 2].values
-    v_vals = sub[value_col].values
+    lb_x_vals = col0
+    lb_y_vals = col2
 
     ix = np.searchsorted(x_edges, lb_x_vals, side="left")
     iy = np.searchsorted(y_edges, lb_y_vals, side="left")
@@ -172,7 +179,7 @@ def _render_scatter(
 
 
 def interaction_scatter_plot(
-    X: pd.DataFrame | np.ndarray,
+    X: pl.DataFrame | np.ndarray,
     result: Result,
     cols: Union[Tuple[int, int], List[int]],
     figsize: Tuple[float, float] = (10.0, 8.0),
@@ -190,7 +197,7 @@ def interaction_scatter_plot(
 
     Parameters
     ----------
-    X : pd.DataFrame
+    X : pl.DataFrame or np.ndarray
         Input data containing feature values
     result : Result
         Result object containing interaction statistics.
@@ -238,7 +245,7 @@ def interaction_scatter_plot(
     x_vals = X[:, cols[0]].astype(float)
     y_vals = X[:, cols[1]].astype(float)
 
-    df = result[cols].copy()
+    df = result[cols].clone()
 
     # Extract feature names once using robust detection
     features = _classify_features(df)
@@ -252,9 +259,9 @@ def interaction_scatter_plot(
     has_class_column = "class" in df.columns
 
     if has_class_column:
-        for class_value in df["class"].unique():
-            df_class = df[df["class"] == class_value].copy()
-            if df_class.empty:
+        for class_value in df["class"].unique().sort().to_list():
+            df_class = df.filter(pl.col("class") == class_value)
+            if df_class.is_empty():
                 continue
 
             x_edges, y_edges, grid = _build_lookup(df_class)

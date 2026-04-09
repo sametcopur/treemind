@@ -1,4 +1,5 @@
 import numpy as np
+import polars as pl
 import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import Optional, Tuple, Iterable
@@ -61,7 +62,7 @@ def importance_plot(
     df = result.importance(combine_classes=combine_classes)
 
     required = {"feature_0", "importance"}
-    if not required.issubset(df.columns):
+    if not required.issubset(set(df.columns)):
         raise ValueError(f"DataFrame must contain {required} columns.")
 
     degree_cols = [c for c in df.columns if c.startswith("feature_")]
@@ -71,18 +72,18 @@ def importance_plot(
 
     multiclass = "class" in df.columns
     class_levels: Iterable[Optional[int]] = (
-        sorted(df["class"].unique()) if multiclass else [None]
+        df["class"].unique().sort().to_list() if multiclass else [None]
     )
 
     # ----------------------------- plotting ------------------------------
     for cls in class_levels:
-        sub = df if cls is None else df[df["class"] == cls]
+        sub = df if cls is None else df.filter(pl.col("class") == cls)
 
         if degree == 1:
             # -------------------------- BAR ---------------------------
-            sub_sorted = sub.sort_values("importance", ascending=False)
-            feat = sub_sorted["feature_0"].values
-            imps = sub_sorted["importance"].values
+            sub_sorted = sub.sort("importance", descending=True)
+            feat = sub_sorted["feature_0"].to_numpy()
+            imps = sub_sorted["importance"].to_numpy()
             x = np.arange(len(feat))
 
             fig, ax = plt.subplots(figsize=figsize)
@@ -95,7 +96,7 @@ def importance_plot(
                 zorder=3,
             )
 
-            # Style – align with feature_plot -------------------------
+            # Style -- align with feature_plot -------------------------
             ax.set_facecolor("whitesmoke")
             ax.set_xticks(x)
             ax.set_xticklabels(feat, rotation=45, ha="right", fontsize=ticks_fontsize)
@@ -107,7 +108,7 @@ def importance_plot(
             ax.spines["right"].set_visible(False)
             ax.spines["top"].set_visible(False)
 
-            cls_txt = f" – Class {cls}" if cls is not None else ""
+            cls_txt = f" -- Class {cls}" if cls is not None else ""
             auto_title = f"Contribution of features{cls_txt}"
             ax.set_title(
                 title if title is not None else auto_title,
@@ -120,21 +121,56 @@ def importance_plot(
 
         else:
             # ------------------------- HEAT-MAP -----------------------
-            pivot = sub.pivot(
-                index="feature_0", columns="feature_1", values="importance"
+            # Build pivot table from polars: feature_0 x feature_1 -> importance
+            pivot_df = sub.pivot(
+                on="feature_1", index="feature_0", values="importance"
             )
 
             # Ensure square ordering with natural/numeric sorting --------
-            feat_order = sorted(
-                set(pivot.index).union(pivot.columns), key=natural_sort_key
-            )
-            pivot = pivot.reindex(index=feat_order, columns=feat_order)
+            feat0_vals = set(sub["feature_0"].unique().to_list())
+            feat1_vals = set(sub["feature_1"].unique().to_list())
+            feat_order = sorted(feat0_vals.union(feat1_vals), key=natural_sort_key)
 
-            vmax = np.nanmax(pivot.values)
+            # Reindex: ensure all features appear as both rows and columns
+            # First, get the feature_0 column and the value columns
+            existing_cols = [c for c in pivot_df.columns if c != "feature_0"]
+
+            # Add missing columns as all-null
+            for f in feat_order:
+                if f not in existing_cols:
+                    pivot_df = pivot_df.with_columns(pl.lit(None).cast(pl.Float64).alias(f))
+
+            # Sort rows by feature_0 according to feat_order
+            order_map = {name: i for i, name in enumerate(feat_order)}
+            pivot_df = pivot_df.with_columns(
+                pl.col("feature_0").replace_strict(order_map, return_dtype=pl.Int64).alias("_sort_key")
+            ).sort("_sort_key").drop("_sort_key")
+
+            # Add missing rows
+            existing_feat0 = set(pivot_df["feature_0"].to_list())
+            missing_rows = []
+            for f in feat_order:
+                if f not in existing_feat0:
+                    row = {"feature_0": f}
+                    for c in feat_order:
+                        row[c] = None
+                    missing_rows.append(row)
+            if missing_rows:
+                missing_df = pl.DataFrame(missing_rows, schema={"feature_0": pl.Utf8, **{f: pl.Float64 for f in feat_order}})
+                pivot_df = pl.concat([pivot_df.select(["feature_0"] + feat_order), missing_df])
+                # Re-sort
+                pivot_df = pivot_df.with_columns(
+                    pl.col("feature_0").replace_strict(order_map, return_dtype=pl.Int64).alias("_sort_key")
+                ).sort("_sort_key").drop("_sort_key")
+
+            # Extract the numpy matrix in correct column order
+            pivot_matrix = pivot_df.select(feat_order).to_numpy().astype(float)
+
+            vmax = np.nanmax(pivot_matrix)
             max_fig_size = max(figsize[0], figsize[1])
             fig, ax = plt.subplots(figsize=(max_fig_size, max_fig_size))
             sns.heatmap(
-                pivot,
+                pivot_matrix,
                 cmap=cmap,
                 vmin=0,  # Start from 0
                 vmax=vmax,  # End at max value
@@ -143,6 +179,8 @@ def importance_plot(
                 linecolor="white",
                 cbar_kws={"label": "Importance"},
                 ax=ax,
+                xticklabels=feat_order,
+                yticklabels=feat_order,
             )
 
             ax.set_xlabel("Feature", fontsize=label_fontsize)
@@ -154,7 +192,7 @@ def importance_plot(
                 ax.get_yticklabels(), rotation=0, fontsize=ticks_fontsize
             )
 
-            cls_txt = f" – Class {cls}" if cls is not None else ""
+            cls_txt = f" -- Class {cls}" if cls is not None else ""
             auto_title = f"Feature interaction importance{cls_txt}"
             ax.set_title(
                 title if title is not None else auto_title,

@@ -125,7 +125,7 @@ cdef int compare_rules(const Rule& a, const Rule& b):
     return a.leaf_index < b.leaf_index
 
 
-cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col):
+cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col) noexcept nogil:
     """
     Retrieves the unique split points for a specific column across all trees, sorted in ascending order.
 
@@ -158,7 +158,7 @@ cdef vector[float] get_split_point(vector[vector[Rule]] trees, int col):
 
     points.resize(it - points.begin())
 
-    if len(points) > 1:
+    if points.size() > 1:
         points.erase(points.begin())
 
     return points

@@ -1,4 +1,5 @@
 # Standard library cimports
+from cython.parallel cimport prange
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
 from libcpp.algorithm cimport sort, unique
@@ -7,8 +8,7 @@ from libc.math cimport INFINITY, sqrt, log, exp
 
 cimport numpy as cnp
 import numpy as np
-import pandas as pd
-from pandas import Categorical
+import polars as pl
 import json
 import tempfile
 import os
@@ -114,8 +114,8 @@ cdef class Result:
         # If requested order is different from stored order, reorder the DataFrames
         if requested_key != stored_key:
             stored_data = self._reorder_dataframes(stored_data, stored_key, requested_key)
-        
-        # Convert class-wise data to single DataFrame
+
+        # Combine class-wise polars DataFrames
         return self._combine_class_dataframes(stored_data)
 
     cdef _combine_class_dataframes(self, dict class_data):
@@ -125,25 +125,21 @@ cdef class Result:
         cdef list dataframes = []
         cdef int class_idx
         cdef object df, combined_df
-        
+
         # If single class, return the DataFrame directly
         if self.n_classes == 1:
             return class_data[0]
-        
+
         # For multi-class, combine all class DataFrames
         for class_idx in sorted(class_data.keys()):
-            df = class_data[class_idx].copy()
-            df['class'] = class_idx
+            df = class_data[class_idx].with_columns(pl.lit(class_idx).alias("class"))
             dataframes.append(df)
-        
-        # Concatenate all DataFrames
-        combined_df = pd.concat(dataframes, ignore_index=True)
-        
-        # Reorder columns to put 'class' first
-        cols =  [col for col in combined_df.columns if col != 'class'] + ['class']
-        combined_df = combined_df[cols]
-        
-        return combined_df
+
+        combined_df = pl.concat(dataframes)
+
+        # Reorder columns: features first, then 'class' at the end
+        cols = [c for c in combined_df.columns if c != 'class'] + ['class']
+        return combined_df.select(cols)
 
     cdef _reorder_dataframes(self, dict class_data, tuple stored_key, tuple requested_key):
         """
@@ -213,7 +209,7 @@ cdef class Result:
         new_columns.extend(other_columns)
         
         # Reorder the DataFrame
-        return df[new_columns]
+        return df.select(new_columns)
 
 
     def importance(self, bint combine_classes=False):
@@ -229,7 +225,7 @@ cdef class Result:
 
         single_importances = self._compute_single_importances(combine_classes)
         rows = self._compute_importance_rows(single_importances, combine_classes)
-        return pd.DataFrame(rows).sort_values(by='importance', ascending=False).reset_index(drop=True)
+        return pl.DataFrame(rows).sort("importance", descending=True)
 
     @staticmethod
     def _calc_abs_importance(df):
@@ -535,16 +531,16 @@ cdef class Explainer:
                 df_dict[f"{column_names[i]}_ub"] = [row[i] for row in points]
         
         # Add statistics columns
-        df_dict.update({
-            'value': np.asarray(mean_values, dtype=np.float32),
-            'std': np.asarray(ensemble_std, dtype=np.float32),
-            'count': np.asarray(counts, dtype=np.float32)
-        })
-        df = pd.DataFrame(df_dict, dtype=np.float32)
+        df_dict['value'] = np.asarray(mean_values, dtype=np.float32)
+        df_dict['std'] = np.asarray(ensemble_std, dtype=np.float32)
+        df_dict['count'] = np.asarray(counts, dtype=np.float32)
+
+        df = pl.DataFrame(df_dict)
 
         # Center the values
-        if df["count"].sum() == 0:
-            df.loc[:, "std"] = df["value"]
+        cdef float count_sum = df["count"].sum()
+        if count_sum == 0:
+            df = df.with_columns(pl.col("value").alias("std"))
 
             if isinstance(columns, int) or len(columns) == 1:
                 msg = f"Feature {columns} was not used in any split by the model."
@@ -553,24 +549,40 @@ cdef class Explainer:
 
             warnings.warn(msg)
         else:
-            adjustment = (df["value"] * df["count"]).sum() / df["count"].sum()
-            df.loc[:, "value"] = (df["value"] - adjustment).astype(np.float32)
-        
-        # Add lower bounds for all columns
+            adjustment = (df["value"] * df["count"]).sum() / count_sum
+            df = df.with_columns((pl.col("value") - adjustment).cast(pl.Float32).alias("value"))
+
+        # Add lower bounds for continuous columns
         for col_name in column_names:
             col_ub = f"{col_name}_ub"
 
             if col_ub in df.columns:
-                ub_index = df.columns.get_loc(col_ub)
-                add_lower_bound(df, ub_index, col_name)
-        
+                ub_values = df[col_ub].to_numpy()
+                unique_values = np.sort(np.unique(ub_values))
+                lower_bounds = np.empty_like(unique_values, dtype=np.float32)
+                lower_bounds[0] = -np.inf
+                lower_bounds[1:] = unique_values[:len(unique_values) - 1]
+
+                # Map each ub value to its lower bound
+                lb_map = dict(zip(unique_values, lower_bounds))
+                lb_col = np.array([lb_map[v] for v in ub_values], dtype=np.float32)
+
+                # Insert lb column before ub column
+                ub_idx = df.columns.index(col_ub)
+                cols = df.columns[:ub_idx]
+                df = df.select(
+                    [pl.col(c) for c in cols] +
+                    [pl.Series(f"{col_name}_lb", lb_col)] +
+                    [pl.col(c) for c in df.columns[ub_idx:]]
+                )
+
         return df
     
     def explain(self, int degree, *, back_data=None):
 
         if self.len_col == -1:
             raise ValueError("Explainer(model) must be called before this operation.")
-        
+
         if degree >= self.len_col:
             raise ValueError("'degree' cannot be greater than or equal to the total number of columns used to train the model.")
 
@@ -579,21 +591,15 @@ cdef class Explainer:
 
         cdef:
             vector[vector[Rule]] trees = self.trees
-            vector[vector[Rule]] class_trees
             Result result = Result()
             list feature_combinations
-            tuple feature_combo
-            vector[int] col_indices
-            int col
-            vector[vector[float]] points
-            vector[float] mean_values, ensemble_std, counts
             int num_cols, class_idx
             list column_names
             object class_df
 
         # Generate all feature combinations of specified degree
         feature_combinations = list(combinations(range(self.len_col), degree))
-        
+
         if not feature_combinations:
             warnings.warn(f"No feature combinations of degree {degree} possible with {self.len_col} features.")
             return result
@@ -604,7 +610,6 @@ cdef class Explainer:
                 "Background data is disabled in the current implementation. For now, please use the model's "
                 "training data to explain feature interactions. Next versions will support background data."
             )
-            #trees = update_leaf_counts(trees, self.model, back_data, self.model_type)
 
         # Set result metadata
         result.degree = degree
@@ -612,32 +617,86 @@ cdef class Explainer:
         result.feature_names = self.columns
         result.model_type = self.model_type
 
-        # Analyze each feature combination
-        for feature_combo in tqdm(feature_combinations, desc="Analyzing features"):
-            # Convert feature combination to vector[int]
-            col_indices.clear()
-            for col in feature_combo:
-                col_indices.push_back(col)
-            
-            num_cols = len(feature_combo)
-            column_names = [self.columns[idx] for idx in feature_combo]
-            
-            # Store class-wise statistics for this feature combination
-            class_stats = {}
-            
-            # Analyze for each class
-            for class_idx in range(self.n_classes):
-                if self.n_classes == 1:
-                    class_trees = trees
+        cdef int n_combos = <int>len(feature_combinations)
+        cdef int n_classes = self.n_classes
+        cdef int n_tasks = n_combos * n_classes
+        cdef int task_idx, combo_idx, cls_idx, col, i
+
+        # Pre-compute col_indices for all combinations
+        cdef vector[vector[int]] all_col_indices = vector[vector[int]](n_combos)
+        for i in range(n_combos):
+            for col in feature_combinations[i]:
+                all_col_indices[i].push_back(col)
+
+        # Pre-compute class trees (sequential)
+        cdef vector[vector[vector[Rule]]] all_class_trees
+        if n_classes > 1:
+            all_class_trees.resize(n_classes)
+            for class_idx in range(n_classes):
+                all_class_trees[class_idx] = filter_class_trees(trees, n_classes, class_idx)
+
+        # Pre-allocate output storage for all tasks
+        cdef vector[vector[vector[float]]] all_points = vector[vector[vector[float]]](n_tasks)
+        cdef vector[vector[float]] all_means = vector[vector[float]](n_tasks)
+        cdef vector[vector[float]] all_stds = vector[vector[float]](n_tasks)
+        cdef vector[vector[float]] all_counts = vector[vector[float]](n_tasks)
+
+        # Cache self attributes for nogil access
+        cdef vector[vector[int]] cat_cols_local = self.cat_cols
+        cdef vector[int] col_indices_tmp
+
+        # Use parallel path for large workloads, sequential with tqdm for small ones
+        if n_tasks >= 16:
+            # Parallel path: prange (no per-task progress, but much faster)
+            print(f"Computing {n_combos} feature combinations (degree={degree}) in parallel...")
+            with nogil:
+                for task_idx in prange(n_tasks, schedule='dynamic'):
+                    combo_idx = task_idx // n_classes
+                    cls_idx = task_idx % n_classes
+
+                    if n_classes == 1:
+                        _analyze_feature_nogil(
+                            trees, all_col_indices[combo_idx], cat_cols_local,
+                            all_points[task_idx], all_means[task_idx],
+                            all_stds[task_idx], all_counts[task_idx])
+                    else:
+                        _analyze_feature_nogil(
+                            all_class_trees[cls_idx], all_col_indices[combo_idx], cat_cols_local,
+                            all_points[task_idx], all_means[task_idx],
+                            all_stds[task_idx], all_counts[task_idx])
+        else:
+            # Sequential path with tqdm for small workloads
+            for task_idx in tqdm(range(n_tasks), desc="Analyzing features"):
+                combo_idx = task_idx // n_classes
+                cls_idx = task_idx % n_classes
+
+                if n_classes == 1:
+                    _analyze_feature_nogil(
+                        trees, all_col_indices[combo_idx], cat_cols_local,
+                        all_points[task_idx], all_means[task_idx],
+                        all_stds[task_idx], all_counts[task_idx])
                 else:
-                    class_trees = filter_class_trees(trees, self.n_classes, class_idx)
-                
-                points, mean_values, ensemble_std, counts = _analyze_feature(class_trees, col_indices, self.cat_cols)
-                class_df = self.prepare_dataframe(col_indices, num_cols, column_names, points, mean_values, ensemble_std, counts, feature_combo)
-                
+                    _analyze_feature_nogil(
+                        all_class_trees[cls_idx], all_col_indices[combo_idx], cat_cols_local,
+                        all_points[task_idx], all_means[task_idx],
+                        all_stds[task_idx], all_counts[task_idx])
+
+        # Phase 2: Build DataFrames from computed results
+        for i in range(n_combos):
+            feature_combo = feature_combinations[i]
+            num_cols = <int>len(feature_combo)
+            column_names = [self.columns[idx] for idx in feature_combo]
+            class_stats = {}
+
+            for class_idx in range(n_classes):
+                task_idx = i * n_classes + class_idx
+                class_df = self.prepare_dataframe(
+                    all_col_indices[i], num_cols, column_names,
+                    all_points[task_idx], all_means[task_idx],
+                    all_stds[task_idx], all_counts[task_idx],
+                    feature_combo)
                 class_stats[class_idx] = class_df
-            
-            # Store in result
+
             result._data[feature_combo] = class_stats
 
         return result
@@ -678,8 +737,7 @@ cdef class Explainer:
         columns.append("count")
 
         # Prepare data for DataFrame
-        data = [(*(comb), count) for comb, count in combination_counts.items()]
+        rows = [{columns[i]: comb[i] for i in range(len(comb))} | {"count": count}
+                for comb, count in combination_counts.items()]
 
-        df = pd.DataFrame(data, columns=columns)
-
-        return df.sort_values("count", ascending=False).reset_index(drop=True)
+        return pl.DataFrame(rows).sort("count", descending=True)

@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
@@ -36,7 +36,7 @@ def _validate_interaction_plot_parameters(
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df : polars.DataFrame
         Interaction summary table.
     figsize : (float, float)
         Figure size in inches.
@@ -60,13 +60,13 @@ def _validate_interaction_plot_parameters(
     if not isinstance(result, Result):
         raise TypeError("`result` must be a Result object.")
 
-    df = result[cols].copy()
-    
+    df = result[cols].clone()
+
     if df.shape[0] <= 2:
         raise ValueError("There is no interaction between features to plot.")
 
     required_meta = {"value", "std", "count"}
-    if not required_meta.issubset(df.columns):
+    if not required_meta.issubset(set(df.columns)):
         missing = required_meta - set(df.columns)
         raise ValueError(f"`df` is missing required columns: {missing}")
 
@@ -79,7 +79,7 @@ def _validate_interaction_plot_parameters(
 
     # discover logical features ----------------------------------------------------
     features = _classify_features(df)
-    cont_pairs = {name: (cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"}
+    cont_pairs = {name: (cols_pair[0], cols_pair[1]) for name, ftype, cols_pair in features if ftype == "continuous"}
     cat_cols = [name for name, ftype, _ in features if ftype == "categorical"]
 
     if len(cont_pairs) + len(cat_cols) != 2:
@@ -87,9 +87,11 @@ def _validate_interaction_plot_parameters(
             "Exactly two logical features are required. "
             f"Found {len(cont_pairs)} continuous + {len(cat_cols)} categorical."
         )
-        
+
     for feature, (lb_col, ub_col) in cont_pairs.items():
-        if np.isinf(df[lb_col]).all() or np.isinf(df[ub_col]).all():
+        lb_arr = df[lb_col].to_numpy()
+        ub_arr = df[ub_col].to_numpy()
+        if np.isinf(lb_arr).all() or np.isinf(ub_arr).all():
             raise ValueError(
                 "No interaction found between the two features, one of them contains only infinite values."
             )
@@ -125,7 +127,7 @@ def _validate_interaction_plot_parameters(
 
 
 def _plot_single_class(
-    df_class: pd.DataFrame,
+    df_class: pl.DataFrame,
     class_name: str,
     figsize: Tuple[float, float],
     axis_ticks_n: int,
@@ -142,7 +144,7 @@ def _plot_single_class(
 
     Parameters
     ----------
-    df_class : pandas.DataFrame
+    df_class : polars.DataFrame
         Interaction data for a single class.
     class_name : str
         Name of the class for title.
@@ -153,10 +155,10 @@ def _plot_single_class(
     meta_cols = {"value", "std", "count"}
     feature_cols = [c for c in df_class.columns if c not in meta_cols]
 
-    df_class = df_class.copy()
+    df_class = df_class.clone()
 
     features = _classify_features(df_class)
-    cont_pairs = {name: (cols[0], cols[1]) for name, ftype, cols in features if ftype == "continuous"}
+    cont_pairs = {name: (cols_pair[0], cols_pair[1]) for name, ftype, cols_pair in features if ftype == "continuous"}
     cat_cols = [name for name, ftype, _ in features if ftype == "categorical"]
     ordered = [(name, ftype) for name, ftype, _ in features]
 
@@ -177,10 +179,10 @@ def _plot_single_class(
         x_right = df_class[ub1].to_numpy()
 
     else:
-        cats1 = df_class[feat1].astype("category")
-        codes1 = cats1.cat.codes.to_numpy()
+        cats1_labels = sorted(df_class[feat1].cast(pl.Utf8).unique().to_list())
+        label_to_code1 = {label: i for i, label in enumerate(cats1_labels)}
+        codes1 = np.array([label_to_code1[v] for v in df_class[feat1].cast(pl.Utf8).to_list()])
         x_left, x_right = codes1, codes1 + 1
-        cats1_labels = cats1.cat.categories.tolist()
 
     if type2 == "continuous":
         lb2, ub2 = cont_pairs[feat2]
@@ -193,10 +195,10 @@ def _plot_single_class(
         y_top = df_class[ub2].to_numpy()
 
     else:
-        cats2 = df_class[feat2].astype("category")
-        codes2 = cats2.cat.codes.to_numpy()
+        cats2_labels = sorted(df_class[feat2].cast(pl.Utf8).unique().to_list())
+        label_to_code2 = {label: i for i, label in enumerate(cats2_labels)}
+        codes2 = np.array([label_to_code2[v] for v in df_class[feat2].cast(pl.Utf8).to_list()])
         y_bottom, y_top = codes2, codes2 + 1
-        cats2_labels = cats2.cat.categories.tolist()
 
     # --------------------------- 3. Colors
     values = df_class["value"].to_numpy()
@@ -371,14 +373,14 @@ def interaction_plot(
     # Check if class column exists for multi-class plotting
     if "class" in df.columns:
         # Get unique classes
-        unique_classes = df["class"].unique()
+        unique_classes = df["class"].unique().sort().to_list()
 
         # Create a plot for each class
         for class_name in unique_classes:
-            df_class = df[df["class"] == class_name].copy()
+            df_class = df.filter(pl.col("class") == class_name)
 
             # Remove class column from the class-specific dataframe
-            df_class = df_class.drop(columns=["class"])
+            df_class = df_class.drop("class")
 
             # Plot for this class
             _plot_single_class(
@@ -397,7 +399,7 @@ def interaction_plot(
     else:
         # Original single plot behavior
         _plot_single_class(
-            df_class=df.copy(),
+            df_class=df.clone(),
             class_name="",
             figsize=figsize,
             axis_ticks_n=axis_ticks_n,

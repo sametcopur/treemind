@@ -8,14 +8,14 @@ from typing import (
     Union,
 )
 
-import pandas as pd
+import polars as pl
 from numpy.typing import ArrayLike
 
 class Result:
     """
     Container holding feature–interaction statistics produced by
     :meth:`Explainer.explain`. Acts like a mapping from feature-index tuples
-    to per-class :class:`pandas.DataFrame` objects with computed metrics.
+    to per-class :class:`polars.DataFrame` objects with computed metrics.
 
     The ``__getitem__`` method simplifies this by returning a single DataFrame
     merged across classes, with a ``"class"`` column when applicable.
@@ -33,13 +33,13 @@ class Result:
     def __init__(self) -> None: ...
     def __repr__(self) -> str: ...
     
-    def __getitem__(self, key: Union[int, Sequence[int]]) -> pd.DataFrame: ...
+    def __getitem__(self, key: Union[int, Sequence[int]]) -> pl.DataFrame: ...
     def __contains__(self, key: object) -> bool: ...
     def __len__(self) -> int: ...
     def __iter__(self) -> Iterator[Tuple[int, ...]]: ...
 
     @property
-    def data(self) -> Dict[Tuple[int, ...], Dict[int, pd.DataFrame]]:
+    def data(self) -> Dict[Tuple[int, ...], Dict[int, pl.DataFrame]]:
         """
         Internal dictionary mapping feature-index tuples to per-class DataFrames.
 
@@ -50,7 +50,7 @@ class Result:
         """
         ...
 
-    def importance(self, combine_classes: bool = False) -> pd.DataFrame:
+    def importance(self, combine_classes: bool = False) -> pl.DataFrame:
         """
         Calculate the mean absolute contribution metric (``I_abs``) for each
         feature or interaction.
@@ -69,7 +69,7 @@ class Result:
 
         Returns
         -------
-        pandas.DataFrame
+        polars.DataFrame
             A DataFrame listing feature or interaction importances (``I_abs``),
             sorted by descending importance.
         """
@@ -114,7 +114,7 @@ class Explainer:
             A mapping from feature index tuples to per-class DataFrames.
         """
 
-    def count_node(self, degree: int = 2) -> pd.DataFrame:
+    def count_node(self, degree: int = 2) -> pl.DataFrame:
         """
         Count how often feature groups appear in tree split rules.
 
@@ -125,7 +125,7 @@ class Explainer:
 
         Returns
         -------
-        pandas.DataFrame
+        polars.DataFrame
             A DataFrame listing feature groups of the given degree and how
             often they appear in tree split rules, sorted by descending count.
         """

@@ -11,6 +11,7 @@ if sys.platform == "win32":
         "/Ox",
         "/Oi",
         "/GT",
+        "/openmp",
     ]
     extra_link_args = ["/OPT:REF", "/OPT:ICF"]
 
@@ -22,23 +23,28 @@ elif sys.platform == "linux":
         "-ftree-vectorize",
         "-fstrict-aliasing",
         "-fstack-protector-strong",
+        "-fopenmp",
     ]
-    extra_link_args = []
+    extra_link_args = ["-fopenmp"]
 
 elif sys.platform == "darwin":
+    import subprocess
+    omp_prefix = subprocess.check_output(["brew", "--prefix", "libomp"], text=True).strip()
     extra_compile_args = [
         "-Wall",
         "-O3",
-        "-fno-math-errno",       
-        "-fno-signed-zeros",    
-        "-fno-trapping-math", 
+        "-fno-math-errno",
+        "-fno-signed-zeros",
+        "-fno-trapping-math",
         "-funroll-loops",
         "-ftree-vectorize",
         "-fstrict-aliasing",
         "-fstack-protector-strong",
         "-Wno-unreachable-code-fallthrough",
+        "-Xpreprocessor", "-fopenmp",
+        f"-I{omp_prefix}/include",
     ]
-    extra_link_args = []
+    extra_link_args = [f"-L{omp_prefix}/lib", "-lomp"]
 
 define_macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 

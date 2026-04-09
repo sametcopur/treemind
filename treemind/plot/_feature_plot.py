@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -81,7 +81,7 @@ def _validate_feature_plot_parameters(
 
     # Validate basic required columns
     required_columns = {"value", "std", "count"}
-    if not required_columns.issubset(df.columns):
+    if not required_columns.issubset(set(df.columns)):
         raise ValueError(
             f"The DataFrame must contain the following columns: {required_columns}"
         )
@@ -150,7 +150,7 @@ def _validate_feature_plot_parameters(
         raise ValueError("ylabel must be a string or None.")
 
 
-def _is_categorical_data(df: pd.DataFrame) -> bool:
+def _is_categorical_data(df: pl.DataFrame) -> bool:
     """
     Determines if the DataFrame contains categorical or continuous data.
 
@@ -162,7 +162,7 @@ def _is_categorical_data(df: pd.DataFrame) -> bool:
     return features[0][1] == "categorical"
 
 
-def _has_multiclass_data(df: pd.DataFrame) -> bool:
+def _has_multiclass_data(df: pl.DataFrame) -> bool:
     """
     Determines if the DataFrame contains multiclass data (has 'class' column).
 
@@ -274,20 +274,20 @@ def feature_plot(
         ylabel=ylabel,
     )
     
-    df = result[col].copy()
+    df = result[col].clone()
 
     # Check if this is multiclass data
     is_multiclass = _has_multiclass_data(df)
 
     if is_multiclass:
         # Get unique classes and plot for each
-        unique_classes = sorted(df["class"].unique())
+        unique_classes = df["class"].unique().sort().to_list()
 
         for class_idx in unique_classes:
             # Filter data for current class
-            class_df = df[df["class"] == class_idx].copy()
+            class_df = df.filter(pl.col("class") == class_idx)
             # Remove the class column for plotting
-            class_df = class_df.drop("class", axis=1)
+            class_df = class_df.drop("class")
 
             # Create class-specific title
             if title is None:
@@ -330,7 +330,7 @@ def feature_plot(
 
 
 def _plot_single_class(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     figsize: Tuple[float, float],
     show_std: bool,
     show_range: bool,
@@ -381,7 +381,7 @@ def _plot_single_class(
 
 
 def _plot_categorical_feature(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     figsize: Tuple[float, float],
     show_std: bool,
     show_range: bool,
@@ -400,10 +400,10 @@ def _plot_categorical_feature(
     xlabel = xlabel or category_col.replace("_", " ").title()
     ylabel = ylabel or "Value"
 
-    categories = df[category_col].astype(str).values
-    values = df["value"].values
-    stds = df["std"].values
-    counts = df["count"].values
+    categories = df[category_col].cast(pl.Utf8).to_numpy()
+    values = df["value"].to_numpy()
+    stds = df["std"].to_numpy()
+    counts = df["count"].to_numpy()
     x = np.arange(len(categories))
 
     # Setup figure
@@ -522,7 +522,7 @@ def _plot_categorical_feature(
 
 
 def _plot_continuous_feature(
-    df: pd.DataFrame,
+    df: pl.DataFrame,
     figsize: Tuple[float, float],
     show_std: bool,
     show_range: bool,
@@ -553,13 +553,26 @@ def _plot_continuous_feature(
 
     extend_ratio = EXTEND_RATIO * (df[column_name].max() - df[column_name].min())
 
-    min_row = df.iloc[df[column_name].argmin()].copy()
-    min_row[column_name] -= extend_ratio
+    min_idx = df[column_name].to_numpy().argmin()
+    min_row = df.row(min_idx, named=True)
+    min_row = {k: v for k, v in min_row.items()}
+    min_row[column_name] = min_row[column_name] - extend_ratio
 
-    max_row = df.iloc[df[column_name].argmax()].copy()
-    max_row[column_name] += extend_ratio
+    max_idx = df[column_name].to_numpy().argmax()
+    max_row = df.row(max_idx, named=True)
+    max_row = {k: v for k, v in max_row.items()}
+    max_row[column_name] = max_row[column_name] + extend_ratio
 
-    df = pd.concat([min_row.to_frame().T, df, max_row.to_frame().T], ignore_index=True)
+    min_row_df = pl.DataFrame(min_row, schema=df.schema)
+    max_row_df = pl.DataFrame(max_row, schema=df.schema)
+    df = pl.concat([min_row_df, df, max_row_df])
+
+    # Extract numpy arrays for plotting
+    col_np = df[column_name].to_numpy()
+    lb_np = df[lb_column_name].to_numpy()
+    value_np = df["value"].to_numpy()
+    std_np = df["std"].to_numpy()
+    count_np = df["count"].to_numpy()
 
     if show_range:
         fig, (ax1, ax2) = plt.subplots(
@@ -571,10 +584,10 @@ def _plot_continuous_feature(
 
     # HISTOGRAM - only if show_range is True
     if show_range:
-        mid_points = (df[lb_column_name] + df[column_name]) / 2
-        weights = df["count"]
-        min_value = df[column_name].min()
-        max_value = df[column_name].max()
+        mid_points = (lb_np + col_np) / 2
+        weights = count_np
+        min_value = col_np.min()
+        max_value = col_np.max()
 
         kde = gaussian_kde(
             np.repeat(mid_points, weights.astype(int)), bw_method="silverman"
@@ -607,9 +620,8 @@ def _plot_continuous_feature(
 
     # Plot the mean line with steps-pre drawstyle
     sns.lineplot(
-        data=df,
-        x=column_name,
-        y="value",
+        x=col_np,
+        y=value_np,
         color=COLOR_PRIMARY,
         linewidth=2,
         drawstyle="steps-pre",
@@ -619,9 +631,9 @@ def _plot_continuous_feature(
     # Fill between the min and max if specified
     if show_std:
         main_ax.fill_between(
-            df[column_name],
-            df["value"] - np.abs(df["std"]),
-            df["value"] + np.abs(df["std"]),
+            col_np,
+            value_np - np.abs(std_np),
+            value_np + np.abs(std_np),
             color=COLOR_STD,
             alpha=0.3,
             label="Standard Deviation",
@@ -641,7 +653,7 @@ def _plot_continuous_feature(
     main_ax.set_facecolor("whitesmoke")
 
     # Set x-ticks
-    x_ticks = np.linspace(df[column_name].min(), df[column_name].max(), num=xticks_n)
+    x_ticks = np.linspace(col_np.min(), col_np.max(), num=xticks_n)
     x_decimal = _find_tick_decimal(x_ticks, xticks_n)
     main_ax.set_xticks(x_ticks)
     main_ax.set_xticklabels(
@@ -651,11 +663,11 @@ def _plot_continuous_feature(
 
     # Determine y-ticks range
     if show_std:
-        y_min = (df["value"] - np.abs(df["std"])).min()
-        y_max = (df["value"] + np.abs(df["std"])).max()
+        y_min = (value_np - np.abs(std_np)).min()
+        y_max = (value_np + np.abs(std_np)).max()
     else:
-        y_min = df["value"].min()
-        y_max = df["value"].max()
+        y_min = value_np.min()
+        y_max = value_np.max()
 
     # Set y-ticks
     y_ticks = np.linspace(y_min, y_max, num=yticks_n)

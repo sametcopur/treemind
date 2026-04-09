@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 import numpy as np
 
 # ---- Visual constants ----
@@ -69,14 +69,14 @@ def _find_tick_decimal(ticks: np.ndarray, n_ticks: int) -> int:
 
 
 def _replace_infinity(
-    data: pd.DataFrame, column_name: str, infinity_type: str = "positive"
+    data: pl.DataFrame, column_name: str, infinity_type: str = "positive"
 ):
     """
     Replaces positive or negative infinity values in a DataFrame column with a calculated value
     based on the finite values in the column.
 
     Parameters:
-    - data: pd.DataFrame
+    - data: pl.DataFrame
         The DataFrame containing the data.
     - column_name: str
         The name of the column to process.
@@ -85,12 +85,11 @@ def _replace_infinity(
         'negative' to replace negative infinity values.
 
     Returns:
-    - pd.DataFrame
-        A copy of the DataFrame with infinity values replaced.
+    - pl.DataFrame
+        A new DataFrame with infinity values replaced.
     """
-    data = data.copy()
     # Extract unique finite values
-    unique_values = np.asarray(data[column_name].unique(), dtype=np.float64)
+    unique_values = data[column_name].unique().to_numpy()
     finite_values = unique_values[~np.isinf(unique_values)]
     finite_values_sorted = np.sort(finite_values)
 
@@ -102,8 +101,13 @@ def _replace_infinity(
             difference = max_value - second_max
         else:
             difference = max_value * INFINITY_FALLBACK_FRACTION
-        # Replace positive infinity values
-        data.loc[np.isposinf(data[column_name]), column_name] = np.float32(max_value + difference)
+        replacement = np.float32(max_value + difference)
+        return data.with_columns(
+            pl.when(pl.col(column_name).is_infinite() & (pl.col(column_name) > 0))
+            .then(replacement)
+            .otherwise(pl.col(column_name))
+            .alias(column_name)
+        )
 
     elif infinity_type == "negative":
         # Handle negative infinity
@@ -113,10 +117,13 @@ def _replace_infinity(
             difference = second_min - min_value
         else:
             difference = abs(min_value) * INFINITY_FALLBACK_FRACTION
-        # Replace negative infinity values
-        data.loc[np.isneginf(data[column_name]), column_name] = np.float32(min_value - difference)
+        replacement = np.float32(min_value - difference)
+        return data.with_columns(
+            pl.when(pl.col(column_name).is_infinite() & (pl.col(column_name) < 0))
+            .then(replacement)
+            .otherwise(pl.col(column_name))
+            .alias(column_name)
+        )
 
     else:
         raise ValueError("infinity_type must be 'positive' or 'negative'")
-
-    return data
